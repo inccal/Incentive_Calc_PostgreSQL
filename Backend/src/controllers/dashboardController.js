@@ -46,6 +46,26 @@ export async function resolveEmployeeId(idOrSlug) {
   return match.id;
 }
 
+/**
+ * Returns the set of employee user IDs that a SUPER_ADMIN is allowed to view
+ * (their subordinate teams only — same scope as super-admin overview).
+ */
+export async function getSuperAdminSubordinateEmployeeIds(currentUser) {
+  if (currentUser.role !== Role.SUPER_ADMIN) return new Set();
+  const subordinates = await prisma.user.findMany({
+    where: { managerId: currentUser.id, employeeProfile: { is: { deletedAt: null } } },
+    select: { employeeProfile: { select: { teamId: true } } },
+  });
+  const teamIds = subordinates.map((s) => s.employeeProfile?.teamId).filter(Boolean);
+  if (teamIds.length === 0) return new Set([currentUser.id]);
+  const profiles = await prisma.employeeProfile.findMany({
+    where: { teamId: { in: teamIds }, deletedAt: null },
+    select: { id: true },
+  });
+  const userIds = profiles.map((p) => p.id).filter(Boolean);
+  return new Set([currentUser.id, ...userIds]);
+}
+
 export async function getSuperAdminOverview(currentUser, year) {
   try {
     console.log(`[getSuperAdminOverview] Called for ${currentUser.id} (${currentUser.role}) with year: ${year}`);

@@ -10,6 +10,7 @@ import {
   getTeamPlacementOverview,
   getL1Placements,
   resolveEmployeeId,
+  getSuperAdminSubordinateEmployeeIds,
 } from "../controllers/dashboardController.js";
 
 const router = express.Router();
@@ -284,16 +285,23 @@ router.get(
       }
 
       const isSelf = employeeId === viewerId;
-      const hasFullAccess = viewer.role === Role.SUPER_ADMIN || viewer.role === Role.S1_ADMIN;
+      const isS1Admin = viewer.role === Role.S1_ADMIN;
+      const isSuperAdmin = viewer.role === Role.SUPER_ADMIN;
+      const isTeamLead = viewer.role === Role.TEAM_LEAD;
 
-      if (!isSelf && !hasFullAccess) {
-        if (viewer.role === Role.TEAM_LEAD) {
-          if (employee.employeeProfile.managerId !== viewerId) {
-            return res.status(403).json({ error: "Forbidden: Not your subordinate" });
-          }
-        } else {
-          return res.status(403).json({ error: "Forbidden" });
-        }
+      let allowed = isSelf;
+      if (!allowed && isS1Admin) {
+        allowed = true;
+      }
+      if (!allowed && isSuperAdmin) {
+        const subordinateIds = await getSuperAdminSubordinateEmployeeIds(viewer);
+        allowed = subordinateIds.has(employeeId);
+      }
+      if (!allowed && isTeamLead) {
+        allowed = employee.employeeProfile.managerId === viewerId;
+      }
+      if (!allowed) {
+        return res.status(403).json({ error: "Forbidden" });
       }
 
       const processedData = await processEmployeeData(employee);
