@@ -4,7 +4,7 @@ import cors from "cors";
 import morgan from "morgan";
 import cookieParser from "cookie-parser";
 import helmet from "helmet";
-import rateLimit from "express-rate-limit";
+import rateLimit, { ipKeyGenerator } from "express-rate-limit";
 import path from "path";
 import { fileURLToPath } from "url";
 import prisma from "./prisma.js";
@@ -51,9 +51,30 @@ app.use(
 
 const limiter = rateLimit({
   windowMs: 15 * 60 * 1000, // 15 minutes
-  max: 5000, // Limit each IP to 100 requests per windowMs
+  max: 1000, // Limit each IP to 1000 requests per windowMs
   standardHeaders: true,
   legacyHeaders: false,
+  // Custom key generator: sanitize IP (especially when it includes a port) and delegate to ipKeyGenerator
+  keyGenerator: (req, res) => {
+    const raw =
+      (req.ip ||
+        req.headers["x-forwarded-for"] ||
+        req.socket?.remoteAddress ||
+        "") + "";
+
+    // Handle "ip1, ip2, ..." from proxies
+    const first = raw.split(",")[0].trim();
+
+    // If IPv4 with port like "20.197.11.14:58841", strip the port, but
+    // leave IPv6 untouched so ipKeyGenerator can handle subnetting correctly.
+    let ip = first;
+    const parts = first.split(":");
+    if (parts.length === 2 && parts[0].includes(".")) {
+      ip = parts[0];
+    }
+
+    return ipKeyGenerator(ip);
+  },
 });
 app.use(limiter);
 

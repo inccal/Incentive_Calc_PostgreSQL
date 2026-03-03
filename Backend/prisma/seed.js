@@ -1,447 +1,280 @@
-import { PrismaClient, Role, PlacementType, BillingStatus } from "../src/generated/client/index.js";
+/**
+ * Seed database from hierarchy_data.json.
+ * Creates: S1 Admin, then all Users, Teams, and EmployeeProfiles from the hierarchy.
+ * Default password for all users: 123456
+ * Run: npm run prisma:seed (or node prisma/seed.js)
+ */
+
+import prismaPkg from "../src/generated/client/index.js";
+const { PrismaClient, Role } = prismaPkg;
 import bcrypt from "bcryptjs";
 import fs from "fs";
 import path from "path";
 import { fileURLToPath } from "url";
 
-const __filename = fileURLToPath(import.meta.url);
-const __dirname = path.dirname(__filename);
-
+const __dirname = path.dirname(fileURLToPath(import.meta.url));
 const prisma = new PrismaClient();
-const password = "123";
+const DEFAULT_PASSWORD = "123456";
 
-const CLIENT_NAMES = [
-  "TechCorp Inc.", "Global Solutions", "Innovate Systems", "Alpha Dynamics", "Omega Partners",
-  "BlueSky Ventures", "Quantum Leap", "Vertex Holdings", "Nexus Group", "Pinnacle Services",
-  "Summit Technologies", "Horizon Digital", "Vanguard Corp", "Synergy Global", "Meridian Systems"
-];
-
-const getRandomElement = (arr) => arr[Math.floor(Math.random() * arr.length)];
-const getRandomInt = (min, max) => Math.floor(Math.random() * (max - min + 1)) + min;
-const getRandomDate = (start, end) => new Date(start.getTime() + Math.random() * (end.getTime() - start.getTime()));
-
-const generateRandomDataForUser = async (userId, userName) => {
-    // CHECK IF DATA EXISTS
-    const existingPlacements = await prisma.placement.count({ where: { employeeId: userId } });
-    if (existingPlacements > 0) {
-        // console.log(`User ${userName} already has data. Skipping generation.`);
-        return;
-    }
-
-    // 95% chance to have data
-    if (Math.random() > 0.95) return;
-
-    const numPlacements = getRandomInt(3, 8);
-    // console.log(`Generating ${numPlacements} placements for ${userName}`);
-    
-    for (let i = 0; i < numPlacements; i++) {
-        const clientName = getRandomElement(CLIENT_NAMES);
-        const revenue = getRandomInt(5000, 25000);
-        const margin = getRandomInt(20, 35);
-        const doi = getRandomDate(new Date('2024-01-01'), new Date('2024-05-30'));
-        const doj = new Date(doi);
-        doj.setDate(doj.getDate() + getRandomInt(5, 20));
-        
-        const placementType = Math.random() > 0.3 ? PlacementType.PERMANENT : PlacementType.CONTRACT;
-        
-        // Create Daily Entry
-        await prisma.dailyEntry.create({
-            data: {
-                employeeId: userId,
-                date: doi,
-                clientName,
-                placementType,
-                revenue,
-                marginPercent: margin,
-                billingStatus: BillingStatus.BILLED,
-                doi,
-                doj,
-                remarks: "Seeded entry",
-            },
-        });
-
-        // Create Placement
-        const placement = await prisma.placement.create({
-            data: {
-                employeeId: userId,
-                candidateName: `${userName} Candidate ${i+1}`,
-                clientName,
-                doi,
-                doj,
-                daysCompleted: getRandomInt(30, 180),
-                placementType,
-                billedHours: placementType === PlacementType.CONTRACT ? 160 : null,
-                marginPercent: margin,
-                revenue,
-                billingStatus: BillingStatus.BILLED,
-                incentivePayoutEta: new Date(doj.getTime() + 30 * 24 * 60 * 60 * 1000),
-                incentiveAmountInr,
-                incentivePaid: Math.random() > 0.5,
-                qualifier: true,
-            },
-        });
-
-        // Create Monthly Billing
-        if (placementType === PlacementType.CONTRACT) {
-            await prisma.monthlyBilling.createMany({
-                data: [
-                    {
-                        placementId: placement.id,
-                        month: "February 2024",
-                        hours: 160,
-                        status: BillingStatus.BILLED,
-                    },
-                    {
-                        placementId: placement.id,
-                        month: "March 2024",
-                        hours: 168,
-                        status: BillingStatus.BILLED,
-                    }
-                ]
-            });
-        }
-    }
-};
-
-const getHierarchyData = () => {
-  const dataPath = path.join(__dirname, "../hierarchy_data.json");
-  if (fs.existsSync(dataPath)) {
-    try {
-      const rawData = fs.readFileSync(dataPath, "utf-8");
-      return JSON.parse(rawData);
-    } catch (e) {
-      console.error("Error reading hierarchy_data.json:", e);
-    }
+function loadHierarchy() {
+  const filePath = path.join(__dirname, "../hierarchy_data.json");
+  if (!fs.existsSync(filePath)) {
+    throw new Error("hierarchy_data.json not found at Backend/hierarchy_data.json");
   }
-  return null;
-};
+  const raw = fs.readFileSync(filePath, "utf-8");
+  const data = JSON.parse(raw);
+  if (!data.hierarchy || !Array.isArray(data.hierarchy)) {
+    throw new Error("hierarchy_data.json must have a 'hierarchy' array");
+  }
+  return data.hierarchy;
+}
 
-// Function to delete an entire hierarchy tree starting from L1
-const deleteHierarchy = async (l1Email, teamNames) => {
-    console.log(`Attempting to delete hierarchy for ${l1Email}...`);
-    
-    // Find L1 User
-    const l1User = await prisma.user.findUnique({ where: { email: l1Email } });
-    if (!l1User) {
-        console.log(`L1 User ${l1Email} not found. Skipping delete.`);
-        
-        // Even if user not found, try to delete teams to be safe
-        if (teamNames && teamNames.length > 0) {
-             await prisma.team.deleteMany({ where: { name: { in: teamNames } } });
-        }
-        return;
-    }
+function safeVbid(vbid) {
+  if (vbid == null || String(vbid).trim() === "") return null;
+  return String(vbid).trim();
+}
 
-    // Find all descendants (L2 -> L3 -> L4)
-    // L2s
-    const l2Users = await prisma.user.findMany({ where: { managerId: l1User.id } });
-    const l2Ids = l2Users.map(u => u.id);
-    
-    // L3s
-    let l3Ids = [];
-    if (l2Ids.length > 0) {
-        const l3Users = await prisma.user.findMany({ where: { managerId: { in: l2Ids } } });
-        l3Ids = l3Users.map(u => u.id);
-    }
+async function ensureUser(db, { email, name, passwordHash, role, vbid, managerId }) {
+  const emailNorm = email.trim().toLowerCase();
+  let user = await db.user.findUnique({ where: { email: emailNorm } });
+  if (user) {
+    const updateData = { name: name.trim(), role, vbid: vbid ?? null };
+    if (managerId !== undefined) updateData.managerId = managerId;
+    await db.user.update({ where: { id: user.id }, data: updateData });
+    return user;
+  }
+  user = await db.user.create({
+    data: {
+      email: emailNorm,
+      name: name.trim(),
+      passwordHash,
+      role,
+      vbid: vbid ?? null,
+      managerId: managerId ?? null,
+    },
+  });
+  return user;
+}
 
-    // L4s
-    let l4Ids = [];
-    if (l3Ids.length > 0) {
-        const l4Users = await prisma.user.findMany({ where: { managerId: { in: l3Ids } } });
-        l4Ids = l4Users.map(u => u.id);
-    }
-
-    // Collect all IDs to delete
-    const allUserIds = [l1User.id, ...l2Ids, ...l3Ids, ...l4Ids];
-    console.log(`Found ${allUserIds.length} users to delete in hierarchy.`);
-
-    // Delete related data
-    await prisma.monthlyBilling.deleteMany({ where: { placement: { employeeId: { in: allUserIds } } } });
-    await prisma.placement.deleteMany({ where: { employeeId: { in: allUserIds } } });
-    await prisma.dailyEntry.deleteMany({ where: { employeeId: { in: allUserIds } } });
-    await prisma.refreshToken.deleteMany({ where: { userId: { in: allUserIds } } });
-    await prisma.auditLog.deleteMany({ where: { actorId: { in: allUserIds } } });
-    await prisma.campaignTask.deleteMany({ where: { completedById: { in: allUserIds } } });
-    await prisma.campaignActivity.deleteMany({ where: { userId: { in: allUserIds } } });
-    await prisma.campaignAssignment.deleteMany({ where: { userId: { in: allUserIds } } });
-    await prisma.campaignTeamLead.deleteMany({ where: { userId: { in: allUserIds } } });
-    await prisma.campaignImage.deleteMany({ where: { uploadedById: { in: allUserIds } } });
-    await prisma.campaign.deleteMany({ where: { createdById: { in: allUserIds } } });
-    
-    // Delete Profiles
-    await prisma.employeeProfile.deleteMany({ where: { id: { in: allUserIds } } });
-    
-    // Delete Users
-    await prisma.user.deleteMany({ where: { id: { in: allUserIds } } });
-    
-    // Delete Teams
-    if (teamNames && teamNames.length > 0) {
-        // Need to unlink any remaining profiles from these teams first (if any exists outside our hierarchy - shouldn't happen but safe to check)
-        // Actually, if we delete the team, profiles pointing to it might fail if restrict. 
-        // But we just deleted the profiles of this hierarchy.
-        // Assuming no one else is in these teams.
-        await prisma.team.deleteMany({ where: { name: { in: teamNames } } });
-    }
-    
-    console.log(`Hierarchy for ${l1Email} deleted successfully.`);
-};
-
-async function main() {
-  const passwordHash = await bcrypt.hash(password, 10);
-  
-  const customData = getHierarchyData();
-  
-  if (customData && customData.hierarchy) {
-    console.log("Seeding from hierarchy_data.json...");
-    
-    // TARGET HIERARCHIES TO UPDATE
-    const TARGET_NAMES = ["Bhanu Pratap Singh"];
-    
-    // Filter the data
-    const hierarchyToSeed = customData.hierarchy.filter(h => TARGET_NAMES.includes(h.name));
-    console.log(`Filtered hierarchy to include: ${TARGET_NAMES.join(", ")}`);
-
-    // Ensure S1 Admin exists
-    const s1AdminEmail = "admin@vbeyond.com";
-    const s1Admin = await prisma.user.findUnique({ where: { email: s1AdminEmail } });
-    if (!s1Admin) {
-         await prisma.user.create({
-            data: {
-                email: s1AdminEmail,
-                name: "S1 Admin",
-                passwordHash,
-                role: "S1_ADMIN",
-            }
-        });
-        console.log("S1 Admin created.");
-    } else {
-        console.log("S1 Admin already exists.");
-    }
-
-    for (const l1 of hierarchyToSeed) {
-      // SKIP DELETION - User requested to append/update only
-      // const teamNames = l1.teams ? l1.teams.map(t => t.name) : [];
-      // await deleteHierarchy(l1.email, teamNames);
-
-      console.log(`Processing hierarchy for ${l1.name}...`);
-
-      // CHECK OR CREATE L1
-      let l1User = await prisma.user.findUnique({ where: { email: l1.email } });
-      if (!l1User) {
-        console.log(`Creating L1 ${l1.name}...`);
-        l1User = await prisma.user.create({
-          data: {
-            email: l1.email,
-            name: l1.name,
-            passwordHash,
-            role: Role.SUPER_ADMIN,
-            employeeProfile: {
-               create: {
-                   level: l1.level || "L1",
-                   yearlyTarget: 0
-               }
-            }
-          },
+async function ensureProfile(db, { userId, teamId, managerId, level, vbid }) {
+  const data = {
+    teamId: teamId ?? null,
+    managerId: managerId ?? null,
+    level: level || null,
+    vbid: vbid ?? null,
+    targetType: "REVENUE",
+  };
+  const existing = await db.employeeProfile.findUnique({
+    where: { id: userId },
+  });
+  if (existing) {
+    try {
+      await db.employeeProfile.update({
+        where: { id: userId },
+        data,
+      });
+    } catch (err) {
+      if (err.code === "P2002") {
+        await db.employeeProfile.update({
+          where: { id: userId },
+          data: { ...data, vbid: null },
         });
       } else {
-        console.log(`L1 ${l1.name} already exists. Updating profile...`);
-        // Ensure profile exists or update it
-        const profile = await prisma.employeeProfile.findUnique({ where: { id: l1User.id } });
-        if (!profile) {
-            await prisma.employeeProfile.create({
-                data: {
-                    id: l1User.id,
-                    level: l1.level || "L1",
-                    yearlyTarget: 0
-                }
-            });
+        throw err;
+      }
+    }
+    return;
+  }
+  try {
+    await db.employeeProfile.create({
+      data: {
+        id: userId,
+        teamId: data.teamId,
+        managerId: data.managerId,
+        level: data.level,
+        vbid: null,
+        targetType: data.targetType,
+      },
+    });
+  } catch (err) {
+    if (err.code === "P2002") {
+      try {
+        await db.employeeProfile.update({
+          where: { id: userId },
+          data: { ...data, vbid: data.vbid || null },
+        });
+      } catch (updateErr) {
+        if (updateErr.code === "P2025") {
+          const now = new Date();
+          try {
+            await db.$executeRaw`
+              INSERT INTO dbo.EmployeeProfile (id, teamId, managerId, level, vbid, targetType, isActive, createdAt, updatedAt)
+              VALUES (${userId}, ${data.teamId}, ${data.managerId}, ${data.level}, ${data.vbid}, ${data.targetType}, 1, ${now}, ${now})
+            `;
+          } catch (insertErr) {
+            try {
+              await db.employeeProfile.update({
+                where: { id: userId },
+                data: { ...data, vbid: data.vbid || null },
+              });
+            } catch (_) {}
+          }
+        } else {
+          throw updateErr;
         }
       }
+      return;
+    }
+    throw err;
+  }
+  if (data.vbid) {
+    try {
+      await db.employeeProfile.update({
+        where: { id: userId },
+        data: { vbid: data.vbid },
+      });
+    } catch (err) {
+      if (err.code !== "P2002") throw err;
+    }
+  }
+}
 
-      if (l1.teams) {
-        for (const teamData of l1.teams) {
-          // Check if team exists
-          let team = await prisma.team.findUnique({ where: { name: teamData.name } });
-          if (!team) {
-            team = await prisma.team.create({
-              data: {
-                name: teamData.name,
-                color: teamData.color || "blue",
-                yearlyTarget: 0,
-              },
-            });
-          }
+async function ensureTeam(db, name, color) {
+  let team = await db.team.findUnique({ where: { name } });
+  if (!team) {
+    team = await db.team.create({
+      data: { name, color: color || null, yearlyTarget: 0 },
+    });
+  }
+  return team;
+}
 
-          if (teamData.leads) {
-            for (const l2 of teamData.leads) {
-              let l2User = await prisma.user.findUnique({ where: { email: l2.email } });
-              if (!l2User) {
-                console.log(`Creating L2 ${l2.name}...`);
-                l2User = await prisma.user.create({
-                  data: {
-                    email: l2.email,
-                    name: l2.name,
-                    passwordHash,
-                    role: Role.TEAM_LEAD,
-                    managerId: l1User.id,
-                    employeeProfile: {
-                      create: {
-                        teamId: team.id,
-                        level: l2.level || "L2",
-                        yearlyTarget: l2.target || 100000,
-                        managerId: l1User.id,
-                      }
-                    }
-                  },
-                });
-              } else {
-                  console.log(`L2 ${l2.name} exists. Updating profile/team link...`);
-                  // Update manager link if needed
-                  if (l2User.managerId !== l1User.id) {
-                      await prisma.user.update({ where: { id: l2User.id }, data: { managerId: l1User.id } });
-                  }
-                  
-                  // Ensure profile and team link
-                  const profile = await prisma.employeeProfile.findUnique({ where: { id: l2User.id } });
-                  if (!profile) {
-                      await prisma.employeeProfile.create({
-                          data: {
-                              id: l2User.id,
-                              teamId: team.id,
-                              level: l2.level || "L2",
-                              yearlyTarget: l2.target || 100000,
-                              managerId: l1User.id,
-                          }
-                      });
-                  } else {
-                      // Update team if missing or different
-                      await prisma.employeeProfile.update({
-                          where: { id: l2User.id },
-                          data: { teamId: team.id, managerId: l1User.id }
-                      });
-                  }
-              }
-              // Wait for user to be available before generating data
-              if (l2User) {
-                  await generateRandomDataForUser(l2User.id, l2.name);
-              }
+async function processMembers(db, members, teamId, managerId, passwordHash) {
+  if (!members || !Array.isArray(members)) return;
+  for (const m of members) {
+    const vbid = safeVbid(m.vbid);
+    const user = await ensureUser(db, {
+      email: m.email,
+      name: m.name,
+      passwordHash,
+      role: Role.EMPLOYEE,
+      vbid,
+      managerId,
+    });
+    await ensureProfile(db, {
+      userId: user.id,
+      teamId,
+      managerId,
+      level: m.level || "L4",
+      vbid,
+    });
+  }
+}
 
-              const createMembers = async (members, managerId) => {
-                for (const member of members) {
-                  let memberUser = await prisma.user.findUnique({ where: { email: member.email } });
-                  if (!memberUser) {
-                    console.log(`Creating Member ${member.name}...`);
-                    memberUser = await prisma.user.create({
-                      data: {
-                        email: member.email,
-                        name: member.name,
-                        passwordHash,
-                        role: Role.EMPLOYEE,
-                        managerId: managerId,
-                        employeeProfile: {
-                          create: {
-                            teamId: team.id,
-                            level: member.level || "L4",
-                            yearlyTarget: member.target || 10000,
-                            managerId: managerId,
-                          }
-                        }
-                      },
-                    });
-                  } else {
-                      // Update existing member
-                      // console.log(`Member ${member.name} exists. Updating...`);
-                      if (memberUser.managerId !== managerId) {
-                          await prisma.user.update({ where: { id: memberUser.id }, data: { managerId: managerId } });
-                      }
-                      
-                      const profile = await prisma.employeeProfile.findUnique({ where: { id: memberUser.id } });
-                      if (!profile) {
-                          await prisma.employeeProfile.create({
-                              data: {
-                                  id: memberUser.id,
-                                  teamId: team.id,
-                                  level: member.level || "L4",
-                                  yearlyTarget: member.target || 10000,
-                                  managerId: managerId,
-                              }
-                          });
-                      } else {
-                          await prisma.employeeProfile.update({
-                              where: { id: memberUser.id },
-                              data: { teamId: team.id, managerId: managerId }
-                          });
-                      }
-                  }
-                  await generateRandomDataForUser(memberUser.id, member.name);
-                }
-              };
+async function processSubLeads(db, subLeads, teamId, l2UserId, passwordHash) {
+  if (!subLeads || !Array.isArray(subLeads)) return;
+  for (const l3 of subLeads) {
+    const vbid = safeVbid(l3.vbid);
+    const l3User = await ensureUser(db, {
+      email: l3.email,
+      name: l3.name,
+      passwordHash,
+      role: Role.TEAM_LEAD,
+      vbid,
+      managerId: l2UserId,
+    });
+    await ensureProfile(db, {
+      userId: l3User.id,
+      teamId,
+      managerId: l2UserId,
+      level: l3.level || "L3",
+      vbid,
+    });
+    if (l3.members) {
+      await processMembers(db, l3.members, teamId, l3User.id, passwordHash);
+    }
+  }
+}
 
-              if (l2.members) {
-                await createMembers(l2.members, l2User.id);
-              }
+async function processLeads(db, leads, teamId, l1UserId, passwordHash) {
+  if (!leads || !Array.isArray(leads)) return;
+  for (const l2 of leads) {
+    const vbid = safeVbid(l2.vbid);
+    const l2User = await ensureUser(db, {
+      email: l2.email,
+      name: l2.name,
+      passwordHash,
+      role: Role.TEAM_LEAD,
+      vbid,
+      managerId: l1UserId,
+    });
+    await ensureProfile(db, {
+      userId: l2User.id,
+      teamId,
+      managerId: l1UserId,
+      level: l2.level || "L2",
+      vbid,
+    });
+    if (l2.subLeads) {
+      await processSubLeads(db, l2.subLeads, teamId, l2User.id, passwordHash);
+    }
+    if (l2.members) {
+      await processMembers(db, l2.members, teamId, l2User.id, passwordHash);
+    }
+  }
+}
 
-              if (l2.subLeads) {
-                for (const l3 of l2.subLeads) {
-                  let l3User = await prisma.user.findUnique({ where: { email: l3.email } });
-                  if (!l3User) {
-                    console.log(`Creating L3 ${l3.name}...`);
-                    l3User = await prisma.user.create({
-                      data: {
-                        email: l3.email,
-                        name: l3.name,
-                        passwordHash,
-                        role: Role.TEAM_LEAD,
-                        managerId: l2User.id,
-                        employeeProfile: {
-                          create: {
-                            teamId: team.id,
-                            level: l3.level || "L3",
-                            yearlyTarget: l3.target || 50000,
-                            managerId: l2User.id,
-                          }
-                        }
-                      },
-                    });
-                  } else {
-                      // Update L3
-                       console.log(`L3 ${l3.name} exists. Updating...`);
-                       if (l3User.managerId !== l2User.id) {
-                           await prisma.user.update({ where: { id: l3User.id }, data: { managerId: l2User.id } });
-                       }
-                       const profile = await prisma.employeeProfile.findUnique({ where: { id: l3User.id } });
-                       if (!profile) {
-                           await prisma.employeeProfile.create({
-                               data: {
-                                   id: l3User.id,
-                                   teamId: team.id,
-                                   level: l3.level || "L3",
-                                   yearlyTarget: l3.target || 50000,
-                                   managerId: l2User.id,
-                               }
-                           });
-                       } else {
-                           await prisma.employeeProfile.update({
-                               where: { id: l3User.id },
-                               data: { teamId: team.id, managerId: l2User.id }
-                           });
-                       }
-                  }
-                  await generateRandomDataForUser(l3User.id, l3.name);
+async function main() {
+  const passwordHash = await bcrypt.hash(DEFAULT_PASSWORD, 10);
+  const hierarchy = loadHierarchy();
+  console.log(`Seeding from hierarchy_data.json (${hierarchy.length} top-level entries)...`);
 
-                  if (l3.members) {
-                    await createMembers(l3.members, l3User.id);
-                  }
-                }
-              }
-            }
-          }
+  const db = prisma;
+  const s1Email = "admin@vbeyond.com";
+  if (!(await db.user.findUnique({ where: { email: s1Email } }))) {
+    const s1 = await db.user.create({
+      data: {
+        email: s1Email,
+        name: "S1 Admin",
+        passwordHash,
+        role: Role.S1_ADMIN,
+      },
+    });
+    await db.employeeProfile.create({
+      data: { id: s1.id, targetType: "REVENUE" },
+    });
+    console.log("Created S1 Admin:", s1Email);
+  }
+
+  for (const l1 of hierarchy) {
+    const vbid = safeVbid(l1.vbid);
+    const l1User = await ensureUser(db, {
+      email: l1.email,
+      name: l1.name,
+      passwordHash,
+      role: Role.SUPER_ADMIN,
+      vbid,
+      managerId: null,
+    });
+    await ensureProfile(db, {
+      userId: l1User.id,
+      teamId: null,
+      managerId: null,
+      level: l1.level || "L1",
+      vbid,
+    });
+
+    if (l1.teams && Array.isArray(l1.teams)) {
+      for (const t of l1.teams) {
+        const team = await ensureTeam(db, t.name, t.color);
+        if (t.leads) {
+          await processLeads(db, t.leads, team.id, l1User.id, passwordHash);
         }
       }
     }
-    console.log("Custom hierarchy updated successfully.");
-    return;
   }
+
+  console.log("Seed completed. All users have password:", DEFAULT_PASSWORD);
 }
 
 main()

@@ -20,6 +20,7 @@
     "react": "^18.2.0",
     "react-dom": "^18.2.0",
     "react-router-dom": "^6.20.1",
+    "ritwil-fullstack": "file:..",
     "tailwindcss": "^3.4.0",
     "vite": "^5.0.8",
     "xlsx": "^0.18.5"
