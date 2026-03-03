@@ -102,11 +102,10 @@ const LoginForm = () => {
         <div className="absolute bottom-20 left-10 w-40 h-40 bg-blue-700 rounded-full opacity-20"></div>
         <div className="absolute top-1/2 left-1/4 w-24 h-24 bg-blue-300 rounded-full opacity-15"></div>
         
-        {/* Company Name */}
+        {/* Company Name / simple "V" logo */}
         <div className="absolute top-8 left-8 flex items-center space-x-2 text-white">
-          <svg className="w-5 h-5" fill="currentColor" viewBox="0 0 20 20">
-            <path d="M10.394 2.08a1 1 0 00-.788 0l-7 3a1 1 0 000 1.84L5.25 8.051a.999.999 0 01.356-.257l4-1.714a1 1 0 11.788 1.838L7.667 9.088l1.94.831a1 1 0 00.787 0l7-3a1 1 0 000-1.838l-7-3zM3.31 9.397L5 10.12v4.102a8.969 8.969 0 00-1.05-.174 1 1 0 01-.89-.89 11.115 11.115 0 01.25-3.762zM9.3 16.573A9.026 9.026 0 007 14.935v-3.957l1.818.78a3 3 0 002.364 0l5.508-2.361a11.026 11.026 0 01.25 3.762 1 1 0 01-.89.89 8.968 8.968 0 00-5.35 2.524 1 1 0 01-1.4 0zM6 18a1 1 0 001-1v-2.065a8.935 8.935 0 00-2-.712V17a1 1 0 001 1z"/>
-          </svg>
+          {/* place small V icon (vlogo.png) under public; or overwrite this file with any image */}
+          <img src="/logo.png" alt="V Logo" className="w-20 h-20 object-contain" />
           <span className="text-sm font-semibold uppercase tracking-wide">Vbeyond Corporation</span>
         </div>
 
