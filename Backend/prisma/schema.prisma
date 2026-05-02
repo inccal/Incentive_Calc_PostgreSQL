@@ -79,6 +79,9 @@ model User {
   teamPlacements         TeamPlacement[]
   passwordResetTokens    PasswordResetToken[]
 
+  // Incentive slab
+  incentiveSlab IncentiveSlab?
+
   @@index([role])
   @@index([isActive])
 }
@@ -208,6 +211,7 @@ model PersonalPlacement {
   revenueUsd       Decimal  @db.Decimal(14, 2)
   incentiveInr     Decimal  @db.Decimal(14, 2)
   incentivePaidInr Decimal? @db.Decimal(14, 2)
+  placementBalanceIncentiveAmount Decimal? @db.Decimal(14, 2)
 
   // Summary snapshot fields from sheet (copied as-is) — headers: "Yearly target", "achieved"
   vbCode                 String?
@@ -220,6 +224,7 @@ model PersonalPlacement {
   slabQualified          String?
   totalIncentiveInr      Decimal? @db.Decimal(14, 2)
   totalIncentivePaidInr  Decimal? @db.Decimal(14, 2)
+  totalBalanceIncentiveAmount Decimal? @db.Decimal(14, 2)
 
   createdAt DateTime @default(now())
 
@@ -257,6 +262,7 @@ model TeamPlacement {
   revenueLeadUsd   Decimal  @db.Decimal(14, 2)
   incentiveInr     Decimal  @db.Decimal(14, 2)
   incentivePaidInr Decimal? @db.Decimal(14, 2)
+  placementBalanceIncentiveAmount Decimal? @db.Decimal(14, 2)
 
   // Summary snapshot fields from sheet (team-level)
   vbCode                    String?
@@ -270,11 +276,42 @@ model TeamPlacement {
   slabQualified             String?
   totalIncentiveInr         Decimal? @db.Decimal(14, 2)
   totalIncentivePaidInr     Decimal? @db.Decimal(14, 2)
+  totalBalanceIncentiveAmount Decimal? @db.Decimal(14, 2)
 
   createdAt DateTime @default(now())
 
   @@index([leadId])
   @@index([placementYear])
   @@index([plcId])
+}
+
+/// Per-user incentive slab configuration. Slabs are stored as a JSON array
+/// of { minPercent, maxPercent (null for open-ended), incentivePercent } objects.
+/// Variable number of slabs supported (2-8 columns).
+model IncentiveSlab {
+  id           String   @id @default(cuid())
+  userId       String   @unique
+  user         User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  /// JSON array: [{ "minPercent": 0, "maxPercent": 34, "incentivePercent": 0 }, ...]
+  slabs        Json
+
+  /// Who assigned this slab configuration
+  assignedById String?
+
+  createdAt    DateTime @default(now())
+  updatedAt    DateTime @updatedAt
+
+  @@index([userId])
+}
+
+/// Reusable slab templates that S1 Admin can create and quickly apply to groups of users.
+model SlabTemplate {
+  id        String   @id @default(cuid())
+  name      String   @unique
+  /// JSON array: same format as IncentiveSlab.slabs
+  slabs     Json
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
 }
 

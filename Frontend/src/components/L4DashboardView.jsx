@@ -3,6 +3,8 @@ import { motion, AnimatePresence } from 'framer-motion'
 import CalculationService from '../utils/calculationService'
 import { apiRequest } from '../api/client'
 import SlabInfoButton from './common/SlabInfoButton'
+import IncentiveSlabTable from './common/IncentiveSlabTable'
+import { useEffect } from 'react'
 
 const TAB_IDS = ['overview', 'placements', 'profile']
 const TAB_LABELS = { overview: 'Overview', placements: 'Placements', profile: 'Profile' }
@@ -137,6 +139,18 @@ export default function L4DashboardView({
   const hasPersonalData = !!(personalSheetData?.placements?.length || personalSheetData?.summary)
   const hasTeamData = !!(teamSheetData?.placements?.length || teamSheetData?.summary)
   
+  const [incentiveSlab, setIncentiveSlab] = useState(null)
+  
+  // Fetch own incentive slab
+  useEffect(() => {
+    apiRequest('/incentive-slabs/me')
+      .then(res => res.json())
+      .then(data => {
+        setIncentiveSlab(data?.slabs || null)
+      })
+      .catch(err => console.error('Error fetching slab:', err))
+  }, [])
+
   // Use placements based on viewMode: personal view shows personal placements, team view shows team placements
   const placementsToDisplay = useMemo(() => {
     if (viewMode === 'team' && hasTeamData) {
@@ -370,6 +384,10 @@ export default function L4DashboardView({
   const sheetIncentivePaidInr =
     activeSummary?.totalIncentivePaidInr != null
       ? CalculationService.formatCurrency(Number(activeSummary.totalIncentivePaidInr), 'INR')
+      : null
+  const sheetTotalBalanceIncentiveAmount =
+    activeSummary?.totalBalanceIncentiveAmount != null
+      ? CalculationService.formatCurrency(Number(activeSummary.totalBalanceIncentiveAmount), 'INR')
       : null
 
   const slabInfo = employeeData?.slabQualified
@@ -925,6 +943,12 @@ export default function L4DashboardView({
                         {sheetIncentivePaidInr ?? '–'}
                       </span>
                     </div>
+                    <div>
+                      <span className="text-slate-500 block">Balance Incentive Amount</span>
+                      <span className="font-semibold text-slate-800">
+                        {sheetTotalBalanceIncentiveAmount ?? '–'}
+                      </span>
+                    </div>
                   </div>
                 </motion.div>
               )}
@@ -991,7 +1015,12 @@ export default function L4DashboardView({
                   total={targetDisplay}
                   percent={percent}
                 />
-                {/* Current slab — lavender/purple palette (reference) + admin comment */}
+              {/* Incentive Slab — 2x6 Table */}
+              <div className="lg:col-span-1">
+                <IncentiveSlabTable slabs={incentiveSlab} />
+              </div>
+
+              {/* Current slab — lavender/purple palette (reference) + admin comment */}
                 <motion.div
                   variants={itemVariants}
                   initial={{ opacity: 0, y: 8 }}
@@ -1396,6 +1425,9 @@ export default function L4DashboardView({
                         <th className="px-4 py-3 text-right text-xs font-semibold uppercase tracking-wider text-slate-600">
                           Incentive paid
                         </th>
+                        <th className="px-4 py-3 text-right text-xs font-semibold uppercase tracking-wider text-slate-600">
+                          Balance Incentive Amount
+                        </th>
                       </tr>
                     </thead>
                     <tbody className="divide-y divide-slate-100">
@@ -1494,6 +1526,11 @@ export default function L4DashboardView({
                           <td className="px-4 py-4 text-right text-sm text-slate-600">
                             {placement.incentivePaidInr != null && placement.incentivePaidInr !== ''
                               ? CalculationService.formatCurrency(Number(placement.incentivePaidInr), 'INR')
+                              : '–'}
+                          </td>
+                          <td className="px-4 py-4 text-right text-sm text-slate-600">
+                            {placement.placementBalanceIncentiveAmount != null && placement.placementBalanceIncentiveAmount !== ''
+                              ? CalculationService.formatCurrency(Number(placement.placementBalanceIncentiveAmount), 'INR')
                               : '–'}
                           </td>
                         </motion.tr>

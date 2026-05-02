@@ -1010,6 +1010,7 @@ export async function getPersonalPlacementOverview(currentUser, userId) {
       slabQualified: pick("slabQualified"),
       totalIncentiveInr: pick("totalIncentiveInr"),
       totalIncentivePaidInr: pick("totalIncentivePaidInr"),
+      totalBalanceIncentiveAmount: pick("totalBalanceIncentiveAmount"),
     } : null;
 
     return {
@@ -1079,6 +1080,7 @@ export async function getTeamPlacementOverview(currentUser, leadId) {
       slabQualified: pick("slabQualified"),
       totalIncentiveInr: pick("totalIncentiveInr"),
       totalIncentivePaidInr: pick("totalIncentivePaidInr"),
+      totalBalanceIncentiveAmount: pick("totalBalanceIncentiveAmount"),
       leadName: pick("leadName"),
       splitWith: pick("splitWith"),
     } : null;

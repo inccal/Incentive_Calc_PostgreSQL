@@ -43,10 +43,10 @@ const AdminEmployeePlacements = () => {
     totalRevenue: "",
     revenueAsLead: "",
     billingStatus: "PENDING",
-    collectionStatus: "",
     incentivePayoutEta: "",
     incentiveAmountInr: "",
     incentivePaidInr: "",
+    placementBalanceIncentiveAmount: "",
   };
 
   const [formData, setFormData] = useState(initialFormState);
@@ -116,6 +116,7 @@ const AdminEmployeePlacements = () => {
       incentivePayoutEta: placement.incentivePayoutEta ? placement.incentivePayoutEta.split('T')[0] : "",
       incentiveAmountInr: placement.incentiveAmountInr || "",
       incentivePaidInr: (placement.incentivePaidInr !== undefined && placement.incentivePaidInr !== null) ? String(placement.incentivePaidInr) : "",
+      placementBalanceIncentiveAmount: (placement.placementBalanceIncentiveAmount !== undefined && placement.placementBalanceIncentiveAmount !== null) ? String(placement.placementBalanceIncentiveAmount) : "",
     });
     setShowModal(true);
   };
@@ -282,6 +283,7 @@ const AdminEmployeePlacements = () => {
                       <th className="py-3 px-2 font-medium">Revenue -Lead (USD)</th>
                       <th className="py-3 px-2 font-medium">Incentive amount (INR)</th>
                       <th className="py-3 px-2 font-medium">Incentive Paid (INR)</th>
+                      <th className="py-3 px-2 font-medium">Balance Incentive Amount</th>
                       <th className="py-3 px-2 font-medium text-right">Actions</th>
                     </tr>
                   </thead>
@@ -328,6 +330,7 @@ const AdminEmployeePlacements = () => {
                           <td className="py-3 px-2 text-slate-600">{p.revenueAsLead || "-"}</td>
                           <td className="py-3 px-2 text-slate-600">{p.incentiveAmountInr ? CalculationService.formatCurrency(p.incentiveAmountInr, "INR") : "-"}</td>
                           <td className="py-3 px-2 text-slate-600">{p.incentivePaidInr || "-"}</td>
+                          <td className="py-3 px-2 text-slate-600">{p.placementBalanceIncentiveAmount || "-"}</td>
                           <td className="py-3 px-2 text-right flex gap-2 justify-end">
                             <button onClick={() => handleEdit(p)} className="text-blue-600 hover:text-blue-800 text-xs">Edit</button>
                             <button onClick={() => handleDelete(p.id)} className="text-red-500 hover:text-red-700 text-xs">Del</button>
@@ -376,6 +379,7 @@ const AdminEmployeePlacements = () => {
                         <th className="py-3 px-2 font-medium">Revenue -Lead (USD)</th>
                         <th className="py-3 px-2 font-medium">Incentive amount (INR)</th>
                         <th className="py-3 px-2 font-medium">Incentive Paid (INR)</th>
+                        <th className="py-3 px-2 font-medium">Balance Incentive Amount</th>
                         <th className="py-3 px-2 font-medium text-right">Actions</th>
                       </tr>
                     </thead>
@@ -422,6 +426,7 @@ const AdminEmployeePlacements = () => {
                             <td className="py-3 px-2 text-slate-600">{p.revenueAsLead || "-"}</td>
                             <td className="py-3 px-2 text-slate-600">{p.incentiveAmountInr ? CalculationService.formatCurrency(p.incentiveAmountInr, "INR") : "-"}</td>
                             <td className="py-3 px-2 text-slate-600">{p.incentivePaidInr || "-"}</td>
+                            <td className="py-3 px-2 text-slate-600">{p.placementBalanceIncentiveAmount || "-"}</td>
                             <td className="py-3 px-2 text-right flex gap-2 justify-end">
                               <button onClick={() => handleEdit(p)} className="text-blue-600 hover:text-blue-800 text-xs">Edit</button>
                               <button onClick={() => handleDelete(p.id)} className="text-red-500 hover:text-red-700 text-xs">Del</button>
@@ -470,6 +475,7 @@ const AdminEmployeePlacements = () => {
                         <th className="py-3 px-2 font-medium">Revenue -Lead (USD)</th>
                         <th className="py-3 px-2 font-medium">Incentive amount (INR)</th>
                         <th className="py-3 px-2 font-medium">Incentive Paid (INR)</th>
+                        <th className="py-3 px-2 font-medium">Balance Incentive Amount</th>
                         <th className="py-3 px-2 font-medium text-right">Actions</th>
                       </tr>
                     </thead>
@@ -509,6 +515,7 @@ const AdminEmployeePlacements = () => {
                           <td className="py-3 px-2 text-slate-600">{p.revenueAsLead || "-"}</td>
                           <td className="py-3 px-2 text-slate-600">{p.incentiveAmountInr ? CalculationService.formatCurrency(p.incentiveAmountInr, "INR") : "-"}</td>
                           <td className="py-3 px-2 text-slate-600">{p.incentivePaidInr || "-"}</td>
+                          <td className="py-3 px-2 text-slate-600">{p.placementBalanceIncentiveAmount || "-"}</td>
                           <td className="py-3 px-2 text-right flex gap-2 justify-end">
                             <button onClick={() => handleEdit(p)} className="text-blue-600 hover:text-blue-800 text-xs">Edit</button>
                             <button onClick={() => handleDelete(p.id)} className="text-red-500 hover:text-red-700 text-xs">Del</button>
@@ -630,6 +637,11 @@ const AdminEmployeePlacements = () => {
                 <label className="block text-xs font-medium text-slate-700 mb-1">Incentive Paid (INR)</label>
                 <input type="text" className="w-full px-3 py-2 border rounded-lg text-sm"
                   value={formData.incentivePaidInr || ''} onChange={e => setFormData({...formData, incentivePaidInr: e.target.value})} />
+              </div>
+              <div>
+                <label className="block text-xs font-medium text-slate-700 mb-1">Balance Incentive Amount (INR)</label>
+                <input type="text" className="w-full px-3 py-2 border rounded-lg text-sm"
+                  value={formData.placementBalanceIncentiveAmount || ''} onChange={e => setFormData({...formData, placementBalanceIncentiveAmount: e.target.value})} />
               </div>
               <div className="col-span-3 flex justify-end gap-3 mt-6 border-t pt-4">
                 <button type="button" onClick={() => setShowModal(false)} className="px-4 py-2 text-slate-600 hover:bg-slate-100 rounded-lg">Cancel</button>

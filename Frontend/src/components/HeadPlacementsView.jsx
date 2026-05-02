@@ -96,6 +96,7 @@ export default function HeadPlacementsView({ allowEdit = false }) {
       revenueUsd: row.revenueUsd != null ? String(row.revenueUsd) : '',
       incentiveInr: row.incentiveInr != null ? String(row.incentiveInr) : '',
       incentivePaidInr: row.incentivePaidInr != null ? String(row.incentivePaidInr) : '',
+      placementBalanceIncentiveAmount: row.placementBalanceIncentiveAmount != null ? String(row.placementBalanceIncentiveAmount) : '',
     })
     setSaveError(null)
   }
@@ -121,6 +122,7 @@ export default function HeadPlacementsView({ allowEdit = false }) {
         revenueUsd: editForm.revenueUsd === '' ? undefined : editForm.revenueUsd,
         incentiveInr: editForm.incentiveInr === '' ? undefined : editForm.incentiveInr,
         incentivePaidInr: editForm.incentivePaidInr === '' ? undefined : editForm.incentivePaidInr,
+        placementBalanceIncentiveAmount: editForm.placementBalanceIncentiveAmount === '' ? undefined : editForm.placementBalanceIncentiveAmount,
         collectionStatus: editForm.collectionStatus === '' ? undefined : editForm.collectionStatus,
       }
       const res = await apiRequest(`/placements/${editingRow.id}`, {
@@ -280,6 +282,8 @@ export default function HeadPlacementsView({ allowEdit = false }) {
                   <th className="px-4 py-3 font-semibold text-slate-700">Billing</th>
                   <th className="px-4 py-3 font-semibold text-slate-700">Revenue (USD)</th>
                   <th className="px-4 py-3 font-semibold text-slate-700">Incentive (INR)</th>
+                  <th className="px-4 py-3 font-semibold text-slate-700">Incentive Paid (INR)</th>
+                  <th className="px-4 py-3 font-semibold text-slate-700">Balance Incentive Amount (INR)</th>
                   {allowEdit && <th className="px-4 py-3 font-semibold text-slate-700 w-24">Actions</th>}
                 </tr>
               </thead>
@@ -331,6 +335,12 @@ export default function HeadPlacementsView({ allowEdit = false }) {
                         </td>
                         <td className="px-4 py-3 text-slate-700">
                           {row.incentiveInr != null ? CalculationService.formatCurrency(row.incentiveInr, 'INR') : '-'}
+                        </td>
+                        <td className="px-4 py-3 text-slate-700">
+                          {row.incentivePaidInr != null ? CalculationService.formatCurrency(row.incentivePaidInr, 'INR') : '-'}
+                        </td>
+                        <td className="px-4 py-3 text-slate-700">
+                          {row.placementBalanceIncentiveAmount != null ? CalculationService.formatCurrency(row.placementBalanceIncentiveAmount, 'INR') : '-'}
                         </td>
                         {allowEdit && (
                           <td className="px-4 py-3">
@@ -449,6 +459,10 @@ export default function HeadPlacementsView({ allowEdit = false }) {
                   <label className="block">
                     <span className="text-xs font-medium text-slate-500">Incentive paid (INR)</span>
                     <input type="number" step="any" value={editForm.incentivePaidInr} onChange={(e) => updateEditForm('incentivePaidInr', e.target.value)} className="mt-1 w-full rounded-lg border border-slate-200 px-3 py-2 text-sm focus:border-indigo-400 focus:outline-none focus:ring-2 focus:ring-indigo-400/20" />
+                  </label>
+                  <label className="block">
+                    <span className="text-xs font-medium text-slate-500">Balance Incentive Amount (INR)</span>
+                    <input type="number" step="any" value={editForm.placementBalanceIncentiveAmount} onChange={(e) => updateEditForm('placementBalanceIncentiveAmount', e.target.value)} className="mt-1 w-full rounded-lg border border-slate-200 px-3 py-2 text-sm focus:border-indigo-400 focus:outline-none focus:ring-2 focus:ring-indigo-400/20" />
                   </label>
                 </div>
               </div>

@@ -12,6 +12,7 @@ import UserCreationModal from './UserCreationModal';
 import { motion, AnimatePresence } from 'framer-motion';
 import { getRoleDisplayName, matchesRoleFilter, getDisplayNameFromFilterValue } from '../utils/roleHelpers';
 import HeadPlacementsView from './HeadPlacementsView';
+import SlabAllocationPage from './SlabAllocationPage';
 
 const containerVariants = {
   hidden: { opacity: 0 },
@@ -165,6 +166,7 @@ const S1AdminDashboard = () => {
       case 'l1-admins': return <L1AdminsTab />;
       case 'placements': return <PlacementsTab />;
       case 'audit-logs': return <AuditLogsTab />;
+      case 'incentive-slabs': return <IncentiveSlabsTab />;
       case 'settings': return <SettingsTab />;
       default: return <HierarchyTab user={user} />;
     }
@@ -195,6 +197,7 @@ const S1AdminDashboard = () => {
             { id: 'members', label: 'Members', icon: 'users' },
             { id: 'l1-admins', label: 'Heads', icon: 'crown' },
             { id: 'placements', label: 'Placements', icon: 'placements' },
+            { id: 'incentive-slabs', label: 'Incentive', icon: 'percent' },
             { id: 'audit-logs', label: 'Audit', icon: 'log' },
             { id: 'settings', label: 'Settings', icon: 'settings' },
           ].map((item) => (
@@ -234,6 +237,11 @@ const S1AdminDashboard = () => {
               {item.icon === 'log' && (
                 <svg className="h-6 w-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                   <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
+                </svg>
+              )}
+              {item.icon === 'percent' && (
+                <svg className="h-6 w-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 7h6m0 10v-3m-3 3h.01M9 17h.01M9 14h.01M12 14h.01M15 11h.01M12 11h.01M9 11h.01M7 21h10a2 2 0 002-2V5a2 2 0 00-2-2H7a2 2 0 00-2 2v14a2 2 0 002 2z" />
                 </svg>
               )}
               {item.icon === 'settings' && (
@@ -537,6 +545,8 @@ const HierarchyTab = ({ user }) => {
                     
                 </div>
             </div>
+
+
 
             {/* Connection Line */}
             <div className="flex justify-center relative -my-4 z-0">
@@ -2231,5 +2241,11 @@ const MfaSetup = () => {
         </div>
     );
 };
+
+const IncentiveSlabsTab = () => (
+    <div className="animate-fadeInUp">
+        <SlabAllocationPage />
+    </div>
+);
 
 export default S1AdminDashboard;

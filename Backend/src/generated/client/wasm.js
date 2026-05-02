@@ -222,6 +222,7 @@ exports.Prisma.PersonalPlacementScalarFieldEnum = {
   revenueUsd: 'revenueUsd',
   incentiveInr: 'incentiveInr',
   incentivePaidInr: 'incentivePaidInr',
+  placementBalanceIncentiveAmount: 'placementBalanceIncentiveAmount',
   vbCode: 'vbCode',
   recruiterName: 'recruiterName',
   teamLeadName: 'teamLeadName',
@@ -232,6 +233,7 @@ exports.Prisma.PersonalPlacementScalarFieldEnum = {
   slabQualified: 'slabQualified',
   totalIncentiveInr: 'totalIncentiveInr',
   totalIncentivePaidInr: 'totalIncentivePaidInr',
+  totalBalanceIncentiveAmount: 'totalBalanceIncentiveAmount',
   createdAt: 'createdAt'
 };
 
@@ -256,6 +258,7 @@ exports.Prisma.TeamPlacementScalarFieldEnum = {
   revenueLeadUsd: 'revenueLeadUsd',
   incentiveInr: 'incentiveInr',
   incentivePaidInr: 'incentivePaidInr',
+  placementBalanceIncentiveAmount: 'placementBalanceIncentiveAmount',
   vbCode: 'vbCode',
   yearlyPlacementTarget: 'yearlyPlacementTarget',
   placementDone: 'placementDone',
@@ -267,7 +270,25 @@ exports.Prisma.TeamPlacementScalarFieldEnum = {
   slabQualified: 'slabQualified',
   totalIncentiveInr: 'totalIncentiveInr',
   totalIncentivePaidInr: 'totalIncentivePaidInr',
+  totalBalanceIncentiveAmount: 'totalBalanceIncentiveAmount',
   createdAt: 'createdAt'
+};
+
+exports.Prisma.IncentiveSlabScalarFieldEnum = {
+  id: 'id',
+  userId: 'userId',
+  slabs: 'slabs',
+  assignedById: 'assignedById',
+  createdAt: 'createdAt',
+  updatedAt: 'updatedAt'
+};
+
+exports.Prisma.SlabTemplateScalarFieldEnum = {
+  id: 'id',
+  name: 'name',
+  slabs: 'slabs',
+  createdAt: 'createdAt',
+  updatedAt: 'updatedAt'
 };
 
 exports.Prisma.SortOrder = {
@@ -277,6 +298,10 @@ exports.Prisma.SortOrder = {
 
 exports.Prisma.NullableJsonNullValueInput = {
   DbNull: Prisma.DbNull,
+  JsonNull: Prisma.JsonNull
+};
+
+exports.Prisma.JsonNullValueInput = {
   JsonNull: Prisma.JsonNull
 };
 
@@ -322,7 +347,9 @@ exports.Prisma.ModelName = {
   AuditLog: 'AuditLog',
   PlacementImportBatch: 'PlacementImportBatch',
   PersonalPlacement: 'PersonalPlacement',
-  TeamPlacement: 'TeamPlacement'
+  TeamPlacement: 'TeamPlacement',
+  IncentiveSlab: 'IncentiveSlab',
+  SlabTemplate: 'SlabTemplate'
 };
 
 /**

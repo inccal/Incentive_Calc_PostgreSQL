@@ -147,7 +147,8 @@ const REQUIRED_TEAM_PLACEMENT_HEADERS = [
 ];
 
 // Recruiter/personal sheet: summary block (fewer columns than team sheet)
-// Required: "yearly target" and "achieved" (legacy "yearly placement target" / "placement done" are not accepted)
+// Accept either the new "yearly target" / "achieved" headers or the older
+// "yearly placement target" / "placement done" headers.
 const REQUIRED_PERSONAL_SUMMARY_HEADERS = [
   "team", "vb code", "recruiter name", "team lead", "yearly target", "achieved",
   "target achieved %", "total revenue generated (usd)", "slab qualified", "total incentive in inr", "total incentive in inr (paid)"
@@ -155,6 +156,8 @@ const REQUIRED_PERSONAL_SUMMARY_HEADERS = [
 // Aliases: person column (at least one); ach column can be "target achieved %" or "placement ach %"
 const PERSONAL_SUMMARY_PERSON_ALIASES = ["recruiter name", "lead name", "lead", "recruiter"];
 const PERSONAL_SUMMARY_ACH_ALIASES = ["target achieved %", "placement ach %"];
+const PERSONAL_SUMMARY_TARGET_ALIASES = ["yearly target", "yearly placement target"];
+const PERSONAL_SUMMARY_ACHIEVED_ALIASES = ["achieved", "placement done"];
 
 // Recruiter/personal sheet: placement block
 // Recruiter Name, Candidate Name, Placement Year, DOJ, DOQ, Client, PLC ID, Placement Type, Billing Status, Collection Status, Total Billed Hours, Revenue (USD), Incentive amount (INR), Incentive Paid (INR)
@@ -172,31 +175,15 @@ function validateRequiredHeaders(normalizedHeaderList, required) {
   return { valid: missing.length === 0, missing };
 }
 
-// Reject legacy headers on personal sheet; require "yearly target" and "achieved"
-const PERSONAL_LEGACY_HEADERS = ["yearly placement target", "placement done"];
-const PERSONAL_REQUIRED_NEW_HEADERS = ["yearly target", "achieved"];
-function rejectLegacyPersonalSummaryHeaders(normalizedHeaderList) {
-  const set = new Set(normalizedHeaderList);
-  const has = (key) => set.has(normalizeHeader(key));
-  const hasBothNew = PERSONAL_REQUIRED_NEW_HEADERS.every((h) => has(h));
-  const hasAnyLegacy = PERSONAL_LEGACY_HEADERS.some((h) => has(h));
-  if (!hasBothNew && hasAnyLegacy) {
-    throw new Error(
-      "Personal placement sheet must use headers \"yearly target\" and \"achieved\". " +
-      "The headers \"yearly placement target\" and \"placement done\" are no longer accepted. " +
-      "Please rename them in your sheet and re-import."
-    );
-  }
-}
-
 // Personal sheet: summary block must have required summary columns + at least one person column
 function validatePersonalSummaryHeaders(normalizedHeaderList) {
-  rejectLegacyPersonalSummaryHeaders(normalizedHeaderList);
   const set = new Set(normalizedHeaderList);
   const hasPerson = PERSONAL_SUMMARY_PERSON_ALIASES.some((h) => set.has(h));
   const requiredCore = REQUIRED_PERSONAL_SUMMARY_HEADERS.filter((h) => !PERSONAL_SUMMARY_PERSON_ALIASES.includes(h));
   const has = (key) => set.has(normalizeHeader(key));
   const missing = requiredCore.filter((h) => {
+    if (h === "yearly target") return !PERSONAL_SUMMARY_TARGET_ALIASES.some((alias) => has(alias));
+    if (h === "achieved") return !PERSONAL_SUMMARY_ACHIEVED_ALIASES.some((alias) => has(alias));
     if (PERSONAL_SUMMARY_ACH_ALIASES.includes(h)) return !PERSONAL_SUMMARY_ACH_ALIASES.some((alias) => has(alias));
     return !has(h);
   });
@@ -428,6 +415,8 @@ export async function getPlacementsByUser(userId) {
     revenue: pp.revenueUsd,
     incentiveAmountInr: pp.incentiveInr,
     incentivePaidInr: pp.incentivePaidInr,
+    placementBalanceIncentiveAmount: pp.placementBalanceIncentiveAmount,
+    totalBalanceIncentiveAmount: pp.totalBalanceIncentiveAmount,
     incentivePayoutEta: null,
     sourcer: null,
     accountManager: null,
@@ -459,6 +448,8 @@ export async function getPlacementsByUser(userId) {
     revenue: tp.revenueLeadUsd,
     incentiveAmountInr: tp.incentiveInr,
     incentivePaidInr: tp.incentivePaidInr,
+    placementBalanceIncentiveAmount: tp.placementBalanceIncentiveAmount,
+    totalBalanceIncentiveAmount: tp.totalBalanceIncentiveAmount,
     incentivePayoutEta: null,
     sourcer: null,
     accountManager: null,
@@ -580,6 +571,8 @@ export async function updatePlacement(id, data, actorId) {
     if (data.revenueUsd !== undefined) updates.revenueUsd = parseNum(data.revenueUsd, 0);
     if (data.incentiveInr !== undefined) updates.incentiveInr = parseNum(data.incentiveInr, 0);
     if (data.incentivePaidInr !== undefined) updates.incentivePaidInr = data.incentivePaidInr != null && data.incentivePaidInr !== "" ? parseNum(data.incentivePaidInr, null) : null;
+    if (data.placementBalanceIncentiveAmount !== undefined) updates.placementBalanceIncentiveAmount = data.placementBalanceIncentiveAmount != null && data.placementBalanceIncentiveAmount !== "" ? parseNum(data.placementBalanceIncentiveAmount, null) : null;
+    if (data.totalBalanceIncentiveAmount !== undefined) updates.totalBalanceIncentiveAmount = data.totalBalanceIncentiveAmount != null && data.totalBalanceIncentiveAmount !== "" ? parseNum(data.totalBalanceIncentiveAmount, null) : null;
     if (data.recruiterName !== undefined) updates.recruiterName = data.recruiterName != null ? String(data.recruiterName).trim() : null;
     if (data.teamLeadName !== undefined) updates.teamLeadName = data.teamLeadName != null ? String(data.teamLeadName).trim() : null;
     if (Object.keys(updates).length === 0) return personal;
@@ -611,6 +604,8 @@ export async function updatePlacement(id, data, actorId) {
     if (data.revenueUsd !== undefined) updates.revenueLeadUsd = parseNum(data.revenueUsd, 0);
     if (data.incentiveInr !== undefined) updates.incentiveInr = parseNum(data.incentiveInr, 0);
     if (data.incentivePaidInr !== undefined) updates.incentivePaidInr = data.incentivePaidInr != null && data.incentivePaidInr !== "" ? parseNum(data.incentivePaidInr, null) : null;
+    if (data.placementBalanceIncentiveAmount !== undefined) updates.placementBalanceIncentiveAmount = data.placementBalanceIncentiveAmount != null && data.placementBalanceIncentiveAmount !== "" ? parseNum(data.placementBalanceIncentiveAmount, null) : null;
+    if (data.totalBalanceIncentiveAmount !== undefined) updates.totalBalanceIncentiveAmount = data.totalBalanceIncentiveAmount != null && data.totalBalanceIncentiveAmount !== "" ? parseNum(data.totalBalanceIncentiveAmount, null) : null;
     if (Object.keys(updates).length === 0) return team;
     const updated = await prisma.teamPlacement.update({ where: { id }, data: updates });
     await prisma.auditLog.create({
@@ -1254,6 +1249,7 @@ const extractSummaryFields = (row, getVal) => {
     slabQualified: sanitizeSlabQualified(slabRaw),
     totalIncentiveInr: parseNum(getVal(row, "total incentive in inr") || getVal(row, "incentive earned") || getVal(row, "total incentive") || getVal(row, "incentive") || getVal(row, "incentive amount")),
     totalIncentivePaidInr: parseNum(getVal(row, "total incentive in inr (paid)") || getVal(row, "incentive paid") || getVal(row, "total incentive paid")),
+    totalBalanceIncentiveAmount: parseNum(getVal(row, "balance incentive amount")),
     individualSynopsis: getVal(row, "individual synopsis") || getVal(row, "synopsis") ? String(getVal(row, "individual synopsis") || getVal(row, "synopsis")).trim() : null,
   };
 };
@@ -1275,7 +1271,8 @@ const extractSummaryFromTeamNameRow = (row, isTeamImport = false) => {
       slabQualified: sanitizeSlabQualified(slabRaw),
       totalIncentiveInr: parseNum(row[11]),
       totalIncentivePaidInr: parseNum(row[12]) || null,
-      individualSynopsis: row[13] ? String(row[13]).trim() : null,
+      totalBalanceIncentiveAmount: parseNum(row[13]) || null,
+      individualSynopsis: parseNum(row[13]) !== null ? (row[14] ? String(row[14]).trim() : null) : (row[13] ? String(row[13]).trim() : null),
     };
   }
   const slabRaw = row[8] != null && row[8] !== "" ? String(row[8]).trim() : null;
@@ -1290,7 +1287,8 @@ const extractSummaryFromTeamNameRow = (row, isTeamImport = false) => {
     slabQualified: sanitizeSlabQualified(slabRaw),
     totalIncentiveInr: parseNum(row[9]),
     totalIncentivePaidInr: parseNum(row[10]) || null,
-    individualSynopsis: row[11] ? String(row[11]).trim() : null,
+    totalBalanceIncentiveAmount: parseNum(row[11]) || null,
+    individualSynopsis: parseNum(row[11]) !== null ? (row[12] ? String(row[12]).trim() : null) : (row[11] ? String(row[11]).trim() : null),
   };
 };
 
@@ -1381,7 +1379,8 @@ export async function importPersonalPlacements(payload, actorId) {
     if (!summaryCheck.valid) {
       throw new Error(
         `Invalid recruiter sheet: missing summary headers: ${summaryCheck.missing.join(", ")}. ` +
-        `Required (summary block): ${REQUIRED_PERSONAL_SUMMARY_HEADERS.join(", ")} and recruiter name or lead name.`
+        `Required (summary block): ${REQUIRED_PERSONAL_SUMMARY_HEADERS.join(", ")} ` +
+        `(or use yearly placement target / placement done) and recruiter name or lead name.`
       );
     }
     // Initialize summary header map from first row so summary rows are parsed correctly even after placement block
@@ -1708,8 +1707,10 @@ export async function importPersonalPlacements(payload, actorId) {
     const totalBilledHours = parseNum(getVal(row, "total billed hours"));
 
     const revenueUsd = parseCurrency(getVal(row, "revenue (usd)"));
+    const incentiveUsd = parseCurrency(getVal(row, "incentive amount (usd)")); // if missing just added
     const incentiveInr = parseCurrency(getVal(row, "incentive amount (inr)"));
     const incentivePaidInr = parseCurrency(getVal(row, "incentive paid (inr)"));
+    const placementBalanceIncentiveAmount = parseCurrency(getVal(row, "balance incentive amount"));
 
     const yearlyTarget = parseCurrency(getVal(row, "yearly target"));
     const achieved = parseNum(getVal(row, "achieved"));
@@ -1776,6 +1777,13 @@ export async function importPersonalPlacements(payload, actorId) {
       : (summaryData.totalIncentivePaidInr !== null && summaryData.totalIncentivePaidInr !== undefined
           ? summaryData.totalIncentivePaidInr
           : null);
+          
+    // Keep the imported personal summary balance separate from the placement-row
+    // balance column so the summary card does not get overwritten by row values.
+    const finalTotalBalanceIncentiveAmount =
+      summaryData.totalBalanceIncentiveAmount !== null && summaryData.totalBalanceIncentiveAmount !== undefined
+        ? summaryData.totalBalanceIncentiveAmount
+        : null;
 
     preparedRows.push({
       id: existingPlacement ? existingPlacement.id : undefined,
@@ -1805,6 +1813,8 @@ export async function importPersonalPlacements(payload, actorId) {
       slabQualified: finalSlabQualified,
       totalIncentiveInr: finalTotalIncentiveInr,
       totalIncentivePaidInr: finalTotalIncentivePaidInr,
+      totalBalanceIncentiveAmount: finalTotalBalanceIncentiveAmount,
+      placementBalanceIncentiveAmount,
     });
   }
 
@@ -1843,6 +1853,8 @@ export async function importPersonalPlacements(payload, actorId) {
       slabQualified: summaryData.slabQualified != null && String(summaryData.slabQualified).trim() ? String(summaryData.slabQualified).trim() : null,
       totalIncentiveInr: summaryData.totalIncentiveInr ?? null,
       totalIncentivePaidInr: summaryData.totalIncentivePaidInr ?? null,
+      totalBalanceIncentiveAmount: summaryData.totalBalanceIncentiveAmount ?? null,
+      placementBalanceIncentiveAmount: null,
     });
   }
 
@@ -2237,11 +2249,11 @@ export async function importTeamPlacements(payload, actorId) {
   const buildGetValFromHeaderRow = (headerRow) => {
     const map = {};
     (headerRow || []).forEach((h, idx) => {
-      const k = String(h || "").trim().toLowerCase();
+      const k = normalizeHeader(h);
       if (k) map[k] = idx;
     });
     return (row, key) => {
-      const idx = map[key] ?? map[key.replace(/\s*\([^)]*\)/g, "").trim()];
+      const idx = map[normalizeHeader(key)];
       if (idx === undefined) return null;
       return row[idx];
     };
@@ -2595,6 +2607,7 @@ export async function importTeamPlacements(payload, actorId) {
     );
     const incentiveInr = parseCurrency(getVal(row, "incentive amount (inr)"));
     const incentivePaidInr = parseCurrency(getVal(row, "incentive paid (inr)"));
+    const placementBalanceIncentiveAmount = parseCurrency(getVal(row, "balance incentive amount"));
 
     // Get summary data for this lead (from summary row or current block). Summary-only fields must
     // be taken ONLY from summaryData: after the placement header row, headerMap is the placement
@@ -2614,6 +2627,7 @@ export async function importTeamPlacements(payload, actorId) {
       : null;
     const finalTotalIncentiveInr = summaryData.totalIncentiveInr ?? null;
     const finalTotalIncentivePaidInr = summaryData.totalIncentivePaidInr ?? null;
+    const finalTotalBalanceIncentiveAmount = summaryData.totalBalanceIncentiveAmount ?? null;
 
     preparedRows.push({
       id: existingPlacement ? existingPlacement.id : undefined,
@@ -2652,6 +2666,8 @@ export async function importTeamPlacements(payload, actorId) {
       slabQualified: finalSlabQualified,
       totalIncentiveInr: finalTotalIncentiveInr,
       totalIncentivePaidInr: finalTotalIncentivePaidInr,
+      totalBalanceIncentiveAmount: finalTotalBalanceIncentiveAmount,
+      placementBalanceIncentiveAmount,
     });
   }
 
@@ -2694,6 +2710,8 @@ export async function importTeamPlacements(payload, actorId) {
       slabQualified: summaryData.slabQualified != null && String(summaryData.slabQualified).trim() ? String(summaryData.slabQualified).trim() : null,
       totalIncentiveInr: summaryData.totalIncentiveInr ?? null,
       totalIncentivePaidInr: summaryData.totalIncentivePaidInr ?? null,
+      totalBalanceIncentiveAmount: summaryData.totalBalanceIncentiveAmount ?? null,
+      placementBalanceIncentiveAmount: null,
     });
   }
 

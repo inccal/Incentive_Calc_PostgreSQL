@@ -16,6 +16,7 @@ const AdminTeamDetails = lazy(() => import('./components/AdminTeamDetails'))
 const AdminEmployeePlacements = lazy(() => import('./components/AdminEmployeePlacements'))
 const S1AdminDashboard = lazy(() => import('./components/S1AdminDashboard'))
 const AdminAuditLogs = lazy(() => import('./components/AdminAuditLogs'))
+const SlabAllocationPage = lazy(() => import('./components/SlabAllocationPage'))
 
 // Loading component
 const LoadingSpinner = () => (
@@ -109,6 +110,14 @@ function App() {
             element={
               <ProtectedRoute allowedRoles={['SUPER_ADMIN', 'TEAM_LEAD']}>
                 <EditProfile />
+              </ProtectedRoute>
+            }
+          />
+          <Route
+            path="/admin/incentive-slabs"
+            element={
+              <ProtectedRoute allowedRoles={['S1_ADMIN']}>
+                <SlabAllocationPage />
               </ProtectedRoute>
             }
           />

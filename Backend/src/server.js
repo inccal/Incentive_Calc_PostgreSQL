@@ -14,6 +14,7 @@ import dashboardRouter from "./routes/dashboard.js";
 import teamRouter from "./routes/teams.js";
 import placementRouter from "./routes/placements.js";
 import auditLogRouter from "./routes/auditLogs.js";
+import incentiveSlabRouter from "./routes/incentiveSlabs.js";
 import { clearCacheMiddleware } from "./middleware/cache.js";
 
 dotenv.config();
@@ -117,6 +118,7 @@ app.use("/api/dashboard", dashboardRouter);
 app.use("/api/teams", teamRouter);
 app.use("/api/placements", placementRouter);
 app.use("/api/audit-logs", auditLogRouter);
+app.use("/api/incentive-slabs", incentiveSlabRouter);
 
 // Catch-all handler: send back React's index.html file in production
 if (process.env.NODE_ENV === "production") {

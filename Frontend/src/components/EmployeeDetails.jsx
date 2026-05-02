@@ -8,6 +8,7 @@ import { useEmployeeDetails, useUpdateVbid } from '../hooks/useEmployee'
 import { Skeleton, CardSkeleton, TableRowSkeleton } from './common/Skeleton'
 import SlabInfoButton from './common/SlabInfoButton'
 import L4DashboardView from './L4DashboardView'
+import IncentiveSlabTable from './common/IncentiveSlabTable'
 
 const EmployeeDetails = () => {
   const navigate = useNavigate()
@@ -23,6 +24,8 @@ const EmployeeDetails = () => {
   // For L4 users, always use 'personal' regardless of URL
   const initialViewMode = 'personal'
   const [viewMode, setViewMode] = useState(initialViewMode)
+  const [incentiveSlab, setIncentiveSlab] = useState(null)
+  const [loadingSlab, setLoadingSlab] = useState(false)
 
   // Sync viewMode state with URL (but ignore team view for L4 users)
   useEffect(() => {
@@ -55,6 +58,20 @@ const EmployeeDetails = () => {
   )
   const isCuid = (v) => typeof v === 'string' && v.length >= 24 && /^c[a-z0-9]+$/i.test(v)
   const resolvedEmployeeId = rawData?.id ?? (isCuid(employeeIdToFetch) ? employeeIdToFetch : null)
+
+  // Fetch incentive slab for the user
+  useEffect(() => {
+    if (resolvedEmployeeId) {
+      setLoadingSlab(true)
+      apiRequest(`/incentive-slabs/user/${resolvedEmployeeId}`)
+        .then(res => res.json())
+        .then(data => {
+          setIncentiveSlab(data?.slabs || null)
+        })
+        .catch(err => console.error('Error fetching slab:', err))
+        .finally(() => setLoadingSlab(false))
+    }
+  }, [resolvedEmployeeId])
   const updateVbidMutation = useUpdateVbid()
 
   const [isEditingVbid, setIsEditingVbid] = useState(false)
@@ -294,11 +311,11 @@ const EmployeeDetails = () => {
   // Check if employee is L4 level - L4 users only have personal placements
   const isL4User = employeeData?.level?.toUpperCase() === 'L4';
   
-  // Show toggle if user has personal and/or team data (so profile can switch views; one may be empty)
-  // BUT hide toggle for L4 users since they only have personal placements
+  // Show toggle for any non-L4 user (admin/lead viewing a non-L4 employee)
+  // Even if no data is uploaded yet, the toggle should still be accessible to switch views
   const hasPersonalData = !!(personalSheetData?.placements?.length || personalSheetData?.summary);
   const hasTeamData = !!(teamSheetData?.placements?.length || teamSheetData?.summary);
-  const canToggleView = !isL4User && (hasPersonalData || hasTeamData);
+  const canToggleView = !isL4User;
 
   // Force L4 users to always use personal view
   useEffect(() => {
@@ -996,6 +1013,13 @@ const EmployeeDetails = () => {
                   </div>
                 </motion.div>
 
+                {/* Incentive Slab Table — Added below comment box (Only for Team Leads and Employees) */}
+                {rawData?.role && ['TEAM_LEAD', 'EMPLOYEE'].includes(rawData.role) && (
+                  <div className="mt-4">
+                    <IncentiveSlabTable slabs={incentiveSlab} />
+                  </div>
+                )}
+
               </div>
 
               {/* Right Column: Performance Summary */}
@@ -1139,6 +1163,16 @@ const EmployeeDetails = () => {
                                 : '-'}
                             </td>
                           </tr>
+                          <tr className="hover:bg-slate-50 transition-colors">
+                            <td className="px-6 py-4 text-sm font-semibold text-slate-700 bg-blue-50/50">
+                              Balance Incentive Amount
+                            </td>
+                            <td className="px-6 py-4 text-sm font-bold text-emerald-600">
+                              {employeeData.teamSummary.totalBalanceIncentiveAmount 
+                                ? CalculationService.formatCurrency(employeeData.teamSummary.totalBalanceIncentiveAmount, 'INR')
+                                : '-'}
+                            </td>
+                          </tr>
                         </>
                       ) : viewMode === 'personal' && employeeData?.personalSummary ? (
                         <>
@@ -1229,6 +1263,16 @@ const EmployeeDetails = () => {
                                 : '-'}
                             </td>
                           </tr>
+                          <tr className="hover:bg-slate-50 transition-colors">
+                            <td className="px-6 py-4 text-sm font-semibold text-slate-700 bg-blue-50/50">
+                              Balance Incentive Amount
+                            </td>
+                            <td className="px-6 py-4 text-sm font-bold text-emerald-600">
+                              {employeeData.personalSummary.totalBalanceIncentiveAmount 
+                                ? CalculationService.formatCurrency(employeeData.personalSummary.totalBalanceIncentiveAmount, 'INR')
+                                : '-'}
+                            </td>
+                          </tr>
                         </>
                       ) : (
                         <>
@@ -1314,6 +1358,14 @@ const EmployeeDetails = () => {
                               {employeeData.incentiveUSD ?? '-'}
                             </td>
                           </tr>
+                          <tr className="hover:bg-slate-50 transition-colors">
+                            <td className="px-6 py-4 text-sm font-semibold text-slate-700 bg-blue-50/50">
+                              Balance Incentive Amount
+                            </td>
+                            <td className="px-6 py-4 text-sm font-bold text-emerald-600">
+                              {employeeData.balanceIncentiveAmountINR ?? '-'}
+                            </td>
+                          </tr>
                         </>
                       )}
                     </tbody>
@@ -1356,6 +1408,7 @@ const EmployeeDetails = () => {
                         <th className="px-4 py-3 text-left text-xs font-semibold uppercase tracking-wider">Revenue -Lead (USD)</th>
                         <th className="px-4 py-3 text-left text-xs font-semibold uppercase tracking-wider">Incentive amount (INR)</th>
                         <th className="px-4 py-3 text-left text-xs font-semibold uppercase tracking-wider">Incentive Paid (INR)</th>
+                        <th className="px-4 py-3 text-left text-xs font-semibold uppercase tracking-wider">Balance Incentive Amount (INR)</th>
                       </>
                     ) : viewMode === 'personal' ? (
                       <>
@@ -1373,6 +1426,7 @@ const EmployeeDetails = () => {
                         <th className="px-4 py-3 text-left text-xs font-semibold uppercase tracking-wider">Revenue (USD)</th>
                         <th className="px-4 py-3 text-left text-xs font-semibold uppercase tracking-wider">Incentive amount (INR)</th>
                         <th className="px-4 py-3 text-left text-xs font-semibold uppercase tracking-wider">Incentive Paid (INR)</th>
+                        <th className="px-4 py-3 text-left text-xs font-semibold uppercase tracking-wider">Balance Incentive Amount (INR)</th>
                       </>
                     ) : (
                       <>
@@ -1389,6 +1443,7 @@ const EmployeeDetails = () => {
                         <th className="px-4 py-3 text-left text-xs font-semibold uppercase tracking-wider">Revenue (USD)</th>
                         <th className="px-4 py-3 text-left text-xs font-semibold uppercase tracking-wider">Incentive amount (INR)</th>
                         <th className="px-4 py-3 text-left text-xs font-semibold uppercase tracking-wider">Incentive Paid (INR)</th>
+                        <th className="px-4 py-3 text-left text-xs font-semibold uppercase tracking-wider">Balance Incentive Amount (INR)</th>
                       </>
                     )}
                   </tr>
@@ -1434,6 +1489,13 @@ const EmployeeDetails = () => {
                               ? (typeof placement.incentivePaidInr === 'number'
                                   ? CalculationService.formatCurrency(placement.incentivePaidInr, 'INR')
                                   : placement.incentivePaidInr)
+                              : '-'}
+                          </td>
+                          <td className="px-4 py-4 text-sm text-slate-600">
+                            {placement.placementBalanceIncentiveAmount 
+                              ? (typeof placement.placementBalanceIncentiveAmount === 'number'
+                                  ? CalculationService.formatCurrency(placement.placementBalanceIncentiveAmount, 'INR')
+                                  : placement.placementBalanceIncentiveAmount)
                               : '-'}
                           </td>
                         </>
@@ -1531,6 +1593,13 @@ const EmployeeDetails = () => {
                                   : placement.incentivePaidInr)
                               : '-'}
                           </td>
+                          <td className="px-4 py-4 text-sm text-slate-600">
+                            {placement.placementBalanceIncentiveAmount 
+                              ? (typeof placement.placementBalanceIncentiveAmount === 'number'
+                                  ? CalculationService.formatCurrency(placement.placementBalanceIncentiveAmount, 'INR')
+                                  : placement.placementBalanceIncentiveAmount)
+                              : '-'}
+                          </td>
                         </>
                       ) : (
                         <>
@@ -1611,6 +1680,11 @@ const EmployeeDetails = () => {
                           <td className="px-4 py-4 text-sm text-slate-600">
                             <span className="text-slate-700 font-medium">
                               {placement.incentivePaidInr || '-'}
+                            </span>
+                          </td>
+                          <td className="px-4 py-4 text-sm text-slate-600">
+                            <span className="text-slate-700 font-medium">
+                              {placement.placementBalanceIncentiveAmount || '-'}
                             </span>
                           </td>
                         </>

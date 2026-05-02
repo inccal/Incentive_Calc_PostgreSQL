@@ -6,6 +6,7 @@ import { useAuth } from '../context/AuthContext'
 import CalculationService from '../utils/calculationService'
 import { Skeleton } from './common/Skeleton'
 import SlabInfoButton from './common/SlabInfoButton'
+import IncentiveSlabTable from './common/IncentiveSlabTable'
 
 const containerVariants = {
   hidden: { opacity: 0 },
@@ -36,6 +37,7 @@ const TeamLeadPage = () => {
   const [viewMode, setViewMode] = useState('personal') // 'personal' | 'team'
   const [personalSheetData, setPersonalSheetData] = useState(null)
   const [teamSheetData, setTeamSheetData] = useState(null)
+  const [incentiveSlab, setIncentiveSlab] = useState(null)
   const [retryCount, setRetryCount] = useState(0)
 
   useEffect(() => {
@@ -43,6 +45,14 @@ const TeamLeadPage = () => {
 
     const fetchData = async () => {
       try {
+        // Fetch incentive slab
+        apiRequest('/incentive-slabs/me')
+          .then(res => res.json())
+          .then(data => {
+            if (isMounted) setIncentiveSlab(data?.slabs || null)
+          })
+          .catch(err => console.error('Error fetching slab:', err))
+
         const response = await apiRequest(`/dashboard/team-lead`)
         if (!response.ok) {
           const data = await response.json().catch(() => ({}))
@@ -595,8 +605,18 @@ const TeamLeadPage = () => {
                 <span className="text-slate-500 block">Incentive Paid (INR)</span>
                 <span className="font-semibold text-slate-800">{sheetSummary.totalIncentivePaidInr != null ? CalculationService.formatCurrency(Number(sheetSummary.totalIncentivePaidInr), 'INR') : '-'}</span>
               </div>
+              <div>
+                <span className="text-slate-500 block">Balance Incentive Amount</span>
+                <span className="font-semibold text-slate-800">{sheetSummary.totalBalanceIncentiveAmount != null ? CalculationService.formatCurrency(Number(sheetSummary.totalBalanceIncentiveAmount), 'INR') : '-'}</span>
+              </div>
             </motion.div>
           )}
+
+          {/* Incentive Slab — 2x6 Table */}
+          <div className="mb-6">
+            <IncentiveSlabTable slabs={incentiveSlab} />
+          </div>
+
           <motion.div variants={itemVariants} className="overflow-hidden rounded-xl border border-slate-200/80">
             <div className="overflow-x-auto">
               <table className="w-full min-w-[900px] text-sm">
@@ -616,6 +636,7 @@ const TeamLeadPage = () => {
                       <th className="px-4 py-3 text-left">Revenue (USD)</th>
                       <th className="px-4 py-3 text-left">Incentive amount (INR)</th>
                       <th className="px-4 py-3 text-left">Incentive Paid (INR)</th>
+                      <th className="px-4 py-3 text-left">Balance Incentive Amount</th>
                     </tr>
                   ) : (
                     <tr>
@@ -634,6 +655,7 @@ const TeamLeadPage = () => {
                       <th className="px-4 py-3 text-left">Revenue -Lead (USD)</th>
                       <th className="px-4 py-3 text-left">Incentive amount (INR)</th>
                       <th className="px-4 py-3 text-left">Incentive Paid (INR)</th>
+                      <th className="px-4 py-3 text-left">Balance Incentive Amount</th>
                     </tr>
                   )}
                 </thead>
@@ -654,6 +676,7 @@ const TeamLeadPage = () => {
                           <td className="px-4 py-2 text-slate-600">{p.revenueUsd}</td>
                           <td className="px-4 py-2 text-slate-600">{p.incentiveInr}</td>
                           <td className="px-4 py-2 text-slate-600">{p.incentivePaidInr ?? '-'}</td>
+                          <td className="px-4 py-2 text-slate-600">{p.placementBalanceIncentiveAmount ?? '-'}</td>
                         </tr>
                       ))
                     : (teamSheetData?.placements || []).map((p) => (
@@ -673,6 +696,7 @@ const TeamLeadPage = () => {
                           <td className="px-4 py-2 text-slate-600">{p.revenueLeadUsd}</td>
                           <td className="px-4 py-2 text-slate-600">{p.incentiveInr}</td>
                           <td className="px-4 py-2 text-slate-600">{p.incentivePaidInr ?? '-'}</td>
+                          <td className="px-4 py-2 text-slate-600">{p.placementBalanceIncentiveAmount ?? '-'}</td>
                         </tr>
                       ))}
                   {((viewMode === 'personal'
@@ -680,7 +704,7 @@ const TeamLeadPage = () => {
                     : teamSheetData?.placements) || []
                   ).length === 0 && (
                     <tr>
-                      <td colSpan={viewMode === 'personal' ? 13 : 15} className="px-4 py-6 text-center text-slate-500">
+                      <td colSpan={viewMode === 'personal' ? 14 : 16} className="px-4 py-6 text-center text-slate-500">
                         No {viewMode === 'personal' ? 'personal' : 'team'} placements found from sheet for this year.
                       </td>
                     </tr>

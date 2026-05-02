@@ -108,8 +108,8 @@ async function ensureProfile(db, { userId, teamId, managerId, level, vbid }) {
           const now = new Date();
           try {
             await db.$executeRaw`
-              INSERT INTO dbo.EmployeeProfile (id, teamId, managerId, level, vbid, targetType, isActive, createdAt, updatedAt)
-              VALUES (${userId}, ${data.teamId}, ${data.managerId}, ${data.level}, ${data.vbid}, ${data.targetType}, 1, ${now}, ${now})
+              INSERT INTO "EmployeeProfile" (id, "teamId", "managerId", level, vbid, "targetType", "isActive", "createdAt", "updatedAt")
+              VALUES (${userId}, ${data.teamId}, ${data.managerId}, ${data.level}, ${data.vbid}, ${data.targetType}, true, ${now}, ${now})
             `;
           } catch (insertErr) {
             try {
