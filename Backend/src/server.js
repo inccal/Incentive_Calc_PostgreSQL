@@ -137,7 +137,25 @@ app.use((err, req, res, next) => {
   res.status(status).json({ error: message });
 });
 
-app.listen(PORT, () => {
+const server = app.listen(PORT, () => {
   console.log(`API server listening on port ${PORT}`);
 });
-// Trigger restart for prisma update 2
+
+async function shutdown(signal) {
+  try {
+    await prisma.$disconnect();
+  } catch (e) {
+    console.error("Prisma disconnect:", e);
+  }
+  server.close(() => {
+    console.log(`Server closed (${signal})`);
+    process.exit(0);
+  });
+  setTimeout(() => process.exit(1), 10_000).unref();
+}
+
+["SIGINT", "SIGTERM"].forEach((sig) => {
+  process.on(sig, () => {
+    shutdown(sig).catch(() => process.exit(1));
+  });
+});

@@ -51,6 +51,205 @@ const AdminEmployeePlacements = () => {
 
   const [formData, setFormData] = useState(initialFormState);
 
+  const emptyPersonalSummaryDraft = () => ({
+    yearlyTarget: "",
+    achieved: "",
+    targetAchievedPercent: "",
+    totalRevenueGenerated: "",
+    slabQualified: "",
+    totalIncentiveInr: "",
+    totalIncentivePaidInr: "",
+    totalBalanceIncentiveAmount: "",
+  });
+  const emptyTeamSummaryDraft = () => ({
+    yearlyPlacementTarget: "",
+    placementDone: "",
+    placementAchPercent: "",
+    yearlyRevenueTarget: "",
+    revenueAch: "",
+    revenueTargetAchievedPercent: "",
+    totalRevenueGenerated: "",
+    slabQualified: "",
+    totalIncentiveInr: "",
+    totalIncentivePaidInr: "",
+    totalBalanceIncentiveAmount: "",
+  });
+
+  const [personalSummaryDraft, setPersonalSummaryDraft] = useState(emptyPersonalSummaryDraft);
+  const [teamSummaryDraft, setTeamSummaryDraft] = useState(emptyTeamSummaryDraft);
+  const [personalSummaryError, setPersonalSummaryError] = useState(null);
+  const [teamSummaryError, setTeamSummaryError] = useState(null);
+  const [savingPersonalSummary, setSavingPersonalSummary] = useState(false);
+  const [savingTeamSummary, setSavingTeamSummary] = useState(false);
+  const [summaryLoading, setSummaryLoading] = useState(false);
+
+  const fmtSummaryVal = (v) => (v != null && v !== "" ? String(v) : "");
+
+  const loadSheetSummaries = async () => {
+    if (!userId) return;
+    setSummaryLoading(true);
+    setPersonalSummaryError(null);
+    setTeamSummaryError(null);
+    try {
+      const pRes = await apiRequest(`/dashboard/personal-placements?userId=${userId}`);
+      if (pRes.ok) {
+        const data = await pRes.json();
+        const s = data.summary || {};
+        setPersonalSummaryDraft({
+          yearlyTarget: fmtSummaryVal(s.yearlyTarget),
+          achieved: fmtSummaryVal(s.achieved),
+          targetAchievedPercent: fmtSummaryVal(s.targetAchievedPercent),
+          totalRevenueGenerated: fmtSummaryVal(s.totalRevenueGenerated),
+          slabQualified: fmtSummaryVal(s.slabQualified),
+          totalIncentiveInr: fmtSummaryVal(s.totalIncentiveInr),
+          totalIncentivePaidInr: fmtSummaryVal(s.totalIncentivePaidInr),
+          totalBalanceIncentiveAmount: fmtSummaryVal(s.totalBalanceIncentiveAmount),
+        });
+      } else {
+        const err = await pRes.json().catch(() => ({}));
+        setPersonalSummaryError({
+          error: err.error || "Could not load personal sheet summary",
+          hint: err.hint || "Check network or permissions.",
+        });
+      }
+
+      const role = targetUser?.role;
+      if (role === "TEAM_LEAD") {
+        const tRes = await apiRequest(`/dashboard/team-placements?leadId=${userId}`);
+        if (tRes.ok) {
+          const data = await tRes.json();
+          const s = data.summary || {};
+          setTeamSummaryDraft({
+            yearlyPlacementTarget: fmtSummaryVal(s.yearlyPlacementTarget),
+            placementDone: fmtSummaryVal(s.placementDone),
+            placementAchPercent: fmtSummaryVal(s.placementAchPercent),
+            yearlyRevenueTarget: fmtSummaryVal(s.yearlyRevenueTarget),
+            revenueAch: fmtSummaryVal(s.revenueAch),
+            revenueTargetAchievedPercent: fmtSummaryVal(s.revenueTargetAchievedPercent),
+            totalRevenueGenerated: fmtSummaryVal(s.totalRevenueGenerated),
+            slabQualified: fmtSummaryVal(s.slabQualified),
+            totalIncentiveInr: fmtSummaryVal(s.totalIncentiveInr),
+            totalIncentivePaidInr: fmtSummaryVal(s.totalIncentivePaidInr),
+            totalBalanceIncentiveAmount: fmtSummaryVal(s.totalBalanceIncentiveAmount),
+          });
+        } else {
+          const err = await tRes.json().catch(() => ({}));
+          setTeamSummaryError({
+            error: err.error || "Could not load team sheet summary",
+            hint: err.hint || "Check network or permissions.",
+          });
+        }
+      } else {
+        setTeamSummaryDraft(emptyTeamSummaryDraft());
+      }
+    } catch (e) {
+      setPersonalSummaryError({ error: e.message || "Failed to load summaries", hint: "" });
+    } finally {
+      setSummaryLoading(false);
+    }
+  };
+
+  useEffect(() => {
+    if (!userId) return;
+    loadSheetSummaries();
+    // eslint-disable-next-line react-hooks/exhaustive-deps -- reload team block when role is known
+  }, [userId, targetUser?.role]);
+
+  const buildPersonalSummaryPayload = () => {
+    const body = { userId };
+    const keys = [
+      "yearlyTarget",
+      "achieved",
+      "targetAchievedPercent",
+      "totalRevenueGenerated",
+      "slabQualified",
+      "totalIncentiveInr",
+      "totalIncentivePaidInr",
+      "totalBalanceIncentiveAmount",
+    ];
+    for (const k of keys) {
+      const raw = personalSummaryDraft[k];
+      const t = raw == null ? "" : String(raw).trim();
+      body[k] = t === "" ? null : t;
+    }
+    return body;
+  };
+
+  const buildTeamSummaryPayload = () => {
+    const body = { leadId: userId };
+    const keys = [
+      "yearlyPlacementTarget",
+      "placementDone",
+      "placementAchPercent",
+      "yearlyRevenueTarget",
+      "revenueAch",
+      "revenueTargetAchievedPercent",
+      "totalRevenueGenerated",
+      "slabQualified",
+      "totalIncentiveInr",
+      "totalIncentivePaidInr",
+      "totalBalanceIncentiveAmount",
+    ];
+    for (const k of keys) {
+      const raw = teamSummaryDraft[k];
+      const t = raw == null ? "" : String(raw).trim();
+      body[k] = t === "" ? null : t;
+    }
+    return body;
+  };
+
+  const handleSavePersonalSummary = async () => {
+    setSavingPersonalSummary(true);
+    setPersonalSummaryError(null);
+    try {
+      const res = await apiRequest("/placements/summary/personal", {
+        method: "PATCH",
+        body: JSON.stringify(buildPersonalSummaryPayload()),
+      });
+      const data = await res.json().catch(() => ({}));
+      if (!res.ok) {
+        setPersonalSummaryError({
+          error: data.error || "Save failed",
+          hint: data.hint || "",
+          detail: data.detail,
+        });
+        return;
+      }
+      await loadSheetSummaries();
+      fetchPlacements({ silent: true });
+    } catch (e) {
+      setPersonalSummaryError({ error: e.message || "Save failed", hint: "" });
+    } finally {
+      setSavingPersonalSummary(false);
+    }
+  };
+
+  const handleSaveTeamSummary = async () => {
+    setSavingTeamSummary(true);
+    setTeamSummaryError(null);
+    try {
+      const res = await apiRequest("/placements/summary/team", {
+        method: "PATCH",
+        body: JSON.stringify(buildTeamSummaryPayload()),
+      });
+      const data = await res.json().catch(() => ({}));
+      if (!res.ok) {
+        setTeamSummaryError({
+          error: data.error || "Save failed",
+          hint: data.hint || "",
+          detail: data.detail,
+        });
+        return;
+      }
+      await loadSheetSummaries();
+      fetchPlacements({ silent: true });
+    } catch (e) {
+      setTeamSummaryError({ error: e.message || "Save failed", hint: "" });
+    } finally {
+      setSavingTeamSummary(false);
+    }
+  };
+
   // Auto-calculate Days Completed - REMOVED as per request to delete field
   // useEffect(() => {
   //   if (formData.doj) {
@@ -59,20 +258,18 @@ const AdminEmployeePlacements = () => {
   //   }
   // }, [formData.doj]);
 
-  const fetchPlacements = async () => {
+  const fetchPlacements = async (opts = {}) => {
+    const silent = !!opts.silent;
     try {
-      setLoading(true);
+      if (!silent) setLoading(true);
       const response = await apiRequest(`/placements/user/${userId}`);
       if (!response.ok) throw new Error("Failed to fetch placements");
       const data = await response.json();
       setPlacements(data);
-      
-      // Try to get user name if possible, otherwise skip
-      // Just for UI nicety
     } catch (err) {
       setError(err.message);
     } finally {
-      setLoading(false);
+      if (!silent) setLoading(false);
     }
   };
 
@@ -248,6 +445,111 @@ const AdminEmployeePlacements = () => {
           <div className="text-center py-12 text-red-600">{error}</div>
         ) : (
           <div className="space-y-8">
+            {/* Sheet summary editors — separate saves; IDs come only from this page URL */}
+            <div className="grid gap-6 lg:grid-cols-2">
+              <div className="rounded-xl border border-indigo-200 bg-white p-5 shadow-sm">
+                <h2 className="text-base font-bold text-indigo-950">Personal sheet summary (Members placement)</h2>
+                <p className="text-xs text-slate-600 mt-1 mb-4">
+                  Mirrors the yellow summary block from the personal import. Saves to all personal placement rows for this user. Uses user id from this page only.
+                </p>
+                {personalSummaryError && (
+                  <div className="mb-3 rounded-lg border border-rose-200 bg-rose-50 px-3 py-2 text-sm text-rose-800">
+                    <p className="font-semibold">{personalSummaryError.error}</p>
+                    {personalSummaryError.hint && <p className="mt-1 text-xs text-rose-700">{personalSummaryError.hint}</p>}
+                  </div>
+                )}
+                {summaryLoading ? (
+                  <p className="text-sm text-slate-500">Loading summary…</p>
+                ) : (
+                  <div className="grid gap-3 sm:grid-cols-2">
+                    {[
+                      ["yearlyTarget", "Yearly target"],
+                      ["achieved", "Achieved"],
+                      ["targetAchievedPercent", "Target achieved %"],
+                      ["totalRevenueGenerated", "Total revenue (USD)"],
+                      ["slabQualified", "Slab qualified"],
+                      ["totalIncentiveInr", "Total incentive (INR)"],
+                      ["totalIncentivePaidInr", "Incentive paid (INR)"],
+                      ["totalBalanceIncentiveAmount", "Balance incentive (INR)"],
+                    ].map(([key, label]) => (
+                      <label key={key} className="block text-xs">
+                        <span className="font-medium text-slate-600">{label}</span>
+                        <input
+                          className="mt-1 w-full rounded border border-slate-200 px-2 py-1.5 text-sm"
+                          value={personalSummaryDraft[key]}
+                          onChange={(e) => setPersonalSummaryDraft((d) => ({ ...d, [key]: e.target.value }))}
+                        />
+                      </label>
+                    ))}
+                  </div>
+                )}
+                <button
+                  type="button"
+                  disabled={savingPersonalSummary || summaryLoading}
+                  onClick={handleSavePersonalSummary}
+                  className="mt-4 rounded-lg bg-indigo-600 px-4 py-2 text-sm font-semibold text-white hover:bg-indigo-700 disabled:opacity-50"
+                >
+                  {savingPersonalSummary ? "Saving…" : "Save personal summary"}
+                </button>
+              </div>
+
+              {isTeamLead ? (
+                <div className="rounded-xl border border-violet-200 bg-white p-5 shadow-sm">
+                  <h2 className="text-base font-bold text-violet-950">Team sheet summary (Team lead placement)</h2>
+                  <p className="text-xs text-slate-600 mt-1 mb-4">
+                    Mirrors the team import summary block. Saves to all team placement rows for this lead. Same user id as this page; do not mix with the personal form.
+                  </p>
+                  {teamSummaryError && (
+                    <div className="mb-3 rounded-lg border border-rose-200 bg-rose-50 px-3 py-2 text-sm text-rose-800">
+                      <p className="font-semibold">{teamSummaryError.error}</p>
+                      {teamSummaryError.hint && <p className="mt-1 text-xs text-rose-700">{teamSummaryError.hint}</p>}
+                    </div>
+                  )}
+                  {summaryLoading ? (
+                    <p className="text-sm text-slate-500">Loading summary…</p>
+                  ) : (
+                    <div className="grid gap-3 sm:grid-cols-2">
+                      {[
+                        ["yearlyPlacementTarget", "Yearly placement target"],
+                        ["placementDone", "Placement done"],
+                        ["placementAchPercent", "Placement ach %"],
+                        ["yearlyRevenueTarget", "Yearly revenue target"],
+                        ["revenueAch", "Revenue ach"],
+                        ["revenueTargetAchievedPercent", "Revenue target achieved %"],
+                        ["totalRevenueGenerated", "Total revenue (USD)"],
+                        ["slabQualified", "Slab qualified"],
+                        ["totalIncentiveInr", "Total incentive (INR)"],
+                        ["totalIncentivePaidInr", "Incentive paid (INR)"],
+                        ["totalBalanceIncentiveAmount", "Balance incentive (INR)"],
+                      ].map(([key, label]) => (
+                        <label key={key} className="block text-xs">
+                          <span className="font-medium text-slate-600">{label}</span>
+                          <input
+                            className="mt-1 w-full rounded border border-slate-200 px-2 py-1.5 text-sm"
+                            value={teamSummaryDraft[key]}
+                            onChange={(e) => setTeamSummaryDraft((d) => ({ ...d, [key]: e.target.value }))}
+                          />
+                        </label>
+                      ))}
+                    </div>
+                  )}
+                  <button
+                    type="button"
+                    disabled={savingTeamSummary || summaryLoading}
+                    onClick={handleSaveTeamSummary}
+                    className="mt-4 rounded-lg bg-violet-600 px-4 py-2 text-sm font-semibold text-white hover:bg-violet-700 disabled:opacity-50"
+                  >
+                    {savingTeamSummary ? "Saving…" : "Save team summary"}
+                  </button>
+                </div>
+              ) : (
+                <div className="rounded-xl border border-dashed border-slate-200 bg-slate-50/80 p-5 text-sm text-slate-500">
+                  <p className="font-medium text-slate-700">Team sheet summary</p>
+                  <p className="mt-1 text-xs">Shown only for users with role Team Lead.</p>
+                </div>
+              )}
+            </div>
+
             {/* Personal (Recruiter sheet) placements */}
             <div className="bg-white rounded-xl shadow-sm border border-slate-200 overflow-hidden">
               <div className="bg-indigo-50 border-b border-indigo-100 px-4 py-2">

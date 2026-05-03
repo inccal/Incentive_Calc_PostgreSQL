@@ -2888,6 +2888,298 @@ export async function importTeamPlacements(payload, actorId) {
   };
 }
 
+/** Admin summary PATCH: attach HTTP status + hint for route handlers */
+function placementSummaryHttpError(statusCode, message, hint = "", detail = "") {
+  const err = new Error(message);
+  err.statusCode = statusCode;
+  err.hint = hint;
+  err.detail = detail;
+  return err;
+}
+
+const PERSONAL_SUMMARY_PATCH_KEYS = [
+  "yearlyTarget",
+  "achieved",
+  "targetAchievedPercent",
+  "totalRevenueGenerated",
+  "slabQualified",
+  "totalIncentiveInr",
+  "totalIncentivePaidInr",
+  "totalBalanceIncentiveAmount",
+];
+
+const TEAM_SUMMARY_PATCH_KEYS = [
+  "yearlyPlacementTarget",
+  "placementDone",
+  "placementAchPercent",
+  "yearlyRevenueTarget",
+  "revenueAch",
+  "revenueTargetAchievedPercent",
+  "totalRevenueGenerated",
+  "slabQualified",
+  "totalIncentiveInr",
+  "totalIncentivePaidInr",
+  "totalBalanceIncentiveAmount",
+];
+
+function assertNoUnknownKeys(body, allowedSet) {
+  for (const k of Object.keys(body || {})) {
+    if (!allowedSet.has(k)) {
+      throw placementSummaryHttpError(
+        400,
+        `Unknown or disallowed field: ${k}`,
+        "Only use the documented summary field names for this endpoint.",
+        k
+      );
+    }
+  }
+}
+
+function parseSummaryDecimalField(val, fieldLabel) {
+  if (val === undefined) return undefined;
+  if (val === null || val === "") return null;
+  const raw = String(val).trim();
+  if (raw === "") return null;
+  const n = parseNum(val);
+  if (n === null) {
+    throw placementSummaryHttpError(
+      400,
+      `Invalid value for ${fieldLabel}`,
+      "Enter a number (no letters), or leave the field blank to clear it.",
+      raw
+    );
+  }
+  return n;
+}
+
+/**
+ * S1 / Super User: update personal sheet snapshot columns on all PersonalPlacement rows for a user.
+ */
+export async function patchPersonalPlacementSummary(body, actorId) {
+  const allowed = new Set(["userId", ...PERSONAL_SUMMARY_PATCH_KEYS]);
+  assertNoUnknownKeys(body || {}, allowed);
+
+  if (body?.leadId !== undefined && body.leadId !== null && body.leadId !== "") {
+    throw placementSummaryHttpError(
+      400,
+      "Invalid request for personal summary",
+      "Do not send leadId. Use the team summary endpoint to edit team (lead) sheet data.",
+      "leadId"
+    );
+  }
+  if (body?.employeeId !== undefined && body.employeeId !== null && body.employeeId !== "") {
+    throw placementSummaryHttpError(
+      400,
+      "Invalid request for personal summary",
+      "Use userId only (the employee's login user id).",
+      "employeeId"
+    );
+  }
+
+  const userId = body?.userId != null ? String(body.userId).trim() : "";
+  if (!userId) {
+    throw placementSummaryHttpError(400, "Missing userId", "Provide userId (the employee's user id).", "");
+  }
+
+  const user = await prisma.user.findUnique({ where: { id: userId }, select: { id: true } });
+  if (!user) {
+    throw placementSummaryHttpError(
+      404,
+      "User not found",
+      "Check that you opened the correct employee.",
+      userId
+    );
+  }
+
+  const data = {};
+  for (const key of PERSONAL_SUMMARY_PATCH_KEYS) {
+    if (!Object.prototype.hasOwnProperty.call(body, key)) continue;
+    const v = body[key];
+    if (key === "slabQualified") {
+      if (v === undefined) continue;
+      data[key] = sanitizeSlabQualified(v == null || v === "" ? null : String(v).trim());
+      continue;
+    }
+    if (
+      key === "yearlyTarget" ||
+      key === "achieved" ||
+      key === "totalRevenueGenerated" ||
+      key === "totalIncentiveInr" ||
+      key === "totalIncentivePaidInr" ||
+      key === "totalBalanceIncentiveAmount"
+    ) {
+      const parsed = parseSummaryDecimalField(v, key);
+      if (parsed !== undefined) data[key] = parsed;
+      continue;
+    }
+    if (key === "targetAchievedPercent") {
+      if (!Object.prototype.hasOwnProperty.call(body, key)) continue;
+      if (v === null || v === "") {
+        data[key] = null;
+        continue;
+      }
+      const p = sanitizePercent(v);
+      data[key] = p;
+      continue;
+    }
+  }
+
+  if (Object.keys(data).length === 0) {
+    throw placementSummaryHttpError(
+      400,
+      "No summary fields to update",
+      "Send at least one summary field to change, or fix field names.",
+      ""
+    );
+  }
+
+  const result = await prisma.personalPlacement.updateMany({
+    where: { employeeId: userId },
+    data,
+  });
+
+  if (result.count === 0) {
+    throw placementSummaryHttpError(
+      404,
+      "No personal placement rows for this user",
+      "Import a Members (personal) sheet for this employee first, then try again.",
+      userId
+    );
+  }
+
+  await prisma.auditLog.create({
+    data: {
+      actorId,
+      action: "PERSONAL_SUMMARY_UPDATED",
+      entityType: "PersonalPlacement",
+      entityId: userId,
+      changes: { ...data, rowsUpdated: result.count },
+    },
+  });
+
+  return { updated: result.count, userId };
+}
+
+/**
+ * S1 / Super User: update team sheet snapshot columns on all TeamPlacement rows for a lead.
+ */
+export async function patchTeamPlacementSummary(body, actorId) {
+  const allowed = new Set(["leadId", ...TEAM_SUMMARY_PATCH_KEYS]);
+  assertNoUnknownKeys(body || {}, allowed);
+
+  if (body?.userId !== undefined && body.userId !== null && body.userId !== "") {
+    throw placementSummaryHttpError(
+      400,
+      "Invalid request for team summary",
+      "Do not send userId. Use the personal summary endpoint for members (personal) sheet data.",
+      "userId"
+    );
+  }
+  if (body?.employeeId !== undefined && body.employeeId !== null && body.employeeId !== "") {
+    throw placementSummaryHttpError(
+      400,
+      "Invalid request for team summary",
+      "Use leadId only (the team lead's user id).",
+      "employeeId"
+    );
+  }
+
+  const leadId = body?.leadId != null ? String(body.leadId).trim() : "";
+  if (!leadId) {
+    throw placementSummaryHttpError(400, "Missing leadId", "Provide leadId (the team lead's user id).", "");
+  }
+
+  const lead = await prisma.user.findUnique({
+    where: { id: leadId },
+    select: { id: true, role: true },
+  });
+  if (!lead) {
+    throw placementSummaryHttpError(
+      404,
+      "User not found",
+      "Check that you opened the correct team lead.",
+      leadId
+    );
+  }
+  if (lead.role !== Role.TEAM_LEAD) {
+    throw placementSummaryHttpError(
+      400,
+      "Team sheet summary only applies to team leads",
+      "This user is not a team lead. Use the personal summary section for members (personal) sheet data.",
+      lead.role
+    );
+  }
+
+  const data = {};
+  for (const key of TEAM_SUMMARY_PATCH_KEYS) {
+    if (!Object.prototype.hasOwnProperty.call(body, key)) continue;
+    const v = body[key];
+    if (key === "slabQualified") {
+      if (v === undefined) continue;
+      data[key] = sanitizeSlabQualified(v == null || v === "" ? null : String(v).trim());
+      continue;
+    }
+    if (
+      key === "yearlyPlacementTarget" ||
+      key === "placementDone" ||
+      key === "yearlyRevenueTarget" ||
+      key === "revenueAch" ||
+      key === "totalRevenueGenerated" ||
+      key === "totalIncentiveInr" ||
+      key === "totalIncentivePaidInr" ||
+      key === "totalBalanceIncentiveAmount"
+    ) {
+      const parsed = parseSummaryDecimalField(v, key);
+      if (parsed !== undefined) data[key] = parsed;
+      continue;
+    }
+    if (key === "placementAchPercent" || key === "revenueTargetAchievedPercent") {
+      if (!Object.prototype.hasOwnProperty.call(body, key)) continue;
+      if (v === null || v === "") {
+        data[key] = null;
+        continue;
+      }
+      data[key] = sanitizePercent(v);
+      continue;
+    }
+  }
+
+  if (Object.keys(data).length === 0) {
+    throw placementSummaryHttpError(
+      400,
+      "No summary fields to update",
+      "Send at least one summary field to change, or fix field names.",
+      ""
+    );
+  }
+
+  const result = await prisma.teamPlacement.updateMany({
+    where: { leadId },
+    data,
+  });
+
+  if (result.count === 0) {
+    throw placementSummaryHttpError(
+      404,
+      "No team placement rows for this lead",
+      "Import a team lead sheet for this team first, then try again.",
+      leadId
+    );
+  }
+
+  await prisma.auditLog.create({
+    data: {
+      actorId,
+      action: "TEAM_SUMMARY_UPDATED",
+      entityType: "TeamPlacement",
+      entityId: leadId,
+      changes: { ...data, rowsUpdated: result.count },
+    },
+  });
+
+  return { updated: result.count, leadId };
+}
+
 export async function deletePlacement(id, actorId) {
   const [personalDeleted, teamDeleted] = await Promise.all([
     prisma.personalPlacement.deleteMany({ where: { id } }),

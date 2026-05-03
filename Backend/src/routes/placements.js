@@ -17,6 +17,8 @@ import {
   importPersonalPlacements,
   importTeamPlacements,
   deleteAllPlacements,
+  patchPersonalPlacementSummary,
+  patchTeamPlacementSummary,
 } from "../controllers/placementController.js";
 
 const router = express.Router();
@@ -102,6 +104,36 @@ router.get("/user/:userId", requireRole(Role.SUPER_ADMIN, Role.S1_ADMIN), async 
     res.json(data);
   } catch (err) {
     next(err);
+  }
+});
+
+// Admin: update personal sheet summary snapshot on all PersonalPlacement rows for a user
+router.patch("/summary/personal", requireRole(Role.SUPER_ADMIN, Role.S1_ADMIN), async (req, res) => {
+  try {
+    const out = await patchPersonalPlacementSummary(req.body, req.user.id);
+    res.json(out);
+  } catch (err) {
+    const status = err.statusCode || 400;
+    res.status(status).json({
+      error: err.message || "Request failed",
+      hint: err.hint || "",
+      detail: err.detail || "",
+    });
+  }
+});
+
+// Admin: update team sheet summary snapshot on all TeamPlacement rows for a lead
+router.patch("/summary/team", requireRole(Role.SUPER_ADMIN, Role.S1_ADMIN), async (req, res) => {
+  try {
+    const out = await patchTeamPlacementSummary(req.body, req.user.id);
+    res.json(out);
+  } catch (err) {
+    const status = err.statusCode || 400;
+    res.status(status).json({
+      error: err.message || "Request failed",
+      hint: err.hint || "",
+      detail: err.detail || "",
+    });
   }
 });
 

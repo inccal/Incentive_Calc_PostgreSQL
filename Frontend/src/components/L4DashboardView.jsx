@@ -243,19 +243,14 @@ export default function L4DashboardView({
   const isDualTargetTeamView = viewMode === 'team' && isL2OrL3 && 
     teamSheetData?.summary?.yearlyRevenueTarget != null && 
     teamSheetData?.summary?.yearlyPlacementTarget != null
-  const incentivePaidInr =
-    activeSummary?.totalIncentivePaidInr != null
-      ? Number(activeSummary.totalIncentivePaidInr)
-      : null
-  const incentiveEarnedNum =
-    activeSummary?.totalIncentiveInr != null
-      ? Number(activeSummary.totalIncentiveInr)
-      : (employeeData?.placements || []).reduce((s, p) => {
-          const str = (p.incentiveAmountINR || '').toString().replace(/[^0-9.-]+/g, '')
-          return s + (Number(str) || 0)
-        }, 0)
-  const incentivePaidNum = incentivePaidInr ?? 0
-  const incentivePendingNum = Math.max(0, incentiveEarnedNum - incentivePaidNum)
+  const parseSheetIncentiveNum = (v) => {
+    if (v == null || v === '') return null
+    const n = Number(v)
+    return Number.isFinite(n) ? n : null
+  }
+  const sheetIncentiveEarnedNum = parseSheetIncentiveNum(activeSummary?.totalIncentiveInr)
+  const sheetIncentivePaidNum = parseSheetIncentiveNum(activeSummary?.totalIncentivePaidInr)
+  const sheetIncentiveBalanceNum = parseSheetIncentiveNum(activeSummary?.totalBalanceIncentiveAmount)
 
   // When sheet has placement target/done (e.g. Vantedge), use them and display as revenue/dollars
   const hasPlacementSheetData =
@@ -378,15 +373,15 @@ export default function L4DashboardView({
       ? CalculationService.formatSlabAsPercentage(activeSummary?.slabQualified ?? employeeData?.slabQualified)
       : null
   const sheetTotalIncentiveInr =
-    activeSummary?.totalIncentiveInr != null
+    activeSummary?.totalIncentiveInr != null && activeSummary.totalIncentiveInr !== ''
       ? CalculationService.formatCurrency(Number(activeSummary.totalIncentiveInr), 'INR')
       : null
   const sheetIncentivePaidInr =
-    activeSummary?.totalIncentivePaidInr != null
+    activeSummary?.totalIncentivePaidInr != null && activeSummary.totalIncentivePaidInr !== ''
       ? CalculationService.formatCurrency(Number(activeSummary.totalIncentivePaidInr), 'INR')
       : null
   const sheetTotalBalanceIncentiveAmount =
-    activeSummary?.totalBalanceIncentiveAmount != null
+    activeSummary?.totalBalanceIncentiveAmount != null && activeSummary.totalBalanceIncentiveAmount !== ''
       ? CalculationService.formatCurrency(Number(activeSummary.totalBalanceIncentiveAmount), 'INR')
       : null
 
@@ -493,10 +488,22 @@ export default function L4DashboardView({
     { id: 'profile', label: 'Profile', icon: 'user' },
   ]
   const recentPlacements = (placementsToDisplay || []).slice(0, 5)
-  const totalIncentive = incentiveEarnedNum || 1
-  const earnedPct = Math.min(100, totalIncentive > 0 ? (incentiveEarnedNum / totalIncentive) * 100 : 0)
-  const paidPct = Math.min(100 - earnedPct, totalIncentive > 0 ? (incentivePaidNum / totalIncentive) * 100 : 0)
-  const pendingPct = Math.max(0, 100 - earnedPct - paidPct)
+  const donutDenom =
+    sheetIncentiveEarnedNum != null && sheetIncentiveEarnedNum > 0 ? sheetIncentiveEarnedNum : null
+  let paidPct = 0
+  let pendingPct = 0
+  if (donutDenom != null) {
+    paidPct =
+      sheetIncentivePaidNum != null ? (sheetIncentivePaidNum / donutDenom) * 100 : 0
+    pendingPct =
+      sheetIncentiveBalanceNum != null ? (sheetIncentiveBalanceNum / donutDenom) * 100 : 0
+    if (paidPct + pendingPct > 100) {
+      const scale = 100 / (paidPct + pendingPct)
+      paidPct *= scale
+      pendingPct *= scale
+    }
+  }
+  const earnedPct = Math.max(0, 100 - paidPct - pendingPct)
   const degEarned = earnedPct * 3.6
   const degPaid = (earnedPct + paidPct) * 3.6
 
@@ -975,10 +982,7 @@ export default function L4DashboardView({
                 />
                 <StatCard
                   label="Incentive earned"
-                  value={
-                    employeeData?.incentiveINR ??
-                    (incentiveEarnedNum > 0 ? CalculationService.formatCurrency(incentiveEarnedNum, 'INR') : '–')
-                  }
+                  value={sheetTotalIncentiveInr ?? '–'}
                   icon={
                     <svg className="h-6 w-6" fill="none" stroke="currentColor" viewBox="0 0 24 24" strokeWidth={1.8}>
                       <path strokeLinecap="round" strokeLinejoin="round" d="M12 6v12m-3-2.818l.879.659c1.171.879 3.07.879 4.242 0 1.172-.879 1.172-2.303 0-3.182C13.536 12.219 12.768 12 12 12c-.725 0-1.45-.22-2.003-.659-1.106-.879-1.106-2.303 0-3.182s2.9-.879 4.006 0l.415.33M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
@@ -1104,9 +1108,10 @@ export default function L4DashboardView({
                       <div
                         className="absolute inset-0 rounded-full border-4 border-white shadow-inner"
                         style={{
-                          background: (incentiveEarnedNum > 0 || incentivePaidNum > 0)
-                            ? `conic-gradient(#10b981 0deg ${degEarned}deg, #34d399 ${degEarned}deg ${degPaid}deg, #a78bfa ${degPaid}deg 360deg)`
-                            : 'conic-gradient(#e2e8f0 0deg 360deg)',
+                          background:
+                            donutDenom != null
+                              ? `conic-gradient(#10b981 0deg ${degEarned}deg, #34d399 ${degEarned}deg ${degPaid}deg, #a78bfa ${degPaid}deg 360deg)`
+                              : 'conic-gradient(#e2e8f0 0deg 360deg)',
                         }}
                       />
                       <div className="absolute inset-0 flex items-center justify-center">
@@ -1124,7 +1129,7 @@ export default function L4DashboardView({
                           Earned
                         </span>
                         <span className="font-semibold text-slate-800">
-                          {employeeData?.incentiveINR ?? (incentiveEarnedNum > 0 ? CalculationService.formatCurrency(incentiveEarnedNum, 'INR') : '–')}
+                          {sheetTotalIncentiveInr ?? '–'}
                         </span>
                       </div>
                       <div className="flex items-center justify-between gap-2 text-sm">
@@ -1133,7 +1138,7 @@ export default function L4DashboardView({
                           Paid
                         </span>
                         <span className="font-semibold text-slate-800">
-                          {incentivePaidInr != null ? CalculationService.formatCurrency(incentivePaidInr, 'INR') : '–'}
+                          {sheetIncentivePaidInr ?? '–'}
                         </span>
                       </div>
                       <div className="flex items-center justify-between gap-2 text-sm">
@@ -1142,7 +1147,7 @@ export default function L4DashboardView({
                           Pending
                         </span>
                         <span className="font-semibold text-slate-800">
-                          {CalculationService.formatCurrency(incentivePendingNum, 'INR')}
+                          {sheetTotalBalanceIncentiveAmount ?? '–'}
                         </span>
                       </div>
                     </div>
