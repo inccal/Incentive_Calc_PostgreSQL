@@ -5,6 +5,8 @@ import { clearCacheMiddleware } from "../middleware/cache.js";
 import {
   getPlacementsByUser,
   createPlacement,
+  createPersonalPlacement,
+  createTeamPlacement,
   updatePlacement,
   updatePlacementBilling,
   bulkCreatePlacements,
@@ -142,6 +144,28 @@ router.post("/user/:userId", requireRole(Role.SUPER_ADMIN, Role.S1_ADMIN), async
   try {
     const { userId } = req.params;
     const placement = await createPlacement(userId, req.body, req.user.id);
+    res.status(201).json(placement);
+  } catch (err) {
+    next(err);
+  }
+});
+
+// Create one Members/Personal placement row for a user
+router.post("/user/:userId/personal", requireRole(Role.SUPER_ADMIN, Role.S1_ADMIN), async (req, res, next) => {
+  try {
+    const { userId } = req.params;
+    const placement = await createPersonalPlacement(userId, req.body, req.user.id);
+    res.status(201).json(placement);
+  } catch (err) {
+    next(err);
+  }
+});
+
+// Create one Team Lead placement row for a team lead
+router.post("/user/:userId/team", requireRole(Role.SUPER_ADMIN, Role.S1_ADMIN), async (req, res, next) => {
+  try {
+    const { userId } = req.params;
+    const placement = await createTeamPlacement(userId, req.body, req.user.id);
     res.status(201).json(placement);
   } catch (err) {
     next(err);

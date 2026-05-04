@@ -420,11 +420,13 @@ export async function getPlacementsByUser(userId) {
     incentivePayoutEta: null,
     sourcer: null,
     accountManager: null,
+    recruiterName: pp.recruiterName,
     teamLead: pp.teamLeadName,
     placementSharing: null,
     placementCredit: null,
     totalRevenue: pp.totalRevenueGenerated,
     revenueAsLead: null,
+    vbCode: pp.vbCode ?? null,
     createdAt: pp.createdAt,
     source: "personal",
   }));
@@ -453,11 +455,13 @@ export async function getPlacementsByUser(userId) {
     incentivePayoutEta: null,
     sourcer: null,
     accountManager: null,
+    recruiterName: tp.recruiterName,
     teamLead: tp.leadName,
     placementSharing: tp.splitWith,
     placementCredit: null,
     totalRevenue: tp.totalRevenueGenerated,
     revenueAsLead: tp.revenueLeadUsd,
+    vbCode: tp.vbCode ?? null,
     createdAt: tp.createdAt,
     source: "team",
   }));
@@ -467,6 +471,176 @@ export async function getPlacementsByUser(userId) {
   );
 
   return allPlacements;
+}
+
+function placementHttpError(statusCode, message, detail = "") {
+  const err = new Error(message);
+  err.statusCode = statusCode;
+  err.detail = detail;
+  return err;
+}
+
+function normalizeRequiredString(value, fieldLabel) {
+  const str = value == null ? "" : String(value).trim();
+  if (!str) {
+    throw placementHttpError(400, `${fieldLabel} is required`, fieldLabel);
+  }
+  return str;
+}
+
+function normalizeOptionalString(value) {
+  const str = value == null ? "" : String(value).trim();
+  return str || null;
+}
+
+function parseRequiredPlacementDate(value, fieldLabel) {
+  const d = parseDateForUpdate(value);
+  if (!d) {
+    throw placementHttpError(400, `${fieldLabel} is required`, fieldLabel);
+  }
+  return d;
+}
+
+function buildManualPlacementBase(data) {
+  return {
+    candidateName: normalizeRequiredString(data.candidateName, "Candidate name"),
+    placementYear: data.placementYear !== "" && data.placementYear != null ? Number(data.placementYear) : null,
+    doj: parseRequiredPlacementDate(data.doj, "DOJ"),
+    doq: parseDateForUpdate(data.doq) ?? null,
+    client: normalizeRequiredString(data.clientName ?? data.client, "Client"),
+    plcId: normalizeOptionalString(data.plcId) || "PLC-Passthrough",
+    placementType: normalizeOptionalString(data.placementType) || "C2C",
+    billingStatus: normalizeOptionalString(data.billingStatus) || "PENDING",
+    collectionStatus: normalizeOptionalString(data.collectionStatus),
+    totalBilledHours: data.billedHours !== "" && data.billedHours != null ? Number(data.billedHours) : null,
+    incentiveInr: parseNum(data.incentiveAmountInr ?? data.incentiveInr, 0),
+    incentivePaidInr:
+      data.incentivePaidInr !== "" && data.incentivePaidInr != null
+        ? parseNum(data.incentivePaidInr, null)
+        : null,
+    placementBalanceIncentiveAmount:
+      data.placementBalanceIncentiveAmount !== "" && data.placementBalanceIncentiveAmount != null
+        ? parseNum(data.placementBalanceIncentiveAmount, null)
+        : null,
+  };
+}
+
+export async function createPersonalPlacement(userId, data, actorId) {
+  const user = await prisma.user.findUnique({
+    where: { id: userId },
+    include: { employeeProfile: true },
+  });
+  if (!user) throw placementHttpError(404, "User not found", userId);
+
+  const base = buildManualPlacementBase(data);
+  const existing = await findExistingPersonalPlacement(
+    userId,
+    base.candidateName,
+    base.client,
+    base.doj,
+    data.level || user.employeeProfile?.level,
+    base.plcId
+  );
+  if (existing) {
+    throw placementHttpError(409, "Personal placement already exists for this member", existing.id);
+  }
+
+  const placement = await prisma.personalPlacement.create({
+    data: {
+      employeeId: userId,
+      level: data.level || user.employeeProfile?.level || null,
+      candidateName: base.candidateName,
+      placementYear: base.placementYear,
+      doj: base.doj,
+      doq: base.doq,
+      client: base.client,
+      plcId: base.plcId,
+      placementType: base.placementType,
+      billingStatus: base.billingStatus,
+      collectionStatus: base.collectionStatus,
+      totalBilledHours: base.totalBilledHours,
+      revenueUsd: parseNum(data.revenue ?? data.revenueUsd, 0),
+      incentiveInr: base.incentiveInr,
+      incentivePaidInr: base.incentivePaidInr,
+      placementBalanceIncentiveAmount: base.placementBalanceIncentiveAmount,
+      vbCode: user.vbid || user.employeeProfile?.vbid || null,
+      recruiterName: user.name,
+      teamLeadName: normalizeOptionalString(data.teamLead ?? data.teamLeadName),
+    },
+  });
+
+  await prisma.auditLog.create({
+    data: {
+      actorId,
+      action: "PERSONAL_PLACEMENT_CREATED",
+      entityType: "PersonalPlacement",
+      entityId: placement.id,
+      changes: { ...data, employeeId: userId },
+    },
+  });
+
+  return placement;
+}
+
+export async function createTeamPlacement(leadId, data, actorId) {
+  const lead = await prisma.user.findUnique({
+    where: { id: leadId },
+    include: { employeeProfile: true },
+  });
+  if (!lead) throw placementHttpError(404, "User not found", leadId);
+  if (lead.role !== Role.TEAM_LEAD) {
+    throw placementHttpError(400, "Team placement can only be created for a team lead", lead.role);
+  }
+
+  const base = buildManualPlacementBase(data);
+  const existing = await findExistingTeamPlacement(
+    leadId,
+    base.candidateName,
+    base.client,
+    base.doj,
+    data.level || lead.employeeProfile?.level,
+    base.plcId
+  );
+  if (existing) {
+    throw placementHttpError(409, "Team placement already exists for this lead", existing.id);
+  }
+
+  const placement = await prisma.teamPlacement.create({
+    data: {
+      leadId,
+      level: data.level || lead.employeeProfile?.level || null,
+      candidateName: base.candidateName,
+      recruiterName: normalizeOptionalString(data.recruiterName) || lead.name,
+      leadName: normalizeOptionalString(data.leadName ?? data.teamLead) || lead.name,
+      splitWith: normalizeOptionalString(data.placementSharing ?? data.splitWith),
+      placementYear: base.placementYear,
+      doj: base.doj,
+      doq: base.doq,
+      client: base.client,
+      plcId: base.plcId,
+      placementType: base.placementType,
+      billingStatus: base.billingStatus,
+      collectionStatus: base.collectionStatus,
+      totalBilledHours: base.totalBilledHours,
+      revenueLeadUsd: parseNum(data.revenue ?? data.revenueUsd, 0),
+      incentiveInr: base.incentiveInr,
+      incentivePaidInr: base.incentivePaidInr,
+      placementBalanceIncentiveAmount: base.placementBalanceIncentiveAmount,
+      vbCode: lead.vbid || lead.employeeProfile?.vbid || null,
+    },
+  });
+
+  await prisma.auditLog.create({
+    data: {
+      actorId,
+      action: "TEAM_PLACEMENT_CREATED",
+      entityType: "TeamPlacement",
+      entityId: placement.id,
+      changes: { ...data, leadId },
+    },
+  });
+
+  return placement;
 }
 
 export async function createPlacement(userId, data, actorId) {
@@ -560,21 +734,21 @@ export async function updatePlacement(id, data, actorId) {
     if (data.placementYear !== undefined) updates.placementYear = data.placementYear !== "" && data.placementYear != null ? Number(data.placementYear) : null;
     if (data.doj !== undefined) { const d = parseDateForUpdate(data.doj); if (d) updates.doj = d; }
     if (data.doq !== undefined) updates.doq = parseDateForUpdate(data.doq) ?? null;
-    if (data.client !== undefined) updates.client = String(data.client).trim() || personal.client;
+    if (data.client !== undefined || data.clientName !== undefined) updates.client = String(data.client ?? data.clientName).trim() || personal.client;
     if (data.plcId !== undefined) updates.plcId = String(data.plcId).trim() || personal.plcId;
     // PersonalPlacement.placementType is a string; store exact value (e.g. C2C) from sheet/edit, do not normalize
     if (data.placementType !== undefined) updates.placementType = String(data.placementType).trim() || personal.placementType;
     // PersonalPlacement.billingStatus is a string; store exact value (e.g. done, pending) from sheet/edit, do not normalize
     if (data.billingStatus !== undefined) updates.billingStatus = String(data.billingStatus).trim() || personal.billingStatus;
     if (data.collectionStatus !== undefined) updates.collectionStatus = data.collectionStatus != null ? String(data.collectionStatus).trim() : null;
-    if (data.totalBilledHours !== undefined) updates.totalBilledHours = data.totalBilledHours !== "" && data.totalBilledHours != null ? Number(data.totalBilledHours) : null;
-    if (data.revenueUsd !== undefined) updates.revenueUsd = parseNum(data.revenueUsd, 0);
-    if (data.incentiveInr !== undefined) updates.incentiveInr = parseNum(data.incentiveInr, 0);
+    if (data.totalBilledHours !== undefined || data.billedHours !== undefined) updates.totalBilledHours = (data.totalBilledHours ?? data.billedHours) !== "" && (data.totalBilledHours ?? data.billedHours) != null ? Number(data.totalBilledHours ?? data.billedHours) : null;
+    if (data.revenueUsd !== undefined || data.revenue !== undefined) updates.revenueUsd = parseNum(data.revenueUsd ?? data.revenue, 0);
+    if (data.incentiveInr !== undefined || data.incentiveAmountInr !== undefined) updates.incentiveInr = parseNum(data.incentiveInr ?? data.incentiveAmountInr, 0);
     if (data.incentivePaidInr !== undefined) updates.incentivePaidInr = data.incentivePaidInr != null && data.incentivePaidInr !== "" ? parseNum(data.incentivePaidInr, null) : null;
     if (data.placementBalanceIncentiveAmount !== undefined) updates.placementBalanceIncentiveAmount = data.placementBalanceIncentiveAmount != null && data.placementBalanceIncentiveAmount !== "" ? parseNum(data.placementBalanceIncentiveAmount, null) : null;
     if (data.totalBalanceIncentiveAmount !== undefined) updates.totalBalanceIncentiveAmount = data.totalBalanceIncentiveAmount != null && data.totalBalanceIncentiveAmount !== "" ? parseNum(data.totalBalanceIncentiveAmount, null) : null;
     if (data.recruiterName !== undefined) updates.recruiterName = data.recruiterName != null ? String(data.recruiterName).trim() : null;
-    if (data.teamLeadName !== undefined) updates.teamLeadName = data.teamLeadName != null ? String(data.teamLeadName).trim() : null;
+    if (data.teamLeadName !== undefined || data.teamLead !== undefined) updates.teamLeadName = (data.teamLeadName ?? data.teamLead) != null ? String(data.teamLeadName ?? data.teamLead).trim() : null;
     if (Object.keys(updates).length === 0) return personal;
     const updated = await prisma.personalPlacement.update({ where: { id }, data: updates });
     await prisma.auditLog.create({
@@ -588,21 +762,21 @@ export async function updatePlacement(id, data, actorId) {
     const updates = {};
     if (data.candidateName !== undefined) updates.candidateName = String(data.candidateName).trim() || team.candidateName;
     if (data.recruiterName !== undefined) updates.recruiterName = data.recruiterName != null ? String(data.recruiterName).trim() : null;
-    if (data.leadName !== undefined) updates.leadName = data.leadName != null ? String(data.leadName).trim() : null;
-    if (data.splitWith !== undefined) updates.splitWith = data.splitWith != null ? String(data.splitWith).trim() : null;
+    if (data.leadName !== undefined || data.teamLead !== undefined) updates.leadName = (data.leadName ?? data.teamLead) != null ? String(data.leadName ?? data.teamLead).trim() : null;
+    if (data.splitWith !== undefined || data.placementSharing !== undefined) updates.splitWith = (data.splitWith ?? data.placementSharing) != null ? String(data.splitWith ?? data.placementSharing).trim() : null;
     if (data.placementYear !== undefined) updates.placementYear = data.placementYear !== "" && data.placementYear != null ? Number(data.placementYear) : null;
     if (data.doj !== undefined) { const d = parseDateForUpdate(data.doj); if (d) updates.doj = d; }
     if (data.doq !== undefined) updates.doq = parseDateForUpdate(data.doq) ?? null;
-    if (data.client !== undefined) updates.client = String(data.client).trim() || team.client;
+    if (data.client !== undefined || data.clientName !== undefined) updates.client = String(data.client ?? data.clientName).trim() || team.client;
     if (data.plcId !== undefined) updates.plcId = String(data.plcId).trim() || team.plcId;
     // TeamPlacement.placementType is a string; store exact value (e.g. C2C) from sheet/edit, do not normalize
     if (data.placementType !== undefined) updates.placementType = String(data.placementType).trim() || team.placementType;
     // TeamPlacement.billingStatus is a string; store exact value (e.g. done, pending) from sheet/edit, do not normalize
     if (data.billingStatus !== undefined) updates.billingStatus = String(data.billingStatus).trim() || team.billingStatus;
     if (data.collectionStatus !== undefined) updates.collectionStatus = data.collectionStatus != null ? String(data.collectionStatus).trim() : null;
-    if (data.totalBilledHours !== undefined) updates.totalBilledHours = data.totalBilledHours !== "" && data.totalBilledHours != null ? Number(data.totalBilledHours) : null;
-    if (data.revenueUsd !== undefined) updates.revenueLeadUsd = parseNum(data.revenueUsd, 0);
-    if (data.incentiveInr !== undefined) updates.incentiveInr = parseNum(data.incentiveInr, 0);
+    if (data.totalBilledHours !== undefined || data.billedHours !== undefined) updates.totalBilledHours = (data.totalBilledHours ?? data.billedHours) !== "" && (data.totalBilledHours ?? data.billedHours) != null ? Number(data.totalBilledHours ?? data.billedHours) : null;
+    if (data.revenueUsd !== undefined || data.revenue !== undefined) updates.revenueLeadUsd = parseNum(data.revenueUsd ?? data.revenue, 0);
+    if (data.incentiveInr !== undefined || data.incentiveAmountInr !== undefined) updates.incentiveInr = parseNum(data.incentiveInr ?? data.incentiveAmountInr, 0);
     if (data.incentivePaidInr !== undefined) updates.incentivePaidInr = data.incentivePaidInr != null && data.incentivePaidInr !== "" ? parseNum(data.incentivePaidInr, null) : null;
     if (data.placementBalanceIncentiveAmount !== undefined) updates.placementBalanceIncentiveAmount = data.placementBalanceIncentiveAmount != null && data.placementBalanceIncentiveAmount !== "" ? parseNum(data.placementBalanceIncentiveAmount, null) : null;
     if (data.totalBalanceIncentiveAmount !== undefined) updates.totalBalanceIncentiveAmount = data.totalBalanceIncentiveAmount != null && data.totalBalanceIncentiveAmount !== "" ? parseNum(data.totalBalanceIncentiveAmount, null) : null;

@@ -122,7 +122,8 @@ export async function getUserById(id) {
     name: user.name,
     role: user.role,
     isActive: user.isActive,
-    employeeProfile: user.employeeProfile
+    vbid: user.vbid,
+    employeeProfile: user.employeeProfile,
   };
 }
 

@@ -14,6 +14,11 @@ const AdminEmployeePlacements = () => {
   // Modal states
   const [showModal, setShowModal] = useState(false);
   const [editingId, setEditingId] = useState(null); // If null, it's adding mode
+  const [createSource, setCreateSource] = useState("personal");
+  const [formBaseline, setFormBaseline] = useState(null);
+  const [savingPlacement, setSavingPlacement] = useState(false);
+  const [placementFormError, setPlacementFormError] = useState(null);
+  const [pageMessage, setPageMessage] = useState(null);
   const [selectedIds, setSelectedIds] = useState([]);
   const [targetUser, setTargetUser] = useState(null);
 
@@ -38,6 +43,7 @@ const AdminEmployeePlacements = () => {
     placementType: "",
     billedHours: "",
     revenue: "",
+    recruiterName: "",
     teamLead: "",
     placementSharing: "",
     totalRevenue: "",
@@ -77,25 +83,45 @@ const AdminEmployeePlacements = () => {
 
   const [personalSummaryDraft, setPersonalSummaryDraft] = useState(emptyPersonalSummaryDraft);
   const [teamSummaryDraft, setTeamSummaryDraft] = useState(emptyTeamSummaryDraft);
+  const [personalSummaryBaseline, setPersonalSummaryBaseline] = useState(emptyPersonalSummaryDraft);
+  const [teamSummaryBaseline, setTeamSummaryBaseline] = useState(emptyTeamSummaryDraft);
   const [personalSummaryError, setPersonalSummaryError] = useState(null);
   const [teamSummaryError, setTeamSummaryError] = useState(null);
+  const [personalSummarySuccess, setPersonalSummarySuccess] = useState("");
+  const [teamSummarySuccess, setTeamSummarySuccess] = useState("");
   const [savingPersonalSummary, setSavingPersonalSummary] = useState(false);
   const [savingTeamSummary, setSavingTeamSummary] = useState(false);
   const [summaryLoading, setSummaryLoading] = useState(false);
 
   const fmtSummaryVal = (v) => (v != null && v !== "" ? String(v) : "");
+  const normalizeForDirty = (obj) =>
+    JSON.stringify(
+      Object.keys(obj || {})
+        .sort()
+        .reduce((acc, key) => {
+          const value = obj[key];
+          acc[key] = value == null ? "" : String(value).trim();
+          return acc;
+        }, {})
+    );
+
+  const isDirty = (draft, baseline) => normalizeForDirty(draft) !== normalizeForDirty(baseline);
+  const personalSummaryDirty = isDirty(personalSummaryDraft, personalSummaryBaseline);
+  const teamSummaryDirty = isDirty(teamSummaryDraft, teamSummaryBaseline);
 
   const loadSheetSummaries = async () => {
     if (!userId) return;
     setSummaryLoading(true);
     setPersonalSummaryError(null);
     setTeamSummaryError(null);
+    setPersonalSummarySuccess("");
+    setTeamSummarySuccess("");
     try {
       const pRes = await apiRequest(`/dashboard/personal-placements?userId=${userId}`);
       if (pRes.ok) {
         const data = await pRes.json();
         const s = data.summary || {};
-        setPersonalSummaryDraft({
+        const nextPersonalSummary = {
           yearlyTarget: fmtSummaryVal(s.yearlyTarget),
           achieved: fmtSummaryVal(s.achieved),
           targetAchievedPercent: fmtSummaryVal(s.targetAchievedPercent),
@@ -104,7 +130,9 @@ const AdminEmployeePlacements = () => {
           totalIncentiveInr: fmtSummaryVal(s.totalIncentiveInr),
           totalIncentivePaidInr: fmtSummaryVal(s.totalIncentivePaidInr),
           totalBalanceIncentiveAmount: fmtSummaryVal(s.totalBalanceIncentiveAmount),
-        });
+        };
+        setPersonalSummaryDraft(nextPersonalSummary);
+        setPersonalSummaryBaseline(nextPersonalSummary);
       } else {
         const err = await pRes.json().catch(() => ({}));
         setPersonalSummaryError({
@@ -119,7 +147,7 @@ const AdminEmployeePlacements = () => {
         if (tRes.ok) {
           const data = await tRes.json();
           const s = data.summary || {};
-          setTeamSummaryDraft({
+          const nextTeamSummary = {
             yearlyPlacementTarget: fmtSummaryVal(s.yearlyPlacementTarget),
             placementDone: fmtSummaryVal(s.placementDone),
             placementAchPercent: fmtSummaryVal(s.placementAchPercent),
@@ -131,7 +159,9 @@ const AdminEmployeePlacements = () => {
             totalIncentiveInr: fmtSummaryVal(s.totalIncentiveInr),
             totalIncentivePaidInr: fmtSummaryVal(s.totalIncentivePaidInr),
             totalBalanceIncentiveAmount: fmtSummaryVal(s.totalBalanceIncentiveAmount),
-          });
+          };
+          setTeamSummaryDraft(nextTeamSummary);
+          setTeamSummaryBaseline(nextTeamSummary);
         } else {
           const err = await tRes.json().catch(() => ({}));
           setTeamSummaryError({
@@ -140,7 +170,9 @@ const AdminEmployeePlacements = () => {
           });
         }
       } else {
-        setTeamSummaryDraft(emptyTeamSummaryDraft());
+        const emptyTeamSummary = emptyTeamSummaryDraft();
+        setTeamSummaryDraft(emptyTeamSummary);
+        setTeamSummaryBaseline(emptyTeamSummary);
       }
     } catch (e) {
       setPersonalSummaryError({ error: e.message || "Failed to load summaries", hint: "" });
@@ -199,8 +231,10 @@ const AdminEmployeePlacements = () => {
   };
 
   const handleSavePersonalSummary = async () => {
+    if (!personalSummaryDirty || savingPersonalSummary || summaryLoading) return;
     setSavingPersonalSummary(true);
     setPersonalSummaryError(null);
+    setPersonalSummarySuccess("");
     try {
       const res = await apiRequest("/placements/summary/personal", {
         method: "PATCH",
@@ -215,7 +249,8 @@ const AdminEmployeePlacements = () => {
         });
         return;
       }
-      await loadSheetSummaries();
+      setPersonalSummaryBaseline({ ...personalSummaryDraft });
+      setPersonalSummarySuccess("Personal summary saved.");
       fetchPlacements({ silent: true });
     } catch (e) {
       setPersonalSummaryError({ error: e.message || "Save failed", hint: "" });
@@ -225,8 +260,10 @@ const AdminEmployeePlacements = () => {
   };
 
   const handleSaveTeamSummary = async () => {
+    if (!teamSummaryDirty || savingTeamSummary || summaryLoading) return;
     setSavingTeamSummary(true);
     setTeamSummaryError(null);
+    setTeamSummarySuccess("");
     try {
       const res = await apiRequest("/placements/summary/team", {
         method: "PATCH",
@@ -241,7 +278,8 @@ const AdminEmployeePlacements = () => {
         });
         return;
       }
-      await loadSheetSummaries();
+      setTeamSummaryBaseline({ ...teamSummaryDraft });
+      setTeamSummarySuccess("Team summary saved.");
       fetchPlacements({ silent: true });
     } catch (e) {
       setTeamSummaryError({ error: e.message || "Save failed", hint: "" });
@@ -292,8 +330,8 @@ const AdminEmployeePlacements = () => {
   }, [userId]);
 
   const handleEdit = (placement) => {
-    setEditingId(placement.id);
-    setFormData({
+    const source = placement.source === "team" ? "team" : "personal";
+    const nextFormData = {
       candidateName: placement.candidateName,
       candidateId: placement.candidateId || "",
       placementYear: placement.placementYear || new Date().getFullYear(),
@@ -304,6 +342,7 @@ const AdminEmployeePlacements = () => {
       placementType: placement.placementType,
       billedHours: placement.billedHours || "",
       revenue: placement.revenue || "",
+      recruiterName: placement.recruiterName || "",
       teamLead: placement.teamLead || "",
       placementSharing: placement.placementSharing || "",
       totalRevenue: placement.totalRevenue || "",
@@ -314,38 +353,80 @@ const AdminEmployeePlacements = () => {
       incentiveAmountInr: placement.incentiveAmountInr || "",
       incentivePaidInr: (placement.incentivePaidInr !== undefined && placement.incentivePaidInr !== null) ? String(placement.incentivePaidInr) : "",
       placementBalanceIncentiveAmount: (placement.placementBalanceIncentiveAmount !== undefined && placement.placementBalanceIncentiveAmount !== null) ? String(placement.placementBalanceIncentiveAmount) : "",
-    });
+    };
+    setEditingId(placement.id);
+    setCreateSource(source);
+    setFormData(nextFormData);
+    setFormBaseline(sanitizePlacementPayload(nextFormData, source));
+    setPlacementFormError(null);
     setShowModal(true);
   };
 
-  const handleAddNew = () => {
+  const handleAddNew = (source = "personal") => {
     setEditingId(null);
-    setFormData(initialFormState);
+    setCreateSource(source);
+    const nextFormData = {
+      ...initialFormState,
+      teamLead: source === "team" ? (userName || targetUser?.name || "") : "",
+    };
+    setFormData(nextFormData);
+    setFormBaseline(sanitizePlacementPayload(nextFormData, source));
+    setPlacementFormError(null);
     setShowModal(true);
   };
+
+  const sanitizePlacementPayload = (data, source = createSource) => {
+    const payload = { ...data };
+    delete payload.candidateId;
+    delete payload.doi;
+    delete payload.totalRevenue;
+    delete payload.revenueAsLead;
+    delete payload.incentivePayoutEta;
+    if (source === "personal") {
+      delete payload.recruiterName;
+      delete payload.placementSharing;
+    }
+    return payload;
+  };
+
+  const buildPlacementPayload = () => sanitizePlacementPayload(formData, createSource);
+  const placementFormDirty =
+    formBaseline != null && normalizeForDirty(buildPlacementPayload()) !== normalizeForDirty(formBaseline);
 
   const handleSubmit = async (e) => {
     e.preventDefault();
+    if (!placementFormDirty || savingPlacement) return;
+    setSavingPlacement(true);
+    setPlacementFormError(null);
     try {
-      const url = editingId 
+      const url = editingId
         ? `/placements/${editingId}`
-        : `/placements/user/${userId}`;
+        : `/placements/user/${userId}/${createSource}`;
       
       const method = editingId ? "PUT" : "POST";
 
       const response = await apiRequest(url, {
         method,
-        body: JSON.stringify(formData),
+        body: JSON.stringify(buildPlacementPayload()),
       });
 
-      if (!response.ok) throw new Error("Failed to save placement");
+      const data = await response.json().catch(() => ({}));
+      if (!response.ok) throw new Error(data.error || "Failed to save placement");
 
       setShowModal(false);
       setFormData(initialFormState);
       setEditingId(null);
+      setCreateSource("personal");
+      setFormBaseline(null);
+      setPageMessage({
+        type: "success",
+        text: editingId ? "Placement updated successfully." : "Placement created successfully.",
+      });
       fetchPlacements();
     } catch (err) {
-      alert(err.message);
+      setPlacementFormError(err.message || "Failed to save placement");
+    } finally {
+      setSavingPlacement(false);
     }
   };
 
@@ -400,6 +481,13 @@ const AdminEmployeePlacements = () => {
     );
   };
 
+  const memberVbid = (() => {
+    const fromUser = targetUser?.vbid || targetUser?.employeeProfile?.vbid;
+    if (fromUser != null && String(fromUser).trim() !== "") return String(fromUser).trim();
+    const row = placements.find((p) => p.vbCode != null && String(p.vbCode).trim() !== "");
+    return row ? String(row.vbCode).trim() : null;
+  })();
+
   return (
     <div className="p-6 bg-slate-50 min-h-screen">
       <div className="max-w-[95%] mx-auto">
@@ -415,7 +503,7 @@ const AdminEmployeePlacements = () => {
             </button>
             <h1 className="text-3xl font-bold text-slate-900">Placement Management</h1>
           </div>
-          <div className="flex gap-3">
+          <div className="flex flex-wrap justify-end gap-3">
             {selectedIds.length > 0 && (
               <button
                 onClick={handleBulkDelete}
@@ -428,16 +516,76 @@ const AdminEmployeePlacements = () => {
               </button>
             )}
             <button
-              onClick={handleAddNew}
-              className="px-4 py-2 bg-blue-600 hover:bg-blue-700 text-white rounded-lg shadow-sm transition-colors flex items-center gap-2"
+              onClick={() => handleAddNew("personal")}
+              className="px-4 py-2 bg-indigo-600 hover:bg-indigo-700 text-white rounded-lg shadow-sm transition-colors flex items-center gap-2"
             >
               <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 4v16m8-8H4" />
               </svg>
-              Add New Placement
+              Create Personal Placement
             </button>
+            {isTeamLead && (
+              <button
+                onClick={() => handleAddNew("team")}
+                className="px-4 py-2 bg-violet-600 hover:bg-violet-700 text-white rounded-lg shadow-sm transition-colors flex items-center gap-2"
+              >
+                <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 4v16m8-8H4" />
+                </svg>
+                Create Team Placement
+              </button>
+            )}
           </div>
         </div>
+
+        {!loading && (userName || targetUser) && (
+          <div className="mb-6 flex flex-col gap-3 rounded-xl border border-indigo-200 bg-gradient-to-r from-indigo-50 to-white px-4 py-4 shadow-sm sm:flex-row sm:flex-wrap sm:items-center sm:justify-between sm:gap-4">
+            <div className="flex min-w-0 flex-1 flex-col gap-3 sm:flex-row sm:items-center sm:gap-6">
+              <div className="min-w-0">
+                <p className="text-[10px] font-bold uppercase tracking-wider text-indigo-600">Member name</p>
+                <p className="truncate text-xl font-bold text-slate-900 sm:text-2xl">
+                  {userName || targetUser?.name || "—"}
+                </p>
+              </div>
+              <div className="hidden h-10 w-px shrink-0 bg-indigo-200 sm:block" aria-hidden />
+              <div className="min-w-0">
+                <p className="text-[10px] font-bold uppercase tracking-wider text-indigo-600">VB ID</p>
+                <p className="font-mono text-lg font-semibold tracking-tight text-slate-800 sm:text-xl">
+                  {memberVbid || "—"}
+                </p>
+              </div>
+            </div>
+            {targetUser?.email && (
+              <p className="shrink-0 truncate text-xs text-slate-500 sm:max-w-xs sm:text-right" title={targetUser.email}>
+                {targetUser.email}
+              </p>
+            )}
+          </div>
+        )}
+
+        {pageMessage && (
+          <div
+            className={`mb-6 flex items-center gap-3 rounded-xl border px-4 py-3 text-sm shadow-sm animate-fadeIn ${
+              pageMessage.type === "success"
+                ? "border-emerald-200 bg-emerald-50 text-emerald-800"
+                : "border-rose-200 bg-rose-50 text-rose-800"
+            }`}
+          >
+            <span className={`flex h-5 w-5 items-center justify-center rounded-full text-xs font-bold ${
+              pageMessage.type === "success" ? "bg-emerald-100 text-emerald-700" : "bg-rose-100 text-rose-700"
+            }`}>
+              {pageMessage.type === "success" ? "✓" : "!"}
+            </span>
+            <span className="font-medium">{pageMessage.text}</span>
+            <button
+              type="button"
+              onClick={() => setPageMessage(null)}
+              className="ml-auto rounded px-2 py-1 text-xs opacity-70 hover:bg-white/70 hover:opacity-100"
+            >
+              Close
+            </button>
+          </div>
+        )}
 
         {loading ? (
           <div className="text-center py-12">Loading...</div>
@@ -456,6 +604,11 @@ const AdminEmployeePlacements = () => {
                   <div className="mb-3 rounded-lg border border-rose-200 bg-rose-50 px-3 py-2 text-sm text-rose-800">
                     <p className="font-semibold">{personalSummaryError.error}</p>
                     {personalSummaryError.hint && <p className="mt-1 text-xs text-rose-700">{personalSummaryError.hint}</p>}
+                  </div>
+                )}
+                {personalSummarySuccess && !personalSummaryDirty && (
+                  <div className="mb-3 rounded-lg border border-emerald-200 bg-emerald-50 px-3 py-2 text-sm font-medium text-emerald-800">
+                    ✓ {personalSummarySuccess}
                   </div>
                 )}
                 {summaryLoading ? (
@@ -485,11 +638,12 @@ const AdminEmployeePlacements = () => {
                 )}
                 <button
                   type="button"
-                  disabled={savingPersonalSummary || summaryLoading}
+                  disabled={savingPersonalSummary || summaryLoading || !personalSummaryDirty}
                   onClick={handleSavePersonalSummary}
-                  className="mt-4 rounded-lg bg-indigo-600 px-4 py-2 text-sm font-semibold text-white hover:bg-indigo-700 disabled:opacity-50"
+                  className="mt-4 inline-flex items-center gap-2 rounded-lg bg-indigo-600 px-4 py-2 text-sm font-semibold text-white transition hover:bg-indigo-700 disabled:cursor-not-allowed disabled:bg-slate-200 disabled:text-slate-500 disabled:shadow-none"
                 >
-                  {savingPersonalSummary ? "Saving…" : "Save personal summary"}
+                  {savingPersonalSummary && <span className="h-3.5 w-3.5 rounded-full border-2 border-white/40 border-t-white animate-spin" />}
+                  {savingPersonalSummary ? "Saving…" : personalSummaryDirty ? "Save personal summary" : "No changes to save"}
                 </button>
               </div>
 
@@ -503,6 +657,11 @@ const AdminEmployeePlacements = () => {
                     <div className="mb-3 rounded-lg border border-rose-200 bg-rose-50 px-3 py-2 text-sm text-rose-800">
                       <p className="font-semibold">{teamSummaryError.error}</p>
                       {teamSummaryError.hint && <p className="mt-1 text-xs text-rose-700">{teamSummaryError.hint}</p>}
+                    </div>
+                  )}
+                  {teamSummarySuccess && !teamSummaryDirty && (
+                    <div className="mb-3 rounded-lg border border-emerald-200 bg-emerald-50 px-3 py-2 text-sm font-medium text-emerald-800">
+                      ✓ {teamSummarySuccess}
                     </div>
                   )}
                   {summaryLoading ? (
@@ -535,11 +694,12 @@ const AdminEmployeePlacements = () => {
                   )}
                   <button
                     type="button"
-                    disabled={savingTeamSummary || summaryLoading}
+                    disabled={savingTeamSummary || summaryLoading || !teamSummaryDirty}
                     onClick={handleSaveTeamSummary}
-                    className="mt-4 rounded-lg bg-violet-600 px-4 py-2 text-sm font-semibold text-white hover:bg-violet-700 disabled:opacity-50"
+                    className="mt-4 inline-flex items-center gap-2 rounded-lg bg-violet-600 px-4 py-2 text-sm font-semibold text-white transition hover:bg-violet-700 disabled:cursor-not-allowed disabled:bg-slate-200 disabled:text-slate-500 disabled:shadow-none"
                   >
-                    {savingTeamSummary ? "Saving…" : "Save team summary"}
+                    {savingTeamSummary && <span className="h-3.5 w-3.5 rounded-full border-2 border-white/40 border-t-white animate-spin" />}
+                    {savingTeamSummary ? "Saving…" : teamSummaryDirty ? "Save team summary" : "No changes to save"}
                   </button>
                 </div>
               ) : (
@@ -608,7 +768,7 @@ const AdminEmployeePlacements = () => {
                             />
                           </td>
                           <td className="py-3 px-2 font-medium text-slate-800">{p.candidateName}</td>
-                          <td className="py-3 px-2 text-slate-600">{userName || "-"}</td>
+                          <td className="py-3 px-2 text-slate-600">{p.recruiterName || userName || "-"}</td>
                           <td className="py-3 px-2 text-slate-600">{p.teamLead || "-"}</td>
                           <td className="py-3 px-2 text-slate-600">{p.placementSharing || "-"}</td>
                           <td className="py-3 px-2 text-slate-600">{p.placementYear || "-"}</td>
@@ -704,7 +864,7 @@ const AdminEmployeePlacements = () => {
                               />
                             </td>
                             <td className="py-3 px-2 font-medium text-slate-800">{p.candidateName}</td>
-                            <td className="py-3 px-2 text-slate-600">{userName || "-"}</td>
+                            <td className="py-3 px-2 text-slate-600">{p.recruiterName || userName || "-"}</td>
                             <td className="py-3 px-2 text-slate-600">{p.teamLead || "-"}</td>
                             <td className="py-3 px-2 text-slate-600">{p.placementSharing || "-"}</td>
                             <td className="py-3 px-2 text-slate-600">{p.placementYear || "-"}</td>
@@ -793,7 +953,7 @@ const AdminEmployeePlacements = () => {
                             />
                           </td>
                           <td className="py-3 px-2 font-medium text-slate-800">{p.candidateName}</td>
-                          <td className="py-3 px-2 text-slate-600">{userName || "-"}</td>
+                          <td className="py-3 px-2 text-slate-600">{p.recruiterName || userName || "-"}</td>
                           <td className="py-3 px-2 text-slate-600">{p.teamLead || "-"}</td>
                           <td className="py-3 px-2 text-slate-600">{p.placementSharing || "-"}</td>
                           <td className="py-3 px-2 text-slate-600">{p.placementYear || "-"}</td>
@@ -837,7 +997,30 @@ const AdminEmployeePlacements = () => {
       {showModal && (
         <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4">
           <div className="bg-white rounded-xl shadow-xl max-w-4xl w-full p-6 animate-fadeIn overflow-y-auto max-h-[90vh]">
-            <h2 className="text-xl font-bold text-slate-800 mb-4">{editingId ? 'Edit Placement' : 'Add New Placement'}</h2>
+            <div className="mb-4 flex flex-wrap items-center justify-between gap-3">
+              <div>
+                <h2 className="text-xl font-bold text-slate-800">
+                  {editingId
+                    ? `Edit ${createSource === "team" ? "Team" : "Personal"} Placement`
+                    : `Create ${createSource === "team" ? "Team" : "Personal"} Placement`}
+                </h2>
+                <p className="text-xs text-slate-500">
+                  {createSource === "team"
+                    ? "This will save into TeamPlacement for this team lead."
+                    : "This will save into PersonalPlacement for this member."}
+                </p>
+              </div>
+              <span className={`rounded-full px-3 py-1 text-xs font-bold uppercase tracking-wider ${
+                createSource === "team" ? "bg-violet-100 text-violet-700" : "bg-indigo-100 text-indigo-700"
+              }`}>
+                {createSource === "team" ? "Team sheet" : "Personal sheet"}
+              </span>
+            </div>
+            {placementFormError && (
+              <div className="mb-4 rounded-lg border border-rose-200 bg-rose-50 px-3 py-2 text-sm font-medium text-rose-800">
+                {placementFormError}
+              </div>
+            )}
             <form onSubmit={handleSubmit} className="grid grid-cols-3 gap-4">
               <div>
                 <label className="block text-xs font-medium text-slate-700 mb-1">Candidate Name</label>
@@ -888,26 +1071,27 @@ const AdminEmployeePlacements = () => {
                 <input required type="number" className="w-full px-3 py-2 border rounded-lg text-sm"
                   value={formData.revenue} onChange={e => setFormData({...formData, revenue: e.target.value})} />
               </div>
-              <div>
-                <label className="block text-xs font-medium text-slate-700 mb-1">Lead</label>
-                <input type="text" className="w-full px-3 py-2 border rounded-lg text-sm"
-                  value={formData.teamLead} onChange={e => setFormData({...formData, teamLead: e.target.value})} />
-              </div>
-              <div>
-                <label className="block text-xs font-medium text-slate-700 mb-1">Split With</label>
-                <input type="text" className="w-full px-3 py-2 border rounded-lg text-sm"
-                  value={formData.placementSharing} onChange={e => setFormData({...formData, placementSharing: e.target.value})} />
-              </div>
-              <div>
-                <label className="block text-xs font-medium text-slate-700 mb-1">Total Revenue</label>
-                <input type="number" className="w-full px-3 py-2 border rounded-lg text-sm"
-                  value={formData.totalRevenue} onChange={e => setFormData({...formData, totalRevenue: e.target.value})} />
-              </div>
-              <div>
-                <label className="block text-xs font-medium text-slate-700 mb-1">Revenue as Lead (USD)</label>
-                <input type="number" className="w-full px-3 py-2 border rounded-lg text-sm"
-                  value={formData.revenueAsLead} onChange={e => setFormData({...formData, revenueAsLead: e.target.value})} />
-              </div>
+              {createSource === "team" && (
+                <div>
+                  <label className="block text-xs font-medium text-slate-700 mb-1">Recruiter Name</label>
+                  <input type="text" className="w-full px-3 py-2 border rounded-lg text-sm"
+                    value={formData.recruiterName || ""} onChange={e => setFormData({...formData, recruiterName: e.target.value})} />
+                </div>
+              )}
+              {createSource === "team" && (
+                <>
+                  <div>
+                    <label className="block text-xs font-medium text-slate-700 mb-1">Lead Name</label>
+                    <input type="text" className="w-full px-3 py-2 border rounded-lg text-sm"
+                      value={formData.teamLead} onChange={e => setFormData({...formData, teamLead: e.target.value})} />
+                  </div>
+                  <div>
+                    <label className="block text-xs font-medium text-slate-700 mb-1">Split With</label>
+                    <input type="text" className="w-full px-3 py-2 border rounded-lg text-sm"
+                      value={formData.placementSharing} onChange={e => setFormData({...formData, placementSharing: e.target.value})} />
+                  </div>
+                </>
+              )}
 
               <div>
                 <label className="block text-xs font-medium text-slate-700 mb-1">Billing Status</label>
@@ -923,11 +1107,6 @@ const AdminEmployeePlacements = () => {
                 <label className="block text-xs font-medium text-slate-700 mb-1">Collection Status</label>
                 <input type="text" className="w-full px-3 py-2 border rounded-lg text-sm"
                   value={formData.collectionStatus || ""} onChange={e => setFormData({...formData, collectionStatus: e.target.value})} />
-              </div>
-              <div>
-                <label className="block text-xs font-medium text-slate-700 mb-1">Incentive ETA</label>
-                <input type="date" className="w-full px-3 py-2 border rounded-lg text-sm"
-                  value={formData.incentivePayoutEta} onChange={e => setFormData({...formData, incentivePayoutEta: e.target.value})} />
               </div>
               <div>
                 <label className="block text-xs font-medium text-slate-700 mb-1">Incentive amount (INR)</label>
@@ -946,9 +1125,29 @@ const AdminEmployeePlacements = () => {
                   value={formData.placementBalanceIncentiveAmount || ''} onChange={e => setFormData({...formData, placementBalanceIncentiveAmount: e.target.value})} />
               </div>
               <div className="col-span-3 flex justify-end gap-3 mt-6 border-t pt-4">
-                <button type="button" onClick={() => setShowModal(false)} className="px-4 py-2 text-slate-600 hover:bg-slate-100 rounded-lg">Cancel</button>
-                <button type="submit" className="px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700">
-                  {editingId ? 'Update Placement' : 'Create Placement'}
+                <button
+                  type="button"
+                  onClick={() => {
+                    setShowModal(false);
+                    setPlacementFormError(null);
+                    setFormBaseline(null);
+                  }}
+                  disabled={savingPlacement}
+                  className="px-4 py-2 text-slate-600 hover:bg-slate-100 rounded-lg disabled:opacity-50"
+                >
+                  Cancel
+                </button>
+                <button
+                  type="submit"
+                  disabled={!placementFormDirty || savingPlacement}
+                  className="inline-flex items-center gap-2 rounded-lg bg-blue-600 px-4 py-2 font-semibold text-white transition hover:bg-blue-700 disabled:cursor-not-allowed disabled:bg-slate-200 disabled:text-slate-500"
+                >
+                  {savingPlacement && <span className="h-4 w-4 rounded-full border-2 border-white/40 border-t-white animate-spin" />}
+                  {savingPlacement
+                    ? "Saving…"
+                    : placementFormDirty
+                      ? (editingId ? "Update Placement" : "Create Placement")
+                      : "No changes to save"}
                 </button>
               </div>
             </form>

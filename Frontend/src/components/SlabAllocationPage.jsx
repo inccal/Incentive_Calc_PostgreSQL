@@ -25,6 +25,9 @@ const SlabAllocationPage = () => {
     ]);
     const [saving, setSaving] = useState(false);
     const [message, setMessage] = useState({ type: '', text: '' });
+    const [selectedMembersOpen, setSelectedMembersOpen] = useState(false);
+    /** Collapsed on small screens so slab rows get space; full width preview on lg+ */
+    const [livePreviewOpen, setLivePreviewOpen] = useState(false);
 
     useEffect(() => {
         fetchData();
@@ -65,6 +68,19 @@ const SlabAllocationPage = () => {
             return matchesSearch && matchesRole && matchesTeam && matchesStatus;
         });
     }, [users, searchTerm, roleFilter, teamFilter, statusFilter]);
+
+    const selectedMembersList = useMemo(
+        () => users.filter((u) => selectedUserIds.has(u.id)),
+        [users, selectedUserIds]
+    );
+
+    const selectedMembersSummary = useMemo(() => {
+        if (selectedMembersList.length === 0) return '';
+        if (selectedMembersList.length === 1) return selectedMembersList[0].name;
+        const first = selectedMembersList.slice(0, 2).map((u) => u.name).join(', ');
+        const rest = selectedMembersList.length - 2;
+        return rest > 0 ? `${first} +${rest} more` : first;
+    }, [selectedMembersList]);
 
     const toggleUserSelection = (userId) => {
         const newSelected = new Set(selectedUserIds);
@@ -171,11 +187,11 @@ const SlabAllocationPage = () => {
                     </motion.div>
                 )}
 
-                <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
-                    {/* User List Panel */}
-                    <div className="lg:col-span-2 space-y-6">
-                        <div className="bg-white rounded-2xl shadow-sm border border-slate-200 overflow-hidden">
-                            <div className="p-4 border-b border-slate-100 bg-slate-50/50 flex flex-wrap gap-4 items-center">
+                <div className="grid grid-cols-1 lg:grid-cols-3 gap-8 lg:items-start">
+                    {/* User List Panel — scroll inside card so the slab editor stays in view */}
+                    <div className="lg:col-span-2 space-y-6 min-h-0">
+                        <div className="bg-white rounded-2xl shadow-sm border border-slate-200 overflow-hidden flex flex-col max-h-[calc(100dvh-10rem)] lg:max-h-[calc(100dvh-8.5rem)]">
+                            <div className="p-4 border-b border-slate-100 bg-slate-50/50 flex flex-wrap gap-4 items-center shrink-0">
                                 <div className="relative flex-1 min-w-[200px]">
                                     <svg className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-400" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" /></svg>
                                     <input 
@@ -215,7 +231,7 @@ const SlabAllocationPage = () => {
                                 </select>
                             </div>
 
-                            <div className="overflow-x-auto">
+                            <div className="overflow-x-auto overflow-y-auto flex-1 min-h-0">
                                 <table className="w-full text-left border-collapse">
                                     <thead>
                                         <tr className="bg-slate-50/80 text-slate-500 text-[10px] font-bold uppercase tracking-widest border-b border-slate-100">
@@ -306,21 +322,80 @@ const SlabAllocationPage = () => {
                         </div>
                     </div>
 
-                    {/* Allocation Panel */}
-                    <div className="lg:col-span-1">
-                        <div className="bg-white rounded-2xl shadow-sm border border-slate-200 overflow-hidden sticky top-8">
-                            <div className="p-5 border-b border-slate-100 bg-gradient-to-br from-indigo-900 to-slate-900 text-white">
+                    {/* Allocation Panel — sticky + internal scroll keeps preview & save visible */}
+                    <div className="lg:col-span-1 w-full min-w-0 lg:sticky lg:top-4 lg:z-20">
+                        <div className="bg-white rounded-2xl border border-slate-200 overflow-hidden flex flex-col max-h-[calc(100dvh-4.5rem)] lg:max-h-none lg:overflow-visible shadow-lg ring-1 ring-slate-200/60">
+                            <div className="p-5 border-b border-slate-100 bg-gradient-to-br from-indigo-900 to-slate-900 text-white shrink-0">
                                 <h3 className="font-bold text-lg">Incentive Slab Editor</h3>
                                 <p className="text-indigo-200 text-xs mt-1">
                                     {selectedUserIds.size === 0 
                                         ? 'Select users from the list to begin' 
-                                        : `${selectedUserIds.size} users selected`}
+                                        : `${selectedUserIds.size} user${selectedUserIds.size === 1 ? '' : 's'} selected`}
                                 </p>
+                                {selectedMembersList.length > 0 && (
+                                    <div className="mt-3 border-t border-white/15 pt-3">
+                                        <button
+                                            type="button"
+                                            onClick={() => setSelectedMembersOpen((o) => !o)}
+                                            aria-expanded={selectedMembersOpen}
+                                            className="flex w-full items-start gap-2 rounded-lg py-1.5 text-left outline-none ring-white/30 transition-colors hover:bg-white/5 focus-visible:ring-2"
+                                        >
+                                            <span className="mt-0.5 flex h-7 w-7 shrink-0 items-center justify-center rounded-md bg-white/10 text-white">
+                                                <svg
+                                                    className={`h-4 w-4 transition-transform duration-200 ${selectedMembersOpen ? 'rotate-180' : ''}`}
+                                                    fill="none"
+                                                    stroke="currentColor"
+                                                    viewBox="0 0 24 24"
+                                                    aria-hidden
+                                                >
+                                                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" />
+                                                </svg>
+                                            </span>
+                                            <span className="min-w-0 flex-1">
+                                                <span className="block text-[10px] font-bold uppercase tracking-widest text-indigo-200/90">
+                                                    Selected members
+                                                </span>
+                                                {!selectedMembersOpen && (
+                                                    <span className="mt-1 block text-xs font-medium leading-snug text-white/95 line-clamp-2">
+                                                        {selectedMembersSummary}
+                                                    </span>
+                                                )}
+                                                <span className="mt-0.5 block text-[10px] text-indigo-200/70">
+                                                    {selectedMembersOpen ? 'Tap to hide list' : 'Tap to show full list'}
+                                                </span>
+                                            </span>
+                                        </button>
+                                        <AnimatePresence initial={false}>
+                                            {selectedMembersOpen && (
+                                                <motion.div
+                                                    initial={{ height: 0, opacity: 0 }}
+                                                    animate={{ height: 'auto', opacity: 1 }}
+                                                    exit={{ height: 0, opacity: 0 }}
+                                                    transition={{ duration: 0.2 }}
+                                                    className="overflow-hidden"
+                                                >
+                                                    <ul className="mt-2 max-h-[min(40vh,14rem)] space-y-2 overflow-y-auto border-t border-white/10 pt-3 pr-1 text-xs text-white/95 custom-scrollbar">
+                                                        {selectedMembersList.map((u) => (
+                                                            <li key={u.id} className="flex items-start gap-2 rounded-md py-0.5" title={u.email}>
+                                                                <span className="mt-1.5 h-1 w-1 shrink-0 rounded-full bg-indigo-300" />
+                                                                <span className="min-w-0 leading-snug">
+                                                                    <span className="font-semibold">{u.name}</span>
+                                                                    <span className="block text-[10px] text-indigo-200/80 break-words">{u.email}</span>
+                                                                </span>
+                                                            </li>
+                                                        ))}
+                                                    </ul>
+                                                </motion.div>
+                                            )}
+                                        </AnimatePresence>
+                                    </div>
+                                )}
                             </div>
 
-                            <div className="p-6 space-y-6">
+                            <div className="flex min-h-0 flex-1 flex-col overflow-hidden lg:flex-none lg:min-h-0 lg:overflow-visible">
+                                <div className="min-h-0 flex-1 space-y-4 overflow-y-auto p-4 sm:p-6 sm:space-y-6 pr-2 custom-scrollbar lg:flex-none lg:min-h-0 lg:overflow-visible">
                                 {/* Templates */}
-                                <div>
+                                <div className="shrink-0">
                                     <label className="block text-xs font-bold text-slate-400 uppercase tracking-widest mb-3">Quick Templates</label>
                                     <div className="flex flex-wrap gap-2">
                                         {templates.map(tpl => (
@@ -336,9 +411,9 @@ const SlabAllocationPage = () => {
                                     </div>
                                 </div>
 
-                                {/* Slab Inputs */}
-                                <div className="space-y-3">
-                                    <div className="flex items-center justify-between mb-1">
+                                {/* Slab Inputs — primary scroll region on narrow viewports */}
+                                <div className="min-h-0 space-y-3 pb-2">
+                                    <div className="flex shrink-0 items-center justify-between mb-1">
                                         <label className="block text-xs font-bold text-slate-400 uppercase tracking-widest">Configuration</label>
                                         <button 
                                             onClick={addSlab} 
@@ -349,12 +424,16 @@ const SlabAllocationPage = () => {
                                         </button>
                                     </div>
                                     
-                                    <div className="space-y-2 max-h-[400px] overflow-y-auto pr-2 custom-scrollbar">
+                                    <div className="space-y-2 pr-1">
                                         {editingSlabs.map((slab, idx) => (
-                                            <div key={idx} className="p-3 rounded-xl border border-slate-100 bg-slate-50/50 flex flex-col gap-3 group relative">
+                                            <div key={idx} className="relative flex flex-col gap-2 rounded-xl border border-slate-100 bg-slate-50/50 p-2.5 sm:gap-3 sm:p-3 pr-10 sm:pr-10">
                                                 <button 
+                                                    type="button"
                                                     onClick={() => removeSlab(idx)}
-                                                    className="absolute -right-2 -top-2 bg-white border border-slate-200 text-rose-500 rounded-full h-5 w-5 flex items-center justify-center text-xs opacity-0 group-hover:opacity-100 transition-opacity shadow-sm"
+                                                    disabled={editingSlabs.length <= 1}
+                                                    title={editingSlabs.length <= 1 ? 'At least one slab required' : 'Remove this slab'}
+                                                    aria-label="Remove slab"
+                                                    className="absolute right-2 top-2 flex h-8 w-8 shrink-0 items-center justify-center rounded-lg border border-rose-200 bg-white text-lg font-bold leading-none text-rose-600 shadow-sm transition-colors hover:bg-rose-50 hover:border-rose-300 disabled:cursor-not-allowed disabled:opacity-40 disabled:hover:bg-white"
                                                 >
                                                     ×
                                                 </button>
@@ -395,31 +474,63 @@ const SlabAllocationPage = () => {
                                         ))}
                                     </div>
                                 </div>
-
-                                {/* Preview */}
-                                <div className="pt-4 border-t border-slate-100">
-                                    <label className="block text-xs font-bold text-slate-400 uppercase tracking-widest mb-3">Live Preview</label>
-                                    <div className="scale-90 origin-top">
-                                        <IncentiveSlabTable slabs={editingSlabs} compact />
-                                    </div>
                                 </div>
 
-                                <button 
-                                    onClick={handleSave}
-                                    disabled={selectedUserIds.size === 0 || saving}
-                                    className={`w-full py-3 rounded-xl font-bold text-sm shadow-lg transition-all flex items-center justify-center gap-2 ${
-                                        selectedUserIds.size === 0 
-                                            ? 'bg-slate-200 text-slate-400 cursor-not-allowed shadow-none' 
-                                            : 'bg-indigo-600 hover:bg-indigo-700 text-white shadow-indigo-500/20 active:scale-[0.98]'
-                                    }`}
-                                >
-                                    {saving ? (
-                                        <span className="h-4 w-4 border-2 border-white/30 border-t-white rounded-full animate-spin"></span>
-                                    ) : (
-                                        <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path d="M5 13l4 4L19 7" strokeLinecap="round" strokeLinejoin="round" strokeWidth="2.5" /></svg>
-                                    )}
-                                    Apply Configuration
-                                </button>
+                                {/* Preview + save — compact on mobile; toggle preview so slab rows stay visible */}
+                                <div className="shrink-0 space-y-3 border-t border-slate-100 bg-slate-50/80 p-3 sm:p-5 sm:space-y-4">
+                                    <div>
+                                        <button
+                                            type="button"
+                                            onClick={() => setLivePreviewOpen((o) => !o)}
+                                            aria-expanded={livePreviewOpen}
+                                            className="mb-2 flex w-full items-center justify-between gap-2 rounded-lg py-2 text-left lg:hidden"
+                                        >
+                                            <span className="text-xs font-bold uppercase tracking-widest text-slate-400">
+                                                Live preview
+                                            </span>
+                                            <span className="flex h-8 w-8 shrink-0 items-center justify-center rounded-md border border-slate-200 bg-white text-slate-600">
+                                                <svg
+                                                    className={`h-4 w-4 transition-transform ${livePreviewOpen ? 'rotate-180' : ''}`}
+                                                    fill="none"
+                                                    stroke="currentColor"
+                                                    viewBox="0 0 24 24"
+                                                    aria-hidden
+                                                >
+                                                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" />
+                                                </svg>
+                                            </span>
+                                        </button>
+                                        <label className="mb-2 hidden text-xs font-bold uppercase tracking-widest text-slate-400 lg:mb-3 lg:block">
+                                            Live Preview
+                                        </label>
+                                        <div
+                                            className={`origin-top rounded-lg border border-slate-100 bg-white custom-scrollbar sm:scale-95 ${
+                                                livePreviewOpen
+                                                    ? 'block max-h-52 overflow-x-auto overflow-y-auto p-2'
+                                                    : 'hidden'
+                                            } lg:block lg:max-h-none lg:overflow-x-auto lg:overflow-y-visible lg:p-2`}
+                                        >
+                                            <IncentiveSlabTable slabs={editingSlabs} compact />
+                                        </div>
+                                    </div>
+
+                                    <button 
+                                        onClick={handleSave}
+                                        disabled={selectedUserIds.size === 0 || saving}
+                                        className={`w-full py-3 rounded-xl font-bold text-sm shadow-lg transition-all flex items-center justify-center gap-2 ${
+                                            selectedUserIds.size === 0 
+                                                ? 'bg-slate-200 text-slate-400 cursor-not-allowed shadow-none' 
+                                                : 'bg-indigo-600 hover:bg-indigo-700 text-white shadow-indigo-500/20 active:scale-[0.98]'
+                                        }`}
+                                    >
+                                        {saving ? (
+                                            <span className="h-4 w-4 border-2 border-white/30 border-t-white rounded-full animate-spin"></span>
+                                        ) : (
+                                            <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path d="M5 13l4 4L19 7" strokeLinecap="round" strokeLinejoin="round" strokeWidth="2.5" /></svg>
+                                        )}
+                                        Apply Configuration
+                                    </button>
+                                </div>
                             </div>
                         </div>
                     </div>
