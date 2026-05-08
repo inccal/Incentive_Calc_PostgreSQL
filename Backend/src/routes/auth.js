@@ -74,6 +74,24 @@ function buildAuthUser(user) {
   };
 }
 
+function buildEntraAuthorizeUrl({ tenantId, clientId, redirectUri, state }) {
+  const params = new URLSearchParams({
+    client_id: clientId,
+    response_type: "code",
+    redirect_uri: redirectUri,
+    response_mode: "query",
+    scope: "openid profile email",
+    prompt: "select_account",
+    state,
+  });
+
+  const authorizeUrl = new URL(
+    `https://login.microsoftonline.com/${encodeURIComponent(tenantId)}/oauth2/v2.0/authorize`
+  );
+  authorizeUrl.search = params.toString();
+  return authorizeUrl.toString();
+}
+
 async function issueAppSession(res, user) {
   const accessToken = signAccessToken(user);
   const refreshToken = await createRefreshToken(user.id);
@@ -168,27 +186,61 @@ router.get("/entra/login", (req, res) => {
     maxAge: 10 * 60 * 1000,
   });
 
-  const params = new URLSearchParams({
-    client_id: clientId,
-    response_type: "code",
-    redirect_uri: redirectUri,
-    response_mode: "query",
-    scope: "openid profile email",
-    prompt: "select_account",
+  const redirectTarget = buildEntraAuthorizeUrl({
+    tenantId,
+    clientId,
+    redirectUri,
     state,
   });
-
-  const authorizeUrl = new URL(
-    `https://login.microsoftonline.com/${encodeURIComponent(tenantId)}/oauth2/v2.0/authorize`
-  );
-  authorizeUrl.search = params.toString();
-
-  const redirectTarget = authorizeUrl.toString();
   if (!redirectTarget.startsWith("https://login.microsoftonline.com/")) {
     return res.status(500).json({ error: "Invalid Microsoft Entra authorization URL configuration" });
   }
 
   return res.redirect(302, redirectTarget);
+});
+
+router.get("/entra/authorize-url", (req, res) => {
+  const tenantId =
+    process.env.AZURE_TENANT_ID ||
+    process.env.ENTRA_TENANT_ID ||
+    process.env.MICROSOFT_TENANT_ID;
+  const clientId =
+    process.env.AZURE_CLIENT_ID ||
+    process.env.ENTRA_CLIENT_ID ||
+    process.env.MICROSOFT_CLIENT_ID;
+  const redirectUri =
+    process.env.AZURE_REDIRECT_URI ||
+    process.env.ENTRA_REDIRECT_URI ||
+    process.env.MICROSOFT_REDIRECT_URI;
+
+  if (!tenantId || !clientId || !redirectUri) {
+    return res
+      .status(500)
+      .json({ error: "Microsoft Entra ID is not configured on the server" });
+  }
+
+  const state = Buffer.from(
+    JSON.stringify({ ts: Date.now(), nonce: Math.random().toString(36).slice(2) })
+  ).toString("base64url");
+  res.cookie("entraState", state, {
+    httpOnly: true,
+    secure: process.env.NODE_ENV === "production",
+    sameSite: "lax",
+    path: "/api/auth/entra/callback",
+    maxAge: 10 * 60 * 1000,
+  });
+
+  const authorizeUrl = buildEntraAuthorizeUrl({
+    tenantId,
+    clientId,
+    redirectUri,
+    state,
+  });
+  if (!authorizeUrl.startsWith("https://login.microsoftonline.com/")) {
+    return res.status(500).json({ error: "Invalid Microsoft Entra authorization URL configuration" });
+  }
+
+  return res.json({ authorizeUrl });
 });
 
 router.get("/entra/callback", async (req, res, next) => {

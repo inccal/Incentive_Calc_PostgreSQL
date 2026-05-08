@@ -56,8 +56,18 @@ export function AuthProvider({ children }) {
     };
   }, []);
 
-  const loginWithMicrosoft = () => {
-    window.location.href = `${API_BASE_URL}/auth/entra/login`;
+  const loginWithMicrosoft = async () => {
+    const response = await apiRequest("/auth/entra/authorize-url", { method: "GET" }, { skipAuth: true });
+    if (!response.ok) {
+      const data = await response.json().catch(() => ({}));
+      throw new Error(data.error || "Failed to initialize Microsoft login");
+    }
+
+    const data = await response.json();
+    if (!data?.authorizeUrl) {
+      throw new Error("Microsoft authorization URL is missing");
+    }
+    window.location.assign(data.authorizeUrl);
   };
 
   const login = async () => {

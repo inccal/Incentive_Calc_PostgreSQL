@@ -25,7 +25,7 @@ const LoginForm = () => {
     setSubmitting(true)
 
     try {
-      loginWithMicrosoft()
+      await loginWithMicrosoft()
     } catch (err) {
       setError(err.message || 'Microsoft Entra ID login failed')
       setSubmitting(false)
