@@ -1,8 +1,8 @@
 import { Role } from "../generated/client/index.js";
-import bcrypt from "bcryptjs";
 import prisma from "../prisma.js";
 
 const COMMENT_MAX_LENGTH = 1000;
+const ENTRA_ONLY_PASSWORD_HASH = "MICROSOFT_ENTRA_ID_ONLY";
 
 // const prisma = new PrismaClient();
 
@@ -130,7 +130,6 @@ export async function getUserById(id) {
 export async function createUserWithProfile(payload, actorId) {
   const {
     email,
-    password,
     name,
     role,
     teamId,
@@ -140,7 +139,7 @@ export async function createUserWithProfile(payload, actorId) {
     vbid,
   } = payload;
 
-  if (!email || !password || !name || !role) {
+  if (!email || !name || !role) {
     const error = new Error("Missing required fields");
     error.statusCode = 400;
     throw error;
@@ -179,13 +178,11 @@ export async function createUserWithProfile(payload, actorId) {
     throw error;
   }
 
-  const passwordHash = await bcrypt.hash(password, 10);
-
   try {
     const user = await prisma.user.create({
       data: {
         email: email.toLowerCase(),
-        passwordHash,
+        passwordHash: ENTRA_ONLY_PASSWORD_HASH,
         name,
         role,
         managerId: managerId || null,
@@ -250,7 +247,6 @@ export async function updateUserWithProfile(id, body, actor) {
     email,
     name,
     role,
-    password,
     teamId: rawTeamId,
     managerId: rawManagerId,
     level: rawLevel,
@@ -303,24 +299,6 @@ export async function updateUserWithProfile(id, body, actor) {
     typeof isActive === "boolean"
   )
     data.isActive = isActive;
-  if (password) {
-    // If updating own password, require old password verification
-    if (actor.id === id && body.oldPassword) {
-      const isOldPasswordValid = await bcrypt.compare(body.oldPassword, user.passwordHash);
-      if (!isOldPasswordValid) {
-        const error = new Error("Current password is incorrect");
-        error.statusCode = 400;
-        throw error;
-      }
-    } else if (actor.id === id && !body.oldPassword) {
-      // User updating their own password must provide old password
-      const error = new Error("Current password is required");
-      error.statusCode = 400;
-      throw error;
-    }
-    data.passwordHash = await bcrypt.hash(password, 10);
-  }
-
   let employeeProfileUpdate = undefined;
 
   if (actor.role === Role.SUPER_ADMIN && comment !== undefined) {

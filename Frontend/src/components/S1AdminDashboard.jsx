@@ -810,7 +810,6 @@ const L1AdminsTab = () => {
   const [formData, setFormData] = useState({
     name: "",
     email: "",
-    password: "",
     role: "SUPER_ADMIN",
     level: "L1",
     yearlyTarget: ""
@@ -833,8 +832,6 @@ const L1AdminsTab = () => {
         ...formData,
         yearlyTarget: formData.yearlyTarget ? Number(formData.yearlyTarget) : 0
       };
-      if (editingAdmin && !payload.password) delete payload.password;
-
       const response = await apiRequest(url, {
         method: method,
         body: JSON.stringify(payload),
@@ -888,7 +885,6 @@ const L1AdminsTab = () => {
       setFormData({
           name: admin.name || "",
           email: admin.email || "",
-          password: "",
           role: admin.role || "SUPER_ADMIN",
           level: admin.level || "L1",
           yearlyTarget: admin.yearlyTarget || ""
@@ -906,7 +902,6 @@ const L1AdminsTab = () => {
       setFormData({
         name: "",
         email: "",
-        password: "",
         role: "SUPER_ADMIN",
         level: "L1",
         yearlyTarget: ""
@@ -1067,18 +1062,6 @@ const L1AdminsTab = () => {
                   onChange={(e) => setFormData({ ...formData, email: e.target.value })}
                   className="w-full px-3 py-2 border border-slate-300 rounded-lg focus:ring-2 focus:ring-blue-500 outline-none"
                   placeholder="john@vbeyond.com"
-                />
-              </div>
-              <div>
-                <label className="block text-sm font-medium text-slate-700 mb-1">
-                    Password {editingAdmin && <span className="text-slate-400 font-normal">(Leave blank to keep)</span>}
-                </label>
-                <input
-                  type="password"
-                  required={!editingAdmin}
-                  value={formData.password}
-                  onChange={(e) => setFormData({ ...formData, password: e.target.value })}
-                  className="w-full px-3 py-2 border border-slate-300 rounded-lg focus:ring-2 focus:ring-blue-500 outline-none"
                 />
               </div>
               <div>
@@ -2033,214 +2016,15 @@ const SettingsTab = () => (
    </div>
 );
 
-const MfaSetup = () => {
-    const { user } = useAuth();
-    const [qrCode, setQrCode] = useState(null);
-    const [secret, setSecret] = useState(null);
-    const [token, setToken] = useState('');
-    const [disablePassword, setDisablePassword] = useState('');
-    const [showDisableForm, setShowDisableForm] = useState(false);
-    const [enabled, setEnabled] = useState(false);
-    const [loading, setLoading] = useState(true);
-    const [message, setMessage] = useState('');
-
-    // Check MFA status on mount and when user changes
-    useEffect(() => {
-        if (user) {
-            setEnabled(user.mfaEnabled || false);
-            setLoading(false);
-        } else {
-            // Fallback to localStorage if user context not available
-            const storedUser = localStorage.getItem('user');
-            if (storedUser) {
-                try {
-                    const userData = JSON.parse(storedUser);
-                    setEnabled(userData.mfaEnabled || false);
-                } catch (e) {
-                    setEnabled(false);
-                }
-            }
-            setLoading(false);
-        }
-    }, [user]);
-
-    const startSetup = async () => {
-        try {
-            const res = await apiRequest('/auth/mfa/setup', { method: 'POST' });
-            if(res.ok) {
-                const data = await res.json();
-                setQrCode(data.qrCode);
-                setSecret(data.secret);
-                setMessage('Scan the QR code and enter the token below.');
-            }
-        } catch(e) {
-            setMessage('Error starting setup: ' + e.message);
-        }
-    };
-
-    const verifySetup = async () => {
-        try {
-            const res = await apiRequest('/auth/mfa/verify', { 
-                method: 'POST',
-                body: JSON.stringify({ token })
-            });
-            if(res.ok) {
-                const data = await res.json();
-                if(data.success) {
-                    setEnabled(true);
-                    setMessage('MFA Enabled Successfully!');
-                    setQrCode(null);
-                    setToken('');
-                    // Update user in localStorage
-                    const storedUser = localStorage.getItem('user');
-                    if (storedUser) {
-                        const userData = JSON.parse(storedUser);
-                        userData.mfaEnabled = true;
-                        localStorage.setItem('user', JSON.stringify(userData));
-                    }
-                } else {
-                    setMessage('Invalid Token');
-                }
-            } else {
-                setMessage('Verification failed');
-            }
-        } catch(e) {
-            setMessage('Error: ' + e.message);
-        }
-    };
-
-    const handleDisableMfa = async () => {
-        if (!disablePassword) {
-            setMessage('Please enter your password to disable MFA');
-            return;
-        }
-
-        try {
-            const res = await apiRequest('/auth/mfa/disable', {
-                method: 'POST',
-                body: JSON.stringify({ password: disablePassword })
-            });
-
-            if (res.ok) {
-                const data = await res.json();
-                if (data.success) {
-                    setEnabled(false);
-                    setMessage('MFA Disabled Successfully!');
-                    setDisablePassword('');
-                    setShowDisableForm(false);
-                    // Update user in localStorage and context
-                    const storedUser = localStorage.getItem('user');
-                    if (storedUser) {
-                        const userData = JSON.parse(storedUser);
-                        userData.mfaEnabled = false;
-                        localStorage.setItem('user', JSON.stringify(userData));
-                        // Trigger a refresh by updating the component state
-                        window.dispatchEvent(new Event('storage'));
-                    }
-                }
-            } else {
-                const data = await res.json().catch(() => ({}));
-                setMessage(data.error || 'Failed to disable MFA');
-            }
-        } catch(e) {
-            setMessage('Error: ' + e.message);
-        }
-    };
-
-    if (loading) {
-        return (
-            <div className="bg-white/70 backdrop-blur-xl p-6 rounded-xl shadow-sm border border-white/60">
-                <h3 className="font-bold text-slate-800 mb-4 pb-2 border-b border-slate-100">Multi-Factor Authentication</h3>
-                <p className="text-slate-600">Loading...</p>
-            </div>
-        );
-    }
-
-    return (
-        <div className="bg-white/70 backdrop-blur-xl p-6 rounded-xl shadow-sm border border-white/60">
-            <h3 className="font-bold text-slate-800 mb-4 pb-2 border-b border-slate-100">Multi-Factor Authentication</h3>
-            
-            {enabled ? (
-                <div className="space-y-4">
-                    <div className="text-green-600 font-medium flex items-center gap-2">
-                        <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M5 13l4 4L19 7"></path></svg>
-                        MFA is currently enabled for your account.
-                    </div>
-                    
-                    {!showDisableForm ? (
-                        <button 
-                            onClick={() => setShowDisableForm(true)}
-                            className="bg-red-600 text-white px-4 py-2 rounded-lg text-sm font-medium hover:bg-red-700 transition shadow-sm shadow-red-500/30"
-                        >
-                            Disable MFA
-                        </button>
-                    ) : (
-                        <div className="space-y-4 p-4 bg-red-50 rounded-lg border border-red-200">
-                            <p className="text-sm text-red-800 font-medium">Enter your password to disable MFA</p>
-                            <div className="flex gap-2 max-w-xs">
-                                <input 
-                                    type="password" 
-                                    value={disablePassword} 
-                                    onChange={e => setDisablePassword(e.target.value)}
-                                    placeholder="Enter your password"
-                                    className="flex-1 px-4 py-2 bg-white border border-red-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-red-500/20"
-                                    autoFocus
-                                />
-                                <button 
-                                    onClick={handleDisableMfa}
-                                    className="bg-red-600 text-white px-4 py-2 rounded-lg text-sm font-medium hover:bg-red-700 transition shadow-sm shadow-red-500/30"
-                                >
-                                    Disable
-                                </button>
-                                <button 
-                                    onClick={() => {
-                                        setShowDisableForm(false);
-                                        setDisablePassword('');
-                                        setMessage('');
-                                    }}
-                                    className="bg-slate-200 text-slate-700 px-4 py-2 rounded-lg text-sm font-medium hover:bg-slate-300 transition"
-                                >
-                                    Cancel
-                                </button>
-                            </div>
-                        </div>
-                    )}
-                    {message && <p className={`text-sm mt-2 ${message.includes('Success') ? 'text-green-600' : 'text-red-600'}`}>{message}</p>}
-                </div>
-            ) : (
-                <div className="space-y-4">
-                    <p className="text-slate-600">Protect your account with 2-step verification.</p>
-                    
-                    {!qrCode ? (
-                        <button onClick={startSetup} className="bg-blue-600 text-white px-4 py-2 rounded-lg text-sm font-medium hover:bg-blue-700 transition shadow-sm shadow-blue-500/30">
-                            Enable MFA
-                        </button>
-                    ) : (
-                        <div className="space-y-4">
-                            <div className="p-4 bg-white rounded-lg inline-block shadow-sm border border-slate-100">
-                                <img src={qrCode} alt="MFA QR Code" className="w-32 h-32" />
-                            </div>
-                            <p className="text-sm text-slate-500">Secret: <span className="font-mono bg-slate-100 px-2 py-1 rounded border border-slate-200">{secret}</span></p>
-                            <div className="flex gap-2 max-w-xs">
-                                <input 
-                                    type="text" 
-                                    value={token} 
-                                    onChange={e => setToken(e.target.value)}
-                                    placeholder="Enter 6-digit code"
-                                    className="flex-1 px-4 py-2 bg-white/50 border border-white/60 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500/20 backdrop-blur-sm"
-                                />
-                                <button onClick={verifySetup} className="bg-green-600 text-white px-4 py-2 rounded-lg text-sm font-medium hover:bg-green-700 transition shadow-sm shadow-green-500/30">
-                                    Verify
-                                </button>
-                            </div>
-                        </div>
-                    )}
-                    {message && <p className="text-sm text-slate-600 mt-2">{message}</p>}
-                </div>
-            )}
-        </div>
-    );
-};
+const MfaSetup = () => (
+    <div className="bg-white/70 backdrop-blur-xl p-6 rounded-xl shadow-sm border border-white/60">
+        <h3 className="font-bold text-slate-800 mb-4 pb-2 border-b border-slate-100">Microsoft Entra ID Security</h3>
+        <p className="text-sm text-slate-600">
+            Passwords and multi-factor authentication are managed by Microsoft Entra ID.
+            Use the Microsoft account security portal to change sign-in methods.
+        </p>
+    </div>
+);
 
 const IncentiveSlabsTab = () => (
     <div className="animate-fadeInUp">

@@ -135,6 +135,7 @@ exports.Prisma.TeamScalarFieldEnum = {
 exports.Prisma.UserScalarFieldEnum = {
   id: 'id',
   email: 'email',
+  entraObjectId: 'entraObjectId',
   passwordHash: 'passwordHash',
   name: 'name',
   vbid: 'vbid',

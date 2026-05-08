@@ -27,7 +27,6 @@ const EditProfile = () => {
   const [formData, setFormData] = useState({
     name: "",
     email: "",
-    password: "",
   });
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState("");
@@ -46,7 +45,7 @@ const EditProfile = () => {
     try {
       // In a real app, you might have a dedicated /me endpoint or get specific user details
       // Here we'll simulate getting the data or reuse an existing endpoint if available
-      // For now, we'll just use the ID to let them update name/email/password
+      // For now, we'll just use the ID to let them update name/email
       
       // Fetching user details often requires an admin endpoint or a "me" endpoint
       // Let's assume we can get basic info or just start with empty/placeholder if not easily fetchable without admin rights
@@ -61,7 +60,6 @@ const EditProfile = () => {
         setFormData({
             name: user.name || "",
             email: user.email || "",
-            password: "",
         });
       }
       setLoading(false);
@@ -83,14 +81,11 @@ const EditProfile = () => {
       // Since I can't easily change backend RBAC in this file alone, I'll assume I need to update the backend too.
       // But for now, let's try hitting the endpoint.
       
-      const payload = { ...formData };
-      if (!payload.password) delete payload.password;
-
       // Note: This will likely fail with 403 Forbidden if the backend requires SUPER_ADMIN for PUT /users/:id
       // We will fix the backend in the next step.
       const response = await apiRequest(`/users/${userIdForApi}`, {
         method: "PUT",
-        body: JSON.stringify(payload),
+        body: JSON.stringify(formData),
       });
 
       if (!response.ok) {
@@ -133,17 +128,6 @@ const EditProfile = () => {
               required
               value={formData.email}
               onChange={(e) => setFormData({ ...formData, email: e.target.value })}
-              className="w-full px-3 py-2 border border-slate-300 rounded-lg focus:ring-2 focus:ring-blue-500 outline-none"
-            />
-          </div>
-          <div>
-            <label className="block text-sm font-medium text-slate-700 mb-1">
-              New Password <span className="text-slate-400 font-normal">(Leave blank to keep current)</span>
-            </label>
-            <input
-              type="password"
-              value={formData.password}
-              onChange={(e) => setFormData({ ...formData, password: e.target.value })}
               className="w-full px-3 py-2 border border-slate-300 rounded-lg focus:ring-2 focus:ring-blue-500 outline-none"
             />
           </div>

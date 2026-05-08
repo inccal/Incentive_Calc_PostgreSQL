@@ -49,6 +49,7 @@ model Team {
 model User {
   id              String           @id @default(cuid())
   email           String           @unique
+  entraObjectId   String?          @unique
   passwordHash    String
   name            String
   /// Denormalized from EmployeeProfile; canonical unique VBID is on EmployeeProfile.

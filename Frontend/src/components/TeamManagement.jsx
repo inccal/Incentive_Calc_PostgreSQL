@@ -14,7 +14,6 @@ const TeamManagement = () => {
   const [formData, setFormData] = useState({
     name: "",
     email: "",
-    password: "",
     level: "",
     yearlyTarget: "",
   });
@@ -52,7 +51,6 @@ const TeamManagement = () => {
         role: "EMPLOYEE", // Team leads can only create employees
         targetType // Pass current target type
       };
-      if (editingMember && !payload.password) delete payload.password;
 
       const response = await apiRequest(url, {
         method,
@@ -78,7 +76,6 @@ const TeamManagement = () => {
     setFormData({
       name: member.name,
       email: member.email,
-      password: "",
       level: member.level || "",
       yearlyTarget: member.target || "",
     });
@@ -89,7 +86,6 @@ const TeamManagement = () => {
     setFormData({
       name: "",
       email: "",
-      password: "",
       level: "",
       yearlyTarget: "",
     });
@@ -184,18 +180,6 @@ const TeamManagement = () => {
                     required
                     value={formData.email}
                     onChange={(e) => setFormData({ ...formData, email: e.target.value })}
-                    className="w-full px-3 py-2 border border-slate-300 rounded-lg focus:ring-2 focus:ring-blue-500 outline-none"
-                  />
-                </div>
-                <div>
-                  <label className="block text-sm font-medium text-slate-700 mb-1">
-                    Password {editingMember && <span className="text-slate-400 font-normal">(Leave blank to keep current)</span>}
-                  </label>
-                  <input
-                    type="password"
-                    required={!editingMember}
-                    value={formData.password}
-                    onChange={(e) => setFormData({ ...formData, password: e.target.value })}
                     className="w-full px-3 py-2 border border-slate-300 rounded-lg focus:ring-2 focus:ring-blue-500 outline-none"
                   />
                 </div>

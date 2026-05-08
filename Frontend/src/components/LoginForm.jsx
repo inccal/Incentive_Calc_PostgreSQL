@@ -1,19 +1,23 @@
-import { useState } from 'react'
-import { useNavigate, Link, useLocation } from 'react-router-dom'
+import { useEffect, useState } from 'react'
+import { useNavigate } from 'react-router-dom'
 import { useAuth } from '../context/AuthContext'
 
 const LoginForm = () => {
-  const [email, setEmail] = useState('')
-  const [password, setPassword] = useState('')
-  const [mfaCode, setMfaCode] = useState('')
-  const [mfaRequired, setMfaRequired] = useState(false)
-  const [keepSignedIn, setKeepSignedIn] = useState(false)
   const [error, setError] = useState('')
   const [submitting, setSubmitting] = useState(false)
   const navigate = useNavigate()
-  const location = useLocation()
-  const { login } = useAuth()
-  const successMessage = location.state?.message
+  const { loginWithMicrosoft, user, loading } = useAuth()
+
+  useEffect(() => {
+    if (loading || !user) return
+    if (user.role === 'S1_ADMIN') return navigate('/admin/dashboard', { replace: true })
+    if (user.role === 'SUPER_ADMIN') return navigate('/team', { replace: true })
+    if (user.role === 'TEAM_LEAD') return navigate('/teamlead', { replace: true })
+    if (user.role === 'EMPLOYEE') {
+      const slug = (user.name ?? '').toLowerCase().replace(/\s+/g, '-').replace(/[^a-z0-9-]/g, '') || user.id
+      return navigate(`/employee/${slug}`, { replace: true, state: { employeeId: user.id } })
+    }
+  }, [loading, user, navigate])
 
   const handleSubmit = async (e) => {
     e.preventDefault()
@@ -21,53 +25,9 @@ const LoginForm = () => {
     setSubmitting(true)
 
     try {
-      const result = await login(email, password, mfaCode || null)
-      
-      // Check if MFA is required
-      if (result && result.mfaRequired) {
-        setMfaRequired(true)
-        setSubmitting(false)
-        return
-      }
-
-      // Normal login success
-      const user = result
-      if (user.role === 'S1_ADMIN') {
-        navigate('/admin/dashboard')
-      } else if (user.role === 'SUPER_ADMIN') {
-        navigate('/team')
-      } else if (user.role === 'TEAM_LEAD') {
-        navigate('/teamlead')
-      } else if (user.role === 'EMPLOYEE') {
-        const slug = (user.name ?? '').toLowerCase().replace(/\s+/g, '-').replace(/[^a-z0-9-]/g, '') || user.id
-        navigate(`/employee/${slug}`, {
-          state: {
-            employeeId: user.id,
-          },
-        })
-      } else {
-        navigate('/')
-      }
+      loginWithMicrosoft()
     } catch (err) {
-      const errorMessage = err.message || 'Invalid email or password'
-      setError(errorMessage)
-      
-      // If error is about MFA code, keep MFA form visible
-      if (err.mfaError || errorMessage.toLowerCase().includes('mfa')) {
-        // Keep MFA form visible if it's an MFA-related error
-        setMfaRequired(true)
-        // Clear the MFA code input so user can try again
-        setMfaCode('')
-      } else if (mfaRequired && errorMessage.toLowerCase().includes('invalid')) {
-        // If we already have mfaRequired and error is about invalid credentials, 
-        // it might be invalid MFA code, so keep form visible
-        setMfaRequired(true)
-        setMfaCode('')
-      } else if (!mfaRequired) {
-        // Only reset mfaRequired if it's not an MFA-related error
-        setMfaRequired(false)
-      }
-    } finally {
+      setError(err.message || 'Microsoft Entra ID login failed')
       setSubmitting(false)
     }
   }
@@ -126,12 +86,6 @@ const LoginForm = () => {
           <div className="w-16 h-1 bg-blue-500 mb-8"></div>
 
           <form onSubmit={handleSubmit} className="space-y-6">
-            {/* Success message (e.g. after password reset) */}
-            {successMessage && (
-              <div className="bg-emerald-50 border border-emerald-200 text-emerald-700 px-4 py-3 rounded-lg text-sm">
-                {successMessage}
-              </div>
-            )}
             {/* Error Message */}
             {error && (
               <div className="bg-red-50 border border-red-200 text-red-600 px-4 py-3 rounded-lg text-sm">
@@ -139,75 +93,17 @@ const LoginForm = () => {
               </div>
             )}
 
-            {/* Email Input */}
-            <div>
-              <input
-                type="email"
-                placeholder="Email"
-                value={email}
-                onChange={(e) => setEmail(e.target.value)}
-                required
-                className="w-full px-4 py-3 border-b-2 border-gray-300 focus:border-blue-500 outline-none transition-colors duration-300 bg-transparent text-gray-700 placeholder-gray-400"
-              />
-            </div>
-
-            {/* Password Input */}
-            <div>
-              <input
-                type="password"
-                placeholder="Password"
-                value={password}
-                onChange={(e) => setPassword(e.target.value)}
-                required
-                className="w-full px-4 py-3 border-b-2 border-gray-300 focus:border-blue-500 outline-none transition-colors duration-300 bg-transparent text-gray-700 placeholder-gray-400"
-              />
-            </div>
-
-            {/* MFA Code Input */}
-            {mfaRequired && (
-              <div>
-                <label className="block text-sm font-medium text-gray-700 mb-2">
-                  Enter MFA Code
-                </label>
-                <input
-                  type="text"
-                  placeholder="000000"
-                  value={mfaCode}
-                  onChange={(e) => setMfaCode(e.target.value.replace(/\D/g, '').slice(0, 6))}
-                  required={mfaRequired}
-                  maxLength={6}
-                  className="w-full px-4 py-3 border-b-2 border-gray-300 focus:border-blue-500 outline-none transition-colors duration-300 bg-transparent text-gray-700 placeholder-gray-400 text-center text-2xl tracking-widest"
-                  autoFocus
-                />
-                <p className="text-xs text-gray-500 mt-2 text-center">
-                  Enter the 6-digit code from your authenticator app
-                </p>
-              </div>
-            )}
-
-            {/* Keep me signed in & Already a member */}
-            <div className="flex items-center justify-between text-sm">
-              <label className="flex items-center cursor-pointer group">
-                <input
-                  type="checkbox"
-                  checked={keepSignedIn}
-                  onChange={(e) => setKeepSignedIn(e.target.checked)}
-                  className="w-4 h-4 text-blue-500 border-gray-300 rounded focus:ring-blue-500 focus:ring-2 cursor-pointer"
-                />
-                <span className="ml-2 text-gray-600 group-hover:text-gray-800">Keep me signed in</span>
-              </label>
-              <Link to="/forgot-password" className="text-blue-500 hover:text-blue-600 transition-colors">
-                Forgot password?
-              </Link>
-            </div>
+            <p className="text-sm text-gray-500">
+              Sign in with your company Microsoft Entra ID account. Passwords are managed by Microsoft.
+            </p>
 
             {/* Submit Button */}
             <button
               type="submit"
               disabled={submitting}
-              className="w-full bg-blue-500 hover:bg-blue-600 text-white font-semibold py-3 px-6 rounded-full transition-all duration-300 transform hover:scale-[1.02] shadow-md hover:shadow-lg uppercase tracking-wide"
+              className="w-full bg-blue-500 hover:bg-blue-600 disabled:opacity-70 disabled:cursor-not-allowed text-white font-semibold py-3 px-6 rounded-full transition-all duration-300 transform hover:scale-[1.02] shadow-md hover:shadow-lg uppercase tracking-wide"
             >
-              {submitting ? 'Logging in...' : 'Login'}
+              {submitting ? 'Opening Microsoft...' : 'Sign in with Microsoft'}
             </button>
           </form>
         </div>

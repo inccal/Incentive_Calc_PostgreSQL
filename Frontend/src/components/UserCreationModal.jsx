@@ -5,7 +5,6 @@ const UserCreationModal = ({ isOpen, onClose, editingUser, onSuccess, teams = []
   const [formData, setFormData] = useState({
     name: "",
     email: "",
-    password: "",
     role: defaultRole,
     teamId: "",
     managerId: "",
@@ -27,7 +26,6 @@ const UserCreationModal = ({ isOpen, onClose, editingUser, onSuccess, teams = []
       setFormData({
         name: editingUser.name,
         email: editingUser.email,
-        password: "", // Don't populate password
         role: editingUser.role,
         teamId: editingUser.employeeProfile?.teamId || editingUser.team?.id || "",
         managerId: editingUser.employeeProfile?.managerId || editingUser.manager?.id || "",
@@ -41,7 +39,6 @@ const UserCreationModal = ({ isOpen, onClose, editingUser, onSuccess, teams = []
       setFormData({
         name: "",
         email: "",
-        password: "",
         role: defaultRole,
         teamId: teams.length === 1 ? teams[0].id : "",
         managerId: "",
@@ -86,13 +83,9 @@ const UserCreationModal = ({ isOpen, onClose, editingUser, onSuccess, teams = []
     try {
       const url = editingUser ? `/users/${editingUser.id}` : "/users";
       const method = editingUser ? "PUT" : "POST";
-
-      const payload = { ...formData };
-      if (editingUser && !payload.password) delete payload.password;
-
       const response = await apiRequest(url, {
         method,
-        body: JSON.stringify(payload),
+        body: JSON.stringify(formData),
       });
 
       if (!response.ok) {
@@ -160,19 +153,6 @@ const UserCreationModal = ({ isOpen, onClose, editingUser, onSuccess, teams = []
               onChange={(e) => setFormData({ ...formData, email: e.target.value })}
               className="w-full px-3 py-2 border border-slate-300 rounded-xl focus:ring-2 focus:ring-blue-500 focus:border-blue-500 outline-none transition-all"
               placeholder="email@example.com"
-            />
-          </div>
-          <div>
-            <label className="block text-xs font-semibold text-slate-700 mb-1 uppercase tracking-wide">
-              Password {editingUser && <span className="text-slate-400 font-normal normal-case ml-1">(Leave blank to keep current)</span>}
-            </label>
-            <input
-              type="password"
-              required={!editingUser}
-              value={formData.password}
-              onChange={(e) => setFormData({ ...formData, password: e.target.value })}
-              className="w-full px-3 py-2 border border-slate-300 rounded-xl focus:ring-2 focus:ring-blue-500 focus:border-blue-500 outline-none transition-all"
-              placeholder="••••••••"
             />
           </div>
           <div>

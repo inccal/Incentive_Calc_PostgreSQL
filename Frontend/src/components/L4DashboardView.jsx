@@ -1694,76 +1694,9 @@ export default function L4DashboardView({
                   </svg>
                 </button>
               </div>
-              <h4 className="mb-3 text-sm font-semibold text-slate-700">Change password</h4>
-              <form onSubmit={handleChangePassword} className="space-y-4">
-                {passwordError && (
-                  <p className="rounded-lg bg-red-50 px-3 py-2 text-sm font-medium text-red-700">{passwordError}</p>
-                )}
-                {passwordSuccess && (
-                  <p className="rounded-lg bg-emerald-50 px-3 py-2 text-sm font-medium text-emerald-700">{passwordSuccess}</p>
-                )}
-                <div>
-                  <label htmlFor="l4-old-password" className="mb-1.5 block text-sm font-medium text-slate-700">
-                    Current password
-                  </label>
-                  <input
-                    id="l4-old-password"
-                    type="password"
-                    value={passwordForm.oldPassword}
-                    onChange={(e) => setPasswordForm((p) => ({ ...p, oldPassword: e.target.value }))}
-                    className="w-full rounded-xl border border-slate-200 px-4 py-2.5 text-sm text-slate-900 placeholder-slate-400 focus:border-violet-500 focus:outline-none focus:ring-2 focus:ring-violet-500/20"
-                    placeholder="Enter your current password"
-                    autoComplete="current-password"
-                    required
-                  />
-                </div>
-                <div>
-                  <label htmlFor="l4-new-password" className="mb-1.5 block text-sm font-medium text-slate-700">
-                    New password
-                  </label>
-                  <input
-                    id="l4-new-password"
-                    type="password"
-                    value={passwordForm.newPassword}
-                    onChange={(e) => setPasswordForm((p) => ({ ...p, newPassword: e.target.value }))}
-                    className="w-full rounded-xl border border-slate-200 px-4 py-2.5 text-sm text-slate-900 placeholder-slate-400 focus:border-violet-500 focus:outline-none focus:ring-2 focus:ring-violet-500/20"
-                    placeholder="At least 6 characters"
-                    autoComplete="new-password"
-                    minLength={6}
-                    required
-                  />
-                </div>
-                <div>
-                  <label htmlFor="l4-confirm-password" className="mb-1.5 block text-sm font-medium text-slate-700">
-                    Confirm password
-                  </label>
-                  <input
-                    id="l4-confirm-password"
-                    type="password"
-                    value={passwordForm.confirmPassword}
-                    onChange={(e) => setPasswordForm((p) => ({ ...p, confirmPassword: e.target.value }))}
-                    className="w-full rounded-xl border border-slate-200 px-4 py-2.5 text-sm text-slate-900 placeholder-slate-400 focus:border-violet-500 focus:outline-none focus:ring-2 focus:ring-violet-500/20"
-                    placeholder="Re-enter new password"
-                    autoComplete="new-password"
-                  />
-                </div>
-                <div className="flex gap-3 pt-2">
-                  <button
-                    type="button"
-                    onClick={() => !passwordLoading && setSettingsOpen(false)}
-                    className="flex-1 rounded-xl border border-slate-200 bg-white px-4 py-2.5 text-sm font-medium text-slate-600 hover:bg-slate-50"
-                  >
-                    Cancel
-                  </button>
-                  <button
-                    type="submit"
-                    disabled={passwordLoading}
-                    className="flex-1 rounded-xl bg-violet-600 px-4 py-2.5 text-sm font-semibold text-white shadow-sm hover:bg-violet-700 disabled:opacity-60"
-                  >
-                    {passwordLoading ? 'Updating…' : 'Update password'}
-                  </button>
-                </div>
-              </form>
+              <div className="rounded-xl border border-blue-100 bg-blue-50 px-4 py-3 text-sm text-blue-800">
+                Passwords are managed by Microsoft Entra ID. Use your Microsoft account security settings to make changes.
+              </div>
             </motion.div>
           </motion.div>
         )}

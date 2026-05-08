@@ -1,5 +1,5 @@
 import { createContext, useContext, useEffect, useState } from "react";
-import { apiRequest, storeAccessToken, clearAuthStorage, API_BASE_URL } from "../api/client";
+import { apiRequest, clearAuthStorage, API_BASE_URL } from "../api/client";
 
 const AuthContext = createContext(null);
 
@@ -8,15 +8,35 @@ export function AuthProvider({ children }) {
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
-    const stored = localStorage.getItem("user");
-    if (stored) {
-      try {
-        setUser(JSON.parse(stored));
-      } catch {
-        setUser(null);
+    let mounted = true;
+
+    const initializeSession = async () => {
+      const stored = localStorage.getItem("user");
+      if (stored) {
+        try {
+          if (mounted) setUser(JSON.parse(stored));
+        } catch {
+          if (mounted) setUser(null);
+        }
       }
-    }
-    setLoading(false);
+
+      try {
+        const response = await apiRequest("/auth/me", { method: "GET" }, { skipAuth: false });
+        if (response.ok) {
+          const data = await response.json();
+          if (mounted && data?.user) {
+            setUser(data.user);
+            localStorage.setItem("user", JSON.stringify(data.user));
+          }
+        }
+      } catch {
+        // Ignore bootstrap errors; user remains logged out.
+      } finally {
+        if (mounted) setLoading(false);
+      }
+    };
+
+    initializeSession();
 
     const handleSessionExpired = () => {
       clearAuthStorage();
@@ -26,40 +46,21 @@ export function AuthProvider({ children }) {
     };
 
     window.addEventListener("auth:session-expired", handleSessionExpired);
-    return () => window.removeEventListener("auth:session-expired", handleSessionExpired);
+
+    return () => {
+      mounted = false;
+      window.removeEventListener("auth:session-expired", handleSessionExpired);
+    };
   }, []);
 
-  const login = async (email, password, mfaCode = null) => {
-    const response = await apiRequest(
-      "/auth/login",
-      {
-        method: "POST",
-        body: JSON.stringify({ email, password, ...(mfaCode && { mfaCode }) }),
-      },
-      { skipAuth: true }
-    );
+  const loginWithMicrosoft = () => {
+    window.location.href = `${API_BASE_URL}/auth/entra/login`;
+  };
 
-    if (!response.ok) {
-      const data = await response.json().catch(() => ({}));
-      // If MFA is required, return the mfaRequired flag instead of throwing error
-      if (response.status === 403 && data.mfaRequired) {
-        return { mfaRequired: true, userId: data.userId };
-      }
-      // If invalid MFA code, throw error but include a flag to keep MFA form visible
-      if (response.status === 401 && data.error && data.error.toLowerCase().includes('mfa')) {
-        const error = new Error(data.error || "Invalid MFA code");
-        error.mfaError = true;
-        throw error;
-      }
-      throw new Error(data.error || "Login failed");
-    }
-
-    const data = await response.json();
-    storeAccessToken(data.accessToken);
-    setUser(data.user);
-    localStorage.setItem("user", JSON.stringify(data.user));
-
-    return data.user;
+  const login = async () => {
+    const stored = localStorage.getItem("user");
+    if (stored) return JSON.parse(stored);
+    throw new Error("Password login is disabled. Use Microsoft Entra ID.");
   };
 
   const logout = async () => {
@@ -81,6 +82,7 @@ export function AuthProvider({ children }) {
     user,
     loading,
     login,
+    loginWithMicrosoft,
     logout,
     API_BASE_URL,
   };
