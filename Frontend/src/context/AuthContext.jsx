@@ -21,7 +21,10 @@ export function AuthProvider({ children }) {
       }
 
       try {
-        const response = await apiRequest("/auth/me", { method: "GET" }, { skipAuth: false });
+        const response = await apiRequest("/auth/me", { method: "GET" }, {
+          skipAuth: false,
+          suppressSessionExpiredEvent: true,
+        });
         if (response.ok) {
           const data = await response.json();
           if (mounted && data?.user) {

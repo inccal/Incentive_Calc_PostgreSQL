@@ -31,7 +31,11 @@ async function refreshAccessToken() {
   return data.accessToken;
 }
 
-export async function apiRequest(path, options = {}, { skipAuth } = {}) {
+export async function apiRequest(
+  path,
+  options = {},
+  { skipAuth, suppressSessionExpiredEvent = false } = {}
+) {
   const url = `${API_BASE_URL}${path}`;
 
   const headers = {
@@ -59,7 +63,9 @@ export async function apiRequest(path, options = {}, { skipAuth } = {}) {
     token = await refreshAccessToken();
   } catch {
     // Dispatch session expired event so AuthContext can handle it (logout + message)
-    window.dispatchEvent(new CustomEvent("auth:session-expired"));
+    if (!suppressSessionExpiredEvent) {
+      window.dispatchEvent(new CustomEvent("auth:session-expired"));
+    }
     return initialResponse;
   }
 
