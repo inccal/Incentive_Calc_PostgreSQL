@@ -178,8 +178,17 @@ router.get("/entra/login", (req, res) => {
     state,
   });
 
-  const authorizeUrl = `https://login.microsoftonline.com/${tenantId}/oauth2/v2.0/authorize?${params.toString()}`;
-  return res.redirect(authorizeUrl);
+  const authorizeUrl = new URL(
+    `https://login.microsoftonline.com/${encodeURIComponent(tenantId)}/oauth2/v2.0/authorize`
+  );
+  authorizeUrl.search = params.toString();
+
+  const redirectTarget = authorizeUrl.toString();
+  if (!redirectTarget.startsWith("https://login.microsoftonline.com/")) {
+    return res.status(500).json({ error: "Invalid Microsoft Entra authorization URL configuration" });
+  }
+
+  return res.redirect(302, redirectTarget);
 });
 
 router.get("/entra/callback", async (req, res, next) => {
