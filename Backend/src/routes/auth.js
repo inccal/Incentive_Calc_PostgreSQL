@@ -1,3 +1,4 @@
+import crypto from "crypto";
 import express from "express";
 import prisma from "../prisma.js";
 import {
@@ -72,6 +73,61 @@ function buildAuthUser(user) {
     level: profile?.level,
     yearlyTarget: null,
   };
+}
+
+const ENTRA_OAUTH_STATE_TTL_MS = 15 * 60 * 1000;
+
+function entraOAuthStateSecret() {
+  return (
+    process.env.OAUTH_STATE_SECRET ||
+    process.env.JWT_ACCESS_SECRET ||
+    process.env.JWT_REFRESH_SECRET ||
+    "dev-access-secret"
+  );
+}
+
+/** Signed state carried in the OAuth URL (no cookie needed — avoids devices that drop cookies on return). */
+function createEntraOAuthState() {
+  const payload = Buffer.from(
+    JSON.stringify({
+      ts: Date.now(),
+      n: crypto.randomBytes(12).toString("hex"),
+    })
+  ).toString("base64url");
+  const sig = crypto
+    .createHmac("sha256", entraOAuthStateSecret())
+    .update(payload)
+    .digest("base64url");
+  return `${payload}.${sig}`;
+}
+
+function verifyEntraOAuthState(state) {
+  if (!state || typeof state !== "string") return false;
+  const dot = state.lastIndexOf(".");
+  if (dot <= 0) return false;
+  const payloadB64 = state.slice(0, dot);
+  const sig = state.slice(dot + 1);
+  const expectedSig = crypto
+    .createHmac("sha256", entraOAuthStateSecret())
+    .update(payloadB64)
+    .digest("base64url");
+  if (!sig || expectedSig.length !== sig.length) return false;
+  try {
+    if (!crypto.timingSafeEqual(Buffer.from(expectedSig, "utf8"), Buffer.from(sig, "utf8"))) {
+      return false;
+    }
+  } catch {
+    return false;
+  }
+  let data;
+  try {
+    data = JSON.parse(Buffer.from(payloadB64, "base64url").toString("utf8"));
+  } catch {
+    return false;
+  }
+  if (typeof data.ts !== "number") return false;
+  if (Date.now() - data.ts > ENTRA_OAUTH_STATE_TTL_MS) return false;
+  return true;
 }
 
 function buildEntraAuthorizeUrl({ tenantId, clientId, redirectUri, state }) {
@@ -175,16 +231,7 @@ router.get("/entra/login", (req, res) => {
       .json({ error: "Microsoft Entra ID is not configured on the server" });
   }
 
-  const state = Buffer.from(
-    JSON.stringify({ ts: Date.now(), nonce: Math.random().toString(36).slice(2) })
-  ).toString("base64url");
-  res.cookie("entraState", state, {
-    httpOnly: true,
-    secure: process.env.NODE_ENV === "production",
-    sameSite: "lax",
-    path: "/api/auth/entra/callback",
-    maxAge: 10 * 60 * 1000,
-  });
+  const state = createEntraOAuthState();
 
   const redirectTarget = buildEntraAuthorizeUrl({
     tenantId,
@@ -219,16 +266,7 @@ router.get("/entra/authorize-url", (req, res) => {
       .json({ error: "Microsoft Entra ID is not configured on the server" });
   }
 
-  const state = Buffer.from(
-    JSON.stringify({ ts: Date.now(), nonce: Math.random().toString(36).slice(2) })
-  ).toString("base64url");
-  res.cookie("entraState", state, {
-    httpOnly: true,
-    secure: process.env.NODE_ENV === "production",
-    sameSite: "lax",
-    path: "/api/auth/entra/callback",
-    maxAge: 10 * 60 * 1000,
-  });
+  const state = createEntraOAuthState();
 
   const authorizeUrl = buildEntraAuthorizeUrl({
     tenantId,
@@ -251,10 +289,9 @@ router.get("/entra/callback", async (req, res, next) => {
     if (!code || typeof code !== "string") {
       return res.status(400).json({ error: "Authorization code is missing" });
     }
-    if (!state || typeof state !== "string" || state !== req.cookies?.entraState) {
+    if (!verifyEntraOAuthState(state)) {
       return res.status(400).json({ error: "Invalid login state. Please try again." });
     }
-    res.clearCookie("entraState", { path: "/api/auth/entra/callback" });
 
     const tenantId =
       process.env.AZURE_TENANT_ID ||
