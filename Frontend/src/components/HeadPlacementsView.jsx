@@ -3,6 +3,7 @@ import { motion, AnimatePresence } from 'framer-motion'
 import { useHeadPlacements } from '../hooks/useDashboard'
 import CalculationService from '../utils/calculationService'
 import { apiRequest } from '../api/client'
+import { formatPlacementDate as formatPlacementDateUtc, toPlacementInputDate } from '../utils/placementDates'
 
 const currentYear = new Date().getFullYear()
 const YEAR_OPTIONS = [
@@ -13,18 +14,8 @@ const YEAR_OPTIONS = [
   })),
 ]
 
-const formatDate = (d) => {
-  if (!d) return '-'
-  const date = typeof d === 'string' ? new Date(d) : d
-  return isNaN(date.getTime()) ? '-' : date.toLocaleDateString('en-IN', { day: '2-digit', month: 'short', year: 'numeric' })
-}
-
-const toInputDate = (d) => {
-  if (!d) return ''
-  const date = typeof d === 'string' ? new Date(d) : d
-  if (isNaN(date.getTime())) return ''
-  return date.toISOString().slice(0, 10)
-}
+const formatDate = formatPlacementDateUtc
+const toInputDate = toPlacementInputDate
 
 export default function HeadPlacementsView({ allowEdit = false }) {
   const [placementView, setPlacementView] = useState('team') // 'team' | 'personal'

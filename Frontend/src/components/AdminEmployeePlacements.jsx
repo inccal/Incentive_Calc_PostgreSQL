@@ -2,6 +2,7 @@ import { useState, useEffect } from "react";
 import { useParams, useNavigate } from "react-router-dom";
 import { apiRequest } from "../api/client";
 import CalculationService from "../utils/calculationService";
+import { formatPlacementDate } from "../utils/placementDates";
 
 const AdminEmployeePlacements = () => {
   const { id: userId } = useParams();
@@ -772,8 +773,8 @@ const AdminEmployeePlacements = () => {
                           <td className="py-3 px-2 text-slate-600">{p.teamLead || "-"}</td>
                           <td className="py-3 px-2 text-slate-600">{p.placementSharing || "-"}</td>
                           <td className="py-3 px-2 text-slate-600">{p.placementYear || "-"}</td>
-                          <td className="py-3 px-2 text-slate-600">{new Date(p.doj).toLocaleDateString()}</td>
-                          <td className="py-3 px-2 text-slate-600">{p.doq ? new Date(p.doq).toLocaleDateString() : "-"}</td>
+                          <td className="py-3 px-2 text-slate-600">{formatPlacementDate(p.doj)}</td>
+                          <td className="py-3 px-2 text-slate-600">{p.doq ? formatPlacementDate(p.doq) : "-"}</td>
                           <td className="py-3 px-2 text-slate-600">{p.clientName}</td>
                           <td className="py-3 px-2 text-slate-600">{p.plcId || "-"}</td>
                           <td className="py-3 px-2">
@@ -868,8 +869,8 @@ const AdminEmployeePlacements = () => {
                             <td className="py-3 px-2 text-slate-600">{p.teamLead || "-"}</td>
                             <td className="py-3 px-2 text-slate-600">{p.placementSharing || "-"}</td>
                             <td className="py-3 px-2 text-slate-600">{p.placementYear || "-"}</td>
-                            <td className="py-3 px-2 text-slate-600">{new Date(p.doj).toLocaleDateString()}</td>
-                            <td className="py-3 px-2 text-slate-600">{p.doq ? new Date(p.doq).toLocaleDateString() : "-"}</td>
+                            <td className="py-3 px-2 text-slate-600">{formatPlacementDate(p.doj)}</td>
+                            <td className="py-3 px-2 text-slate-600">{p.doq ? formatPlacementDate(p.doq) : "-"}</td>
                             <td className="py-3 px-2 text-slate-600">{p.clientName}</td>
                             <td className="py-3 px-2 text-slate-600">{p.plcId || "-"}</td>
                             <td className="py-3 px-2">
@@ -957,8 +958,8 @@ const AdminEmployeePlacements = () => {
                           <td className="py-3 px-2 text-slate-600">{p.teamLead || "-"}</td>
                           <td className="py-3 px-2 text-slate-600">{p.placementSharing || "-"}</td>
                           <td className="py-3 px-2 text-slate-600">{p.placementYear || "-"}</td>
-                          <td className="py-3 px-2 text-slate-600">{new Date(p.doj).toLocaleDateString()}</td>
-                          <td className="py-3 px-2 text-slate-600">{p.doq ? new Date(p.doq).toLocaleDateString() : "-"}</td>
+                          <td className="py-3 px-2 text-slate-600">{formatPlacementDate(p.doj)}</td>
+                          <td className="py-3 px-2 text-slate-600">{p.doq ? formatPlacementDate(p.doq) : "-"}</td>
                           <td className="py-3 px-2 text-slate-600">{p.clientName}</td>
                           <td className="py-3 px-2 text-slate-600">{p.plcId || "-"}</td>
                           <td className="py-3 px-2">

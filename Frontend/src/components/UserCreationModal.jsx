@@ -27,8 +27,8 @@ const UserCreationModal = ({ isOpen, onClose, editingUser, onSuccess, teams = []
         name: editingUser.name,
         email: editingUser.email,
         role: editingUser.role,
-        teamId: editingUser.employeeProfile?.teamId || editingUser.team?.id || "",
-        managerId: editingUser.employeeProfile?.managerId || editingUser.manager?.id || "",
+        teamId: editingUser.teamId || editingUser.employeeProfile?.teamId || editingUser.team?.id || "",
+        managerId: editingUser.managerId || editingUser.employeeProfile?.managerId || editingUser.manager?.id || "",
         level: editingUser.employeeProfile?.level || editingUser.level || "",
         vbid: editingUser.employeeProfile?.vbid || editingUser.vbid || "",
       });
@@ -202,7 +202,7 @@ const UserCreationModal = ({ isOpen, onClose, editingUser, onSuccess, teams = []
               </select>
             </div>
             
-            {formData.role === "EMPLOYEE" && formData.teamId && (
+            {formData.teamId && formData.role === "EMPLOYEE" && (formData.level || "L4").toUpperCase() !== "L2" && (
               <div>
                 <label className="block text-xs font-semibold text-slate-700 mb-1 uppercase tracking-wide">Manager (Optional)</label>
                 <select

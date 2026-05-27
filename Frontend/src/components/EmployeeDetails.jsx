@@ -9,6 +9,7 @@ import { Skeleton, CardSkeleton, TableRowSkeleton } from './common/Skeleton'
 import SlabInfoButton from './common/SlabInfoButton'
 import L4DashboardView from './L4DashboardView'
 import IncentiveSlabTable from './common/IncentiveSlabTable'
+import { formatPlacementDate } from '../utils/placementDates'
 
 const EmployeeDetails = () => {
   const navigate = useNavigate()
@@ -83,17 +84,6 @@ const EmployeeDetails = () => {
   const [personalSheetData, setPersonalSheetData] = useState(null);
   const [teamSheetData, setTeamSheetData] = useState(null);
  
-  const formatPlacementDate = (value) => {
-    if (!value) return '-';
-    const d = new Date(value);
-    if (isNaN(d.getTime())) return '-';
-    // Treat sentinel 1990-01-01 as blank (from 1/0/1990 or similar)
-    if (d.getFullYear() === 1990 && d.getMonth() === 0 && d.getDate() === 1) {
-      return '-';
-    }
-    return d.toLocaleDateString();
-  };
-
   const employeeData = useMemo(() => {
     if (!rawData) return null
 

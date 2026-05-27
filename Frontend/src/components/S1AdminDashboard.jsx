@@ -1169,7 +1169,8 @@ const MembersTab = () => {
   };
 
   const handleSuccess = () => {
-    queryClient.invalidateQueries(['members']);
+    queryClient.invalidateQueries({ queryKey: ['members'] });
+    fetchTeams();
     setShowModal(false);
     setEditingUser(null);
   };
@@ -1276,8 +1277,19 @@ const MembersTab = () => {
 
   // Pagination
   const pageSize = 20;
-  const totalPages = Math.ceil(filteredAndSortedMembers.length / pageSize);
-  const paginatedMembers = filteredAndSortedMembers.slice((page - 1) * pageSize, page * pageSize);
+  const totalPages = Math.max(1, Math.ceil(filteredAndSortedMembers.length / pageSize));
+  const currentPage = Math.min(page, totalPages);
+
+  useEffect(() => {
+    if (page !== currentPage) {
+      setPage(currentPage);
+    }
+  }, [page, currentPage]);
+
+  const paginatedMembers = filteredAndSortedMembers.slice(
+    (currentPage - 1) * pageSize,
+    currentPage * pageSize
+  );
 
   const toggleSort = (column) => {
     if (sortBy === column) {
@@ -1744,25 +1756,25 @@ const MembersTab = () => {
             className="flex items-center justify-between text-sm text-slate-600 bg-white/50 backdrop-blur-sm p-4 rounded-xl border border-white/60"
           >
             <div>
-              Showing {((page - 1) * pageSize) + 1} - {Math.min(page * pageSize, filteredAndSortedMembers.length)} of {filteredAndSortedMembers.length} members
+              Showing {filteredAndSortedMembers.length === 0 ? 0 : ((currentPage - 1) * pageSize) + 1} - {Math.min(currentPage * pageSize, filteredAndSortedMembers.length)} of {filteredAndSortedMembers.length} members
             </div>
             <div className="flex gap-2">
               <motion.button
                 whileHover={{ scale: 1.05 }}
                 whileTap={{ scale: 0.95 }}
-                disabled={page <= 1}
+                disabled={currentPage <= 1}
                 onClick={() => setPage((prev) => Math.max(1, prev - 1))}
                 className="px-4 py-2 rounded-xl border border-slate-200 disabled:opacity-40 disabled:cursor-not-allowed hover:bg-white transition-colors font-medium"
               >
                 Previous
               </motion.button>
               <span className="px-4 py-2 text-slate-700 font-medium">
-                Page {page} of {totalPages}
+                Page {currentPage} of {totalPages}
               </span>
               <motion.button
                 whileHover={{ scale: 1.05 }}
                 whileTap={{ scale: 0.95 }}
-                disabled={page >= totalPages}
+                disabled={currentPage >= totalPages}
                 onClick={() => setPage((prev) => Math.min(totalPages, prev + 1))}
                 className="px-4 py-2 rounded-xl border border-slate-200 disabled:opacity-40 disabled:cursor-not-allowed hover:bg-white transition-colors font-medium"
               >

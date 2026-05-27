@@ -4,6 +4,7 @@ import { motion, AnimatePresence } from 'framer-motion'
 import { apiRequest } from '../api/client'
 import { useAuth } from '../context/AuthContext'
 import CalculationService from '../utils/calculationService'
+import { formatPlacementDate } from '../utils/placementDates'
 import { Skeleton } from './common/Skeleton'
 import SlabInfoButton from './common/SlabInfoButton'
 import IncentiveSlabTable from './common/IncentiveSlabTable'
@@ -665,8 +666,8 @@ const TeamLeadPage = () => {
                         <tr key={p.id}>
                           <td className="px-4 py-2 text-slate-800">{p.candidateName}</td>
                           <td className="px-4 py-2 text-slate-600">{p.placementYear ?? '-'}</td>
-                          <td className="px-4 py-2 text-slate-600">{p.doj ? new Date(p.doj).toLocaleDateString() : '-'}</td>
-                          <td className="px-4 py-2 text-slate-600">{p.doq ? new Date(p.doq).toLocaleDateString() : '-'}</td>
+                          <td className="px-4 py-2 text-slate-600">{p.doj ? formatPlacementDate(p.doj) : '-'}</td>
+                          <td className="px-4 py-2 text-slate-600">{p.doq ? formatPlacementDate(p.doq) : '-'}</td>
                           <td className="px-4 py-2 text-slate-600">{p.client}</td>
                           <td className="px-4 py-2 text-slate-600">{p.plcId}</td>
                           <td className="px-4 py-2 text-slate-600">{p.placementType}</td>
@@ -685,8 +686,8 @@ const TeamLeadPage = () => {
                           <td className="px-4 py-2 text-slate-600">{p.recruiterName ?? '-'}</td>
                           <td className="px-4 py-2 text-slate-600">{p.splitWith ?? '-'}</td>
                           <td className="px-4 py-2 text-slate-600">{p.placementYear ?? '-'}</td>
-                          <td className="px-4 py-2 text-slate-600">{p.doj ? new Date(p.doj).toLocaleDateString() : '-'}</td>
-                          <td className="px-4 py-2 text-slate-600">{p.doq ? new Date(p.doq).toLocaleDateString() : '-'}</td>
+                          <td className="px-4 py-2 text-slate-600">{p.doj ? formatPlacementDate(p.doj) : '-'}</td>
+                          <td className="px-4 py-2 text-slate-600">{p.doq ? formatPlacementDate(p.doq) : '-'}</td>
                           <td className="px-4 py-2 text-slate-600">{p.client}</td>
                           <td className="px-4 py-2 text-slate-600">{p.plcId}</td>
                           <td className="px-4 py-2 text-slate-600">{p.placementType}</td>

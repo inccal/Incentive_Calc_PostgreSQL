@@ -89,6 +89,10 @@ const shouldSkipDuplicateCheck = (plcId) => {
   return normalized === "plc-passthrough" || normalized === "0" || normalized === "";
 };
 
+/** UTC midnight for a calendar date (avoids timezone shifting sheet dates by ±1 day). */
+const utcDateFromParts = (year, monthIndex, day) =>
+  new Date(Date.UTC(year, monthIndex, day));
+
 // Helper to parse dates, handling Excel serials, errors (#N/A), and invalid formats
 const parseDateCell = (val) => {
   if (val === undefined || val === null || val === "") return null;
@@ -96,29 +100,47 @@ const parseDateCell = (val) => {
   if (strVal === "" || strVal === "na" || strVal === "-" || strVal === "n/a" || strVal === "0") return null;
   if (/^#(n\/a|ref!|value!|div\/0!|name\?)$/.test(strVal)) return null;
 
-  let d;
+  let calendarDate = null;
+
   if (typeof val === "number") {
-    // Excel date check: numbers like 32874 (1/1/1990)
-    if (val < 32874) return null; // Before 1990
+    // Excel serial (e.g. 46079 = 2026-02-27)
+    if (val < 32874) return null;
 
     const excelEpoch = Date.UTC(1899, 11, 30);
     const ms = excelEpoch + val * 24 * 60 * 60 * 1000;
-    d = new Date(ms);
+    const d = new Date(ms);
+    calendarDate = utcDateFromParts(d.getUTCFullYear(), d.getUTCMonth(), d.getUTCDate());
+  } else if (val instanceof Date) {
+    if (isNaN(val.getTime())) return null;
+    // Use local calendar parts from the sheet cell (what the user entered)
+    calendarDate = utcDateFromParts(val.getFullYear(), val.getMonth(), val.getDate());
   } else {
-    // Handle common invalid string dates
-    if (strVal === '1/0/1990' || strVal === '0/1/1990' || strVal.includes('0/0/')) return null;
-    d = new Date(val);
+    if (strVal === "1/0/1990" || strVal === "0/1/1990" || strVal.includes("0/0/")) return null;
+
+    const mdy = strVal.match(/^(\d{1,2})[\/\-](\d{1,2})[\/\-](\d{4})$/);
+    if (mdy) {
+      calendarDate = utcDateFromParts(Number(mdy[3]), Number(mdy[1]) - 1, Number(mdy[2]));
+    } else if (/^\d{4}-\d{2}-\d{2}/.test(strVal)) {
+      const [y, m, day] = strVal.slice(0, 10).split("-").map(Number);
+      calendarDate = utcDateFromParts(y, m - 1, day);
+    } else {
+      const d = new Date(val);
+      if (isNaN(d.getTime())) return null;
+      calendarDate = utcDateFromParts(d.getFullYear(), d.getMonth(), d.getDate());
+    }
   }
 
-  if (isNaN(d.getTime())) return null;
-  
-  // Handle specific invalid date string formats
-  if (d.getFullYear() <= 1990 && d.getMonth() === 0 && (d.getDate() === 0 || d.getDate() === 1)) {
+  if (!calendarDate || isNaN(calendarDate.getTime())) return null;
+
+  if (
+    calendarDate.getUTCFullYear() <= 1990 &&
+    calendarDate.getUTCMonth() === 0 &&
+    (calendarDate.getUTCDate() === 0 || calendarDate.getUTCDate() === 1)
+  ) {
     return null;
   }
 
-  // Normalize to start of day in UTC to ensure consistent comparison and prevent duplicacy
-  return new Date(Date.UTC(d.getUTCFullYear(), d.getUTCMonth(), d.getUTCDate()));
+  return calendarDate;
 };
 
 // Required headers for personal and team imports
@@ -718,11 +740,11 @@ export async function createPlacement(userId, data, actorId) {
   return placement;
 }
 
-/** Parse date for placement update; returns null for empty/invalid. */
+/** Parse date for placement update; returns undefined for empty/invalid. */
 function parseDateForUpdate(val) {
   if (val === undefined || val === null || val === "") return undefined;
-  const d = typeof val === "string" ? new Date(val) : val;
-  return isNaN(d?.getTime()) ? undefined : d;
+  const parsed = parseDateCell(val);
+  return parsed ?? undefined;
 }
 
 /** Update PersonalPlacement or TeamPlacement by id (used by S1 Admin / Super User edit). */
@@ -1155,8 +1177,7 @@ export async function bulkCreateGlobalPlacements(placementsData, actorId, campai
       // DOQ Logic
       let validDoq = null;
       if (doq && String(doq).toLowerCase() !== 'na' && String(doq).trim() !== '') {
-          const d = new Date(doq);
-          if (!isNaN(d.getTime())) validDoq = d;
+          validDoq = parseDateCell(doq);
       }
 
       // If candidateName is missing, skip placement creation but allow profile update

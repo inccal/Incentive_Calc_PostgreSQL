@@ -80,6 +80,8 @@ export async function listUsersWithRelations({ page = 1, pageSize = 25, actor, r
           name: u.employeeProfile.team.name,
         }
       : null,
+    managerId: u.employeeProfile?.managerId || null,
+    teamId: u.employeeProfile?.teamId || null,
     manager: u.employeeProfile?.manager
       ? {
           id: u.employeeProfile.manager.id,
@@ -308,7 +310,7 @@ export async function updateUserWithProfile(id, body, actor) {
     throw error;
   }
 
-  if (actor.role === Role.SUPER_ADMIN) {
+  if (actor.role === Role.SUPER_ADMIN || actor.role === Role.S1_ADMIN) {
     // Validate vbid uniqueness if being updated - check both User.vbid and EmployeeProfile.vbid
     let finalVbid = vbid !== undefined ? (vbid === "" ? null : vbid.trim()) : (user.employeeProfile?.vbid ?? user.vbid ?? null);
     
@@ -355,8 +357,9 @@ export async function updateUserWithProfile(id, body, actor) {
       finalVbid = trimmedVbid;
     }
 
+    const targetRole = role ?? user.role;
     employeeProfileUpdate =
-      role === Role.SUPER_ADMIN
+      targetRole === Role.SUPER_ADMIN || targetRole === Role.S1_ADMIN
         ? user.employeeProfile
           ? {
               update: {
@@ -412,14 +415,25 @@ export async function updateUserWithProfile(id, body, actor) {
     if (vbid !== undefined) {
       data.vbid = finalVbid;
     }
+
+    // Keep User.managerId in sync with profile (used by hierarchy queries)
+    const effectiveRole = role ?? user.role;
+    if (managerId !== undefined && effectiveRole !== Role.SUPER_ADMIN && effectiveRole !== Role.S1_ADMIN) {
+      data.managerId = managerId;
+    }
   }
 
   if (actor.role === Role.S1_ADMIN && user.employeeProfile && comment !== undefined) {
-    employeeProfileUpdate = {
-      update: {
-        comment: comment === "" ? null : comment,
-      },
-    };
+    const commentValue = comment === "" ? null : comment;
+    if (employeeProfileUpdate?.upsert?.update) {
+      employeeProfileUpdate.upsert.update.comment = commentValue;
+    } else if (!employeeProfileUpdate) {
+      employeeProfileUpdate = {
+        update: {
+          comment: commentValue,
+        },
+      };
+    }
   }
 
   const before = {
