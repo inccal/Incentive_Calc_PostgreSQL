@@ -1,6 +1,8 @@
 import React, { useState } from 'react';
 import { useQuery } from '@tanstack/react-query';
 import { getAuditLogs } from '../api/auditLogs';
+import AuditChangesCell from './AuditChangesCell';
+import { formatAuditAction } from '../utils/auditLogFormat';
 import { API_BASE_URL } from '../api/client';
 import { format } from 'date-fns';
 import { ArrowDownTrayIcon, FunnelIcon, MagnifyingGlassIcon } from '@heroicons/react/24/outline';
@@ -194,7 +196,7 @@ const AdminAuditLogs = () => {
                           )}
                         </td>
                         <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-700">
-                          <span className="font-mono bg-gray-100 px-2 py-1 rounded text-xs">{log.action}</span>
+                          <span className="bg-gray-100 px-2 py-1 rounded text-xs">{formatAuditAction(log.action)}</span>
                         </td>
                         <td className="px-6 py-4 whitespace-nowrap">
                           <span className={`px-2 inline-flex text-xs leading-5 font-semibold rounded-full ${
@@ -207,10 +209,12 @@ const AdminAuditLogs = () => {
                         <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
                           {log.ipAddress || '-'}
                         </td>
-                        <td className="px-6 py-4 text-sm text-gray-500 max-w-xs truncate">
-                           <div className="truncate" title={JSON.stringify(log.changes, null, 2)}>
-                             {JSON.stringify(log.changes)}
-                           </div>
+                        <td className="px-6 py-4 align-top">
+                          {log.changes ? (
+                            <AuditChangesCell changes={log.changes} action={log.action} />
+                          ) : (
+                            <span className="text-gray-400">—</span>
+                          )}
                         </td>
                       </tr>
                     ))

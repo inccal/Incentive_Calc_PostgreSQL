@@ -12,6 +12,8 @@ import UserCreationModal from './UserCreationModal';
 import { motion, AnimatePresence } from 'framer-motion';
 import { getRoleDisplayName, matchesRoleFilter, getDisplayNameFromFilterValue } from '../utils/roleHelpers';
 import HeadPlacementsView from './HeadPlacementsView';
+import AuditChangesCell from './AuditChangesCell';
+import { formatAuditAction } from '../utils/auditLogFormat';
 import SlabAllocationPage from './SlabAllocationPage';
 
 const containerVariants = {
@@ -1927,7 +1929,7 @@ const AuditLogsTab = () => {
                         <th className="py-3">User</th>
                         <th className="py-3">Module</th>
                         <th className="py-3">Action</th>
-                        <th className="py-3">Changes (Old → New)</th>
+                        <th className="py-3 min-w-[280px]">What changed</th>
                     </tr>
                 </thead>
                 <tbody className="divide-y divide-slate-100">
@@ -1954,17 +1956,14 @@ const AuditLogsTab = () => {
                                 </span>
                             </td>
                             <td className="py-3 text-sm text-slate-600">
-                                {log.action}
+                                {formatAuditAction(log.action)}
                             </td>
-                            <td className="py-3 text-xs text-slate-500 max-w-xs truncate">
+                            <td className="py-3 align-top">
                                 {log.changes ? (
-                                    <div className="group relative cursor-help">
-                                        <span className="truncate block">{JSON.stringify(log.changes)}</span>
-                                        <div className="absolute left-0 bottom-full mb-2 hidden group-hover:block bg-slate-800 text-white p-2 rounded text-xs w-64 z-50 shadow-lg whitespace-pre-wrap">
-                                            {JSON.stringify(log.changes, null, 2)}
-                                        </div>
-                                    </div>
-                                ) : '-'}
+                                    <AuditChangesCell changes={log.changes} action={log.action} />
+                                ) : (
+                                    <span className="text-sm text-slate-400">—</span>
+                                )}
                             </td>
                         </tr>
                     ))}
