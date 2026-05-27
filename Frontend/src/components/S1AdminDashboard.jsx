@@ -862,16 +862,17 @@ const L1AdminsTab = () => {
           // Immediately remove from list and refetch
           queryClient.setQueryData(['l1Admins', { page, pageSize }], (old) => {
             if (!old || !old.data) return old;
+            // QueryFn returns the server payload shape: { data: [...], pagination: ... }.
+            // So `old.data` is already the admins array (not nested again).
+            const currentAdmins = Array.isArray(old.data) ? old.data : [];
+            const currentPagination = old.pagination || {};
             return {
               ...old,
-              data: {
-                ...old.data,
-                data: (old.data.data || []).filter(a => a.id !== id),
-                pagination: {
-                  ...old.data.pagination,
-                  total: Math.max(0, (old.data.pagination?.total || 0) - 1)
-                }
-              }
+              data: currentAdmins.filter(a => a.id !== id),
+              pagination: {
+                ...currentPagination,
+                total: Math.max(0, (currentPagination.total || 0) - 1),
+              },
             };
           });
           queryClient.invalidateQueries(['l1Admins']);
@@ -1191,7 +1192,9 @@ const MembersTab = () => {
 
   // Client-side filtering and sorting
   const filteredAndSortedMembers = useMemo(() => {
-    let filtered = [...allMembers];
+    // `allMembers` should always be an array, but defensive guard prevents white-screens
+    // if query cache shape changes (e.g. after delete).
+    let filtered = Array.isArray(allMembers) ? [...allMembers] : [];
 
     // Search filter
     if (searchQuery) {
@@ -1297,12 +1300,12 @@ const MembersTab = () => {
           // Immediately remove from list and refetch
           queryClient.setQueryData(['members', { page }], (old) => {
             if (!old) return old;
+            // QueryFn returns the server payload shape: { data: [...members], pagination: ... }.
+            // So `old.data` is already the members array (not nested twice).
+            const currentMembers = Array.isArray(old.data) ? old.data : [];
             return {
               ...old,
-              data: {
-                ...old.data,
-                data: (old.data?.data || []).filter(m => m.id !== id)
-              }
+              data: currentMembers.filter(m => m.id !== id)
             };
           });
           // Refetch to ensure consistency
