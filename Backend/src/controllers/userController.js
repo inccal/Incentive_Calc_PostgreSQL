@@ -4,6 +4,23 @@ import prisma from "../prisma.js";
 const COMMENT_MAX_LENGTH = 1000;
 const ENTRA_ONLY_PASSWORD_HASH = "MICROSOFT_ENTRA_ID_ONLY";
 
+/** Human-readable user fields for audit logs (names only, no internal IDs). */
+function userAuditSnapshot(user) {
+  const profile = user?.employeeProfile;
+  return {
+    name: user?.name ?? null,
+    email: user?.email ?? null,
+    role: user?.role ?? null,
+    isActive: user?.isActive ?? null,
+    level: profile?.level ?? null,
+    team: profile?.team?.name ?? null,
+    manager: profile?.manager?.name ?? null,
+    vbid: profile?.vbid ?? user?.vbid ?? null,
+    comment: profile?.comment ?? null,
+    targetType: profile?.targetType ?? null,
+  };
+}
+
 // const prisma = new PrismaClient();
 
 export async function listUsersWithRelations({ page = 1, pageSize = 25, actor, role }) {
@@ -216,16 +233,7 @@ export async function createUserWithProfile(payload, actorId) {
         action: "USER_CREATED",
         entityType: "User",
         entityId: user.id,
-        changes: {
-          email: user.email,
-          name: user.name,
-          role: user.role,
-          vbid: trimmedVbid,
-          teamId: user.employeeProfile?.teamId || null,
-          managerId: user.employeeProfile?.managerId || null,
-          level: user.employeeProfile?.level || null,
-          targetType: user.employeeProfile?.targetType || null,
-        },
+        changes: userAuditSnapshot(user),
       },
     });
 
@@ -285,7 +293,11 @@ export async function updateUserWithProfile(id, body, actor) {
 
   const user = await prisma.user.findUnique({
     where: { id },
-    include: { employeeProfile: true },
+    include: {
+      employeeProfile: {
+        include: { team: true, manager: true },
+      },
+    },
   });
   if (!user) {
     const error = new Error("User not found");
@@ -447,13 +459,7 @@ export async function updateUserWithProfile(id, body, actor) {
     }
   }
 
-  const before = {
-    email: user.email,
-    name: user.name,
-    role: user.role,
-    isActive: user.isActive,
-    employeeProfile: user.employeeProfile,
-  };
+  const before = userAuditSnapshot(user);
 
   const updated = await prisma.user.update({
     where: { id },
@@ -476,13 +482,7 @@ export async function updateUserWithProfile(id, body, actor) {
       entityId: updated.id,
       changes: {
         before,
-        after: {
-          email: updated.email,
-          name: updated.name,
-          role: updated.role,
-          isActive: updated.isActive,
-          employeeProfile: updated.employeeProfile,
-        },
+        after: userAuditSnapshot(updated),
       },
     },
   });

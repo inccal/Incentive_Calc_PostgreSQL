@@ -5,9 +5,7 @@ const FIELD_LABELS = {
   isActive: "Account status",
   level: "Level",
   team: "Team",
-  teamId: "Team",
   manager: "Manager",
-  managerId: "Manager",
   vbid: "VB ID",
   comment: "Comment",
   targetType: "Target type",
@@ -34,10 +32,22 @@ const ACTION_LABELS = {
   LOGIN_ATTEMPT: "Sign-in",
 };
 
-const SKIP_KEYS = new Set(["entraObjectId", "employeeProfile"]);
+const SKIP_KEYS = new Set([
+  "entraObjectId",
+  "employeeProfile",
+  "teamId",
+  "managerId",
+]);
+
+function looksLikeInternalId(value) {
+  if (value == null || typeof value !== "string") return false;
+  const s = value.trim();
+  return /^c[a-z0-9]{20,}$/i.test(s) || (s.length >= 20 && !/\s/.test(s) && !s.includes("@"));
+}
 
 function formatScalar(key, value) {
   if (value === null || value === undefined || value === "") return "—";
+  if (looksLikeInternalId(String(value))) return "—";
   if (key === "role") return ROLE_LABELS[value] || String(value);
   if (key === "isActive") return value ? "Active" : "Inactive";
   if (key === "provider" && value === "MICROSOFT_ENTRA_ID") return "Microsoft";
@@ -51,6 +61,16 @@ function formatScalar(key, value) {
 
 function flattenUserSnapshot(snapshot) {
   if (!snapshot || typeof snapshot !== "object") return {};
+
+  // New audit shape: flat snapshot with team/manager names
+  if (!snapshot.employeeProfile && (snapshot.team !== undefined || snapshot.manager !== undefined)) {
+    const flat = {};
+    for (const key of ["name", "email", "role", "isActive", "level", "team", "manager", "vbid", "comment", "targetType"]) {
+      if (snapshot[key] !== undefined) flat[key] = snapshot[key];
+    }
+    return flat;
+  }
+
   const profile = snapshot.employeeProfile;
   const flat = {
     name: snapshot.name,
@@ -61,9 +81,7 @@ function flattenUserSnapshot(snapshot) {
   if (profile && typeof profile === "object") {
     if (profile.level != null) flat.level = profile.level;
     if (profile.team?.name) flat.team = profile.team.name;
-    else if (profile.teamId) flat.teamId = profile.teamId;
     if (profile.manager?.name) flat.manager = profile.manager.name;
-    else if (profile.managerId) flat.managerId = profile.managerId;
     if (profile.vbid != null) flat.vbid = profile.vbid;
     if (profile.comment != null) flat.comment = profile.comment;
     if (profile.targetType != null) flat.targetType = profile.targetType;
@@ -80,8 +98,13 @@ function diffFlat(before, after) {
     const oldVal = before[key];
     const newVal = after[key];
     if (JSON.stringify(oldVal) === JSON.stringify(newVal)) continue;
+
+    const oldDisplay = formatScalar(key, oldVal);
+    const newDisplay = formatScalar(key, newVal);
+    if (oldDisplay === "—" && newDisplay === "—") continue;
+
     const label = FIELD_LABELS[key] || key.replace(/([A-Z])/g, " $1").replace(/^./, (s) => s.toUpperCase());
-    lines.push(`${label}: ${formatScalar(key, oldVal)} → ${formatScalar(key, newVal)}`);
+    lines.push(`${label}: ${oldDisplay} → ${newDisplay}`);
   }
   return lines;
 }
@@ -99,14 +122,15 @@ function formatLoginChanges(changes) {
 }
 
 function formatCreateChanges(changes) {
+  const flat = flattenUserSnapshot(changes);
   const lines = [];
-  if (changes.name) lines.push(`Created user: ${changes.name}`);
-  if (changes.email) lines.push(`Email: ${changes.email}`);
-  if (changes.role) lines.push(`Role: ${formatScalar("role", changes.role)}`);
-  if (changes.level) lines.push(`Level: ${changes.level}`);
-  if (changes.vbid) lines.push(`VB ID: ${changes.vbid}`);
-  if (changes.teamId) lines.push(`Team assigned`);
-  if (changes.managerId) lines.push(`Manager assigned`);
+  if (flat.name) lines.push(`Created user: ${flat.name}`);
+  if (flat.email) lines.push(`Email: ${flat.email}`);
+  if (flat.role) lines.push(`Role: ${formatScalar("role", flat.role)}`);
+  if (flat.level) lines.push(`Level: ${flat.level}`);
+  if (flat.vbid) lines.push(`VB ID: ${flat.vbid}`);
+  if (flat.team) lines.push(`Team: ${flat.team}`);
+  if (flat.manager) lines.push(`Manager: ${flat.manager}`);
   return lines.length ? lines : ["New user created"];
 }
 
@@ -115,6 +139,7 @@ function formatGenericFlat(changes) {
   for (const [key, value] of Object.entries(changes)) {
     if (SKIP_KEYS.has(key) || value === null || value === undefined) continue;
     if (typeof value === "object") continue;
+    if (looksLikeInternalId(String(value))) continue;
     const label = FIELD_LABELS[key] || key.replace(/_/g, " ");
     lines.push(`${label}: ${formatScalar(key, value)}`);
   }
