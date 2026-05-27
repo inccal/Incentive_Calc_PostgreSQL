@@ -1175,9 +1175,9 @@ const MembersTab = () => {
   };
 
   const { data: { data: allMembers = [], pagination } = {}, isLoading: loading } = useQuery({
-    queryKey: ['members', { page }],
+    queryKey: ['members'],
     queryFn: async () => {
-        const params = { page, pageSize: 1000 }; // Fetch all for client-side filtering/sorting
+        const params = { page: 1, pageSize: 1000 }; // Fetch all for client-side filtering/sorting
         const res = await getUsers(params);
         // Filter out S1_ADMIN, SUPER_ADMIN, LIMITED_ACCESS (but keep inactive users for filtering)
         res.data = (res.data || []).filter(u => 
@@ -1298,7 +1298,7 @@ const MembersTab = () => {
             throw new Error(data.error || "Failed to delete");
           }
           // Immediately remove from list and refetch
-          queryClient.setQueryData(['members', { page }], (old) => {
+          queryClient.setQueryData(['members'], (old) => {
             if (!old) return old;
             // QueryFn returns the server payload shape: { data: [...members], pagination: ... }.
             // So `old.data` is already the members array (not nested twice).

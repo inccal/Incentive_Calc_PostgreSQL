@@ -72,6 +72,7 @@ export async function listUsersWithRelations({ page = 1, pageSize = 25, actor, r
     name: u.name,
     role: u.role,
     isActive: u.isActive,
+    vbid: u.vbid || u.employeeProfile?.vbid || null,
     level: u.employeeProfile?.level || null,
     team: u.employeeProfile?.team
       ? {
