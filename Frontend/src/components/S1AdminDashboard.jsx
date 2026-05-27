@@ -1170,6 +1170,7 @@ const MembersTab = () => {
 
   const handleSuccess = () => {
     queryClient.invalidateQueries({ queryKey: ['members'] });
+    queryClient.invalidateQueries({ queryKey: ['hierarchyData'] });
     fetchTeams();
     setShowModal(false);
     setEditingUser(null);
@@ -1321,7 +1322,8 @@ const MembersTab = () => {
             };
           });
           // Refetch to ensure consistency
-          queryClient.invalidateQueries(['members']);
+          queryClient.invalidateQueries({ queryKey: ['members'] });
+          queryClient.invalidateQueries({ queryKey: ['hierarchyData'] });
       } catch (err) {
           alert(err.message || 'Failed to delete member');
       }

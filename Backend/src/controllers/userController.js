@@ -296,7 +296,18 @@ export async function updateUserWithProfile(id, body, actor) {
   const data = {};
   if (email) data.email = email.toLowerCase();
   if (name) data.name = name;
-  if (actor.role === Role.SUPER_ADMIN && role) data.role = role;
+  if (role) {
+    if (actor.role === Role.SUPER_ADMIN) {
+      data.role = role;
+    } else if (
+      actor.role === Role.S1_ADMIN &&
+      user.role !== Role.SUPER_ADMIN &&
+      user.role !== Role.S1_ADMIN &&
+      [Role.TEAM_LEAD, Role.EMPLOYEE, Role.LIMITED_ACCESS].includes(role)
+    ) {
+      data.role = role;
+    }
+  }
   if (
     actor.role === Role.SUPER_ADMIN &&
     typeof isActive === "boolean"

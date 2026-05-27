@@ -441,6 +441,7 @@ export async function getSuperAdminOverview(currentUser, year) {
             const node = {
                 id: report.id,
                 name: report.user.name,
+                role: report.user.role,
                 level: report.level || "L4",
                 target: target,
                 targetType: targetType,
@@ -457,7 +458,9 @@ export async function getSuperAdminOverview(currentUser, year) {
     };
 
     const leads = team.employees.filter(
-      (p) => p.user.role === Role.TEAM_LEAD && levelL2L3(p)
+      (p) =>
+        levelL2L3(p) &&
+        (p.user.role === Role.TEAM_LEAD || String(p.level || "").toUpperCase() === "L2")
     );
 
     const teamLeads = leads.map((lead) => {
@@ -494,6 +497,7 @@ export async function getSuperAdminOverview(currentUser, year) {
       const leadNode = {
         id: lead.id,
         name: lead.user.name,
+        role: lead.user.role,
         level: lead.level || "L2",
         target: leadTarget,
         targetType: leadTargetType,
