@@ -130,39 +130,54 @@ router.patch(
   }
 );
 
+async function hardDeleteUserById(id) {
+  await prisma.$transaction(async (tx) => {
+    const batchIds = (
+      await tx.placementImportBatch.findMany({
+        where: { uploaderId: id },
+        select: { id: true },
+      })
+    ).map((b) => b.id);
+
+    if (batchIds.length > 0) {
+      await tx.personalPlacement.deleteMany({ where: { batchId: { in: batchIds } } });
+      await tx.teamPlacement.deleteMany({ where: { batchId: { in: batchIds } } });
+      await tx.placementImportBatch.deleteMany({ where: { id: { in: batchIds } } });
+    }
+
+    await tx.personalPlacement.deleteMany({ where: { employeeId: id } });
+    await tx.teamPlacement.deleteMany({ where: { leadId: id } });
+    await tx.refreshToken.deleteMany({ where: { userId: id } });
+    await tx.incentiveSlab.deleteMany({ where: { userId: id } });
+    await tx.auditLog.updateMany({ where: { actorId: id }, data: { actorId: null } });
+    await tx.employeeProfile.updateMany({ where: { managerId: id }, data: { managerId: null } });
+    await tx.user.updateMany({ where: { managerId: id }, data: { managerId: null } });
+    await tx.employeeProfile.deleteMany({ where: { id } });
+    await tx.user.delete({ where: { id } });
+  });
+}
+
 router.delete(
   "/:id",
   requireRole(Role.SUPER_ADMIN, Role.S1_ADMIN),
   async (req, res, next) => {
     try {
       const { id } = req.params;
+      const exists = await prisma.user.findUnique({ where: { id }, select: { id: true } });
+      if (!exists) {
+        return res.status(404).json({ error: "User not found" });
+      }
 
-      // Revoke refresh tokens first
-      await prisma.refreshToken.updateMany({
-        where: { userId: id },
-        data: { isRevoked: true },
-      });
-
-      // Delete EmployeeProfile if it exists (must delete before User due to foreign key)
-      await prisma.employeeProfile.deleteMany({
-        where: { id },
-      });
-
-      // Hard delete the User (this will cascade to related records that allow it)
-      await prisma.user.delete({
-        where: { id },
-      });
-
+      await hardDeleteUserById(id);
       res.status(204).send();
     } catch (err) {
-      // Handle case where user doesn't exist or has related records
-      if (err.code === 'P2025') {
-        return res.status(404).json({ error: 'User not found' });
+      if (err.code === "P2025") {
+        return res.status(404).json({ error: "User not found" });
       }
-      // Handle foreign key constraint violations
-      if (err.code === 'P2003') {
-        return res.status(400).json({ 
-          error: 'Cannot delete user: user has related records that must be removed first' 
+      if (err.code === "P2003") {
+        return res.status(400).json({
+          error:
+            "Cannot delete user: they are still referenced elsewhere (e.g. another user’s manager). Reassign those links and try again.",
         });
       }
       next(err);

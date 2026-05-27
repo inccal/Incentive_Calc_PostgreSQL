@@ -1065,7 +1065,7 @@ export async function bulkCreateGlobalPlacements(placementsData, actorId, campai
 
       let employeeId = providedEmployeeId;
 
-      // Lookup or Create User if ID is missing
+      // Lookup User if ID is missing. IMPORTANT: never auto-create new users during import.
       if (!employeeId && recruiterName) {
         let user = await prisma.user.findFirst({
           where: {
@@ -1084,42 +1084,28 @@ export async function bulkCreateGlobalPlacements(placementsData, actorId, campai
              }
         }
 
-        // Create User if not found
+        // Match existing member by email local-part (e.g. alishai@vantage.com when sheet says "Alishai")
         if (!user) {
-             const baseEmail = recruiterName.replace(/[^a-zA-Z0-9]/g, '.').toLowerCase() + '@vbeyond.com';
-             let email = baseEmail;
-             let counter = 1;
-             // Simple collision check loop (async inside loop is fine for low volume creation)
-             while (await prisma.user.findUnique({ where: { email } })) {
-                 email = baseEmail.replace('@', `${counter}@`);
-                 counter++;
-             }
-
-             try {
-                 user = await prisma.user.create({
-                     data: {
-                         name: recruiterName.trim(),
-                         email: email,
-                         passwordHash: '$2a$10$McDSEu7JWMAtZo0ykFIRx.U1Lf/qBQl/rF92qLxvM8VCRXdgsFSea', // Default password
-                         role: 'EMPLOYEE',
-                         employeeProfile: {
-                             create: {
-                                 vbid: vbid ? String(vbid).trim() : null,
-                             }
-                         }
-                     }
-                 });
-             } catch (createErr) {
-                 console.error(`Failed to create user ${recruiterName}:`, createErr.message);
-             }
+          const emailLocal = recruiterName.replace(/[^a-zA-Z0-9]/g, "").toLowerCase();
+          if (emailLocal) {
+            user = await prisma.user.findFirst({
+              where: {
+                email: { startsWith: `${emailLocal}@`, mode: "insensitive" },
+              },
+            });
+          }
         }
 
-        if (user) {
-          employeeId = user.id;
-        } else {
-           errors.push({ data, error: `Recruiter not found: "${recruiterName}"` });
-           continue;
+        // If not found in your directory, skip the row (no auto-creation).
+        if (!user) {
+          errors.push({
+            data,
+            error: `Recruiter is not in directory, skipping upload: "${recruiterName}"`,
+          });
+          continue;
         }
+
+        employeeId = user.id;
       }
 
       if (!employeeId) {
@@ -1138,19 +1124,21 @@ export async function bulkCreateGlobalPlacements(placementsData, actorId, campai
           if (Object.keys(updateData).length > 0) {
             const profile = await prisma.employeeProfile.findUnique({ where: { id: employeeId } });
             if (!profile) {
-              await prisma.employeeProfile.create({
-                data: { id: employeeId, ...updateData },
+              errors.push({
+                data,
+                error: `Member profile not found in directory, skipping upload for employeeId: ${employeeId}`,
               });
-            } else {
-              const finalUpdates = {};
-              if (updateData.vbid != null && !profile.vbid) finalUpdates.vbid = updateData.vbid;
-              if (updateData.targetType !== undefined) finalUpdates.targetType = updateData.targetType;
-              if (Object.keys(finalUpdates).length > 0) {
-                await prisma.employeeProfile.update({
-                  where: { id: employeeId },
-                  data: finalUpdates,
-                });
-              }
+              continue;
+            }
+
+            const finalUpdates = {};
+            if (updateData.vbid != null && !profile.vbid) finalUpdates.vbid = updateData.vbid;
+            if (updateData.targetType !== undefined) finalUpdates.targetType = updateData.targetType;
+            if (Object.keys(finalUpdates).length > 0) {
+              await prisma.employeeProfile.update({
+                where: { id: employeeId },
+                data: finalUpdates,
+              });
             }
           }
       }
