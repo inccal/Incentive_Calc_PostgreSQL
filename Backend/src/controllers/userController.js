@@ -320,11 +320,17 @@ export async function updateUserWithProfile(id, body, actor) {
       data.role = role;
     }
   }
-  if (
-    actor.role === Role.SUPER_ADMIN &&
-    typeof isActive === "boolean"
-  )
-    data.isActive = isActive;
+  if (typeof isActive === "boolean") {
+    if (actor.role === Role.SUPER_ADMIN) {
+      data.isActive = isActive;
+    } else if (
+      actor.role === Role.S1_ADMIN &&
+      user.role !== Role.SUPER_ADMIN &&
+      user.role !== Role.S1_ADMIN
+    ) {
+      data.isActive = isActive;
+    }
+  }
   let employeeProfileUpdate = undefined;
 
   if (actor.role === Role.SUPER_ADMIN && comment !== undefined) {

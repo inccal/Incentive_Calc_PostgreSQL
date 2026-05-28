@@ -10,6 +10,7 @@ const UserCreationModal = ({ isOpen, onClose, editingUser, onSuccess, teams = []
     managerId: "",
     level: "",
     vbid: "",
+    isActive: true,
   });
 
   const [error, setError] = useState("");
@@ -31,6 +32,7 @@ const UserCreationModal = ({ isOpen, onClose, editingUser, onSuccess, teams = []
         managerId: editingUser.managerId || editingUser.employeeProfile?.managerId || editingUser.manager?.id || "",
         level: editingUser.employeeProfile?.level || editingUser.level || "",
         vbid: editingUser.employeeProfile?.vbid || editingUser.vbid || "",
+        isActive: editingUser.isActive !== false,
       });
     } else {
       // Determine default level based on defaultRole
@@ -44,6 +46,7 @@ const UserCreationModal = ({ isOpen, onClose, editingUser, onSuccess, teams = []
         managerId: "",
         level: defaultLevel,
         vbid: "",
+        isActive: true,
       });
     }
     setError("");
@@ -122,6 +125,19 @@ const UserCreationModal = ({ isOpen, onClose, editingUser, onSuccess, teams = []
             </>
           )}
         </h2>
+        {editingUser && (
+          <div className="mb-4">
+            <span
+              className={`inline-flex items-center px-2 py-1 rounded-full text-xs font-medium border ${
+                formData.isActive
+                  ? "bg-green-100 text-green-700 border-green-200"
+                  : "bg-red-100 text-red-700 border-red-200"
+              }`}
+            >
+              {formData.isActive ? "Active" : "Inactive"}
+            </span>
+          </div>
+        )}
         
         {error && (
           <div className="mb-4 p-3 bg-red-50 border border-red-200 text-red-600 rounded-lg text-sm flex items-center gap-2">
@@ -222,6 +238,20 @@ const UserCreationModal = ({ isOpen, onClose, editingUser, onSuccess, teams = []
               </div>
             )}
           </div>
+
+          {editingUser && (
+            <div>
+              <label className="block text-xs font-semibold text-slate-700 mb-1 uppercase tracking-wide">Status</label>
+              <select
+                value={formData.isActive ? "ACTIVE" : "INACTIVE"}
+                onChange={(e) => setFormData({ ...formData, isActive: e.target.value === "ACTIVE" })}
+                className="w-full px-3 py-2 border border-slate-300 rounded-xl focus:ring-2 focus:ring-blue-500 focus:border-blue-500 outline-none transition-all bg-white"
+              >
+                <option value="ACTIVE">Active</option>
+                <option value="INACTIVE">Inactive</option>
+              </select>
+            </div>
+          )}
           
           <div className="flex justify-end gap-3 mt-6 pt-4 border-t border-slate-100">
             <button

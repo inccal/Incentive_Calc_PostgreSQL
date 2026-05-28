@@ -814,7 +814,7 @@ const L1AdminsTab = () => {
     email: "",
     role: "SUPER_ADMIN",
     level: "L1",
-    yearlyTarget: ""
+    isActive: true,
   });
 
   const { data: { data: admins = [], pagination } = {}, isLoading: loading } = useQuery({
@@ -832,7 +832,6 @@ const L1AdminsTab = () => {
       
       const payload = { 
         ...formData,
-        yearlyTarget: formData.yearlyTarget ? Number(formData.yearlyTarget) : 0
       };
       const response = await apiRequest(url, {
         method: method,
@@ -890,7 +889,7 @@ const L1AdminsTab = () => {
           email: admin.email || "",
           role: admin.role || "SUPER_ADMIN",
           level: admin.level || "L1",
-          yearlyTarget: admin.yearlyTarget || ""
+          isActive: admin.isActive !== false,
       });
       setShowModal(true);
   };
@@ -907,7 +906,7 @@ const L1AdminsTab = () => {
         email: "",
         role: "SUPER_ADMIN",
         level: "L1",
-        yearlyTarget: ""
+        isActive: true,
       });
   };
 
@@ -1044,6 +1043,19 @@ const L1AdminsTab = () => {
             className="bg-white rounded-xl shadow-xl max-w-md w-full p-6 pointer-events-auto"
           >
             <h2 className="text-xl font-bold text-slate-800 mb-4">{editingAdmin ? 'Edit Admin' : 'Create Super Admin'}</h2>
+            {editingAdmin && (
+              <div className="mb-4">
+                <span
+                  className={`inline-flex items-center px-2 py-1 rounded-full text-xs font-medium border ${
+                    formData.isActive
+                      ? "bg-green-100 text-green-700 border-green-200"
+                      : "bg-red-100 text-red-700 border-red-200"
+                  }`}
+                >
+                  {formData.isActive ? "Active" : "Inactive"}
+                </span>
+              </div>
+            )}
             <form onSubmit={handleSubmit} className="space-y-4">
               <div>
                 <label className="block text-sm font-medium text-slate-700 mb-1">Name</label>
@@ -1067,16 +1079,19 @@ const L1AdminsTab = () => {
                   placeholder="john@vbeyond.com"
                 />
               </div>
-              <div>
-                <label className="block text-sm font-medium text-slate-700 mb-1">Yearly Target ($)</label>
-                <input
-                  type="number"
-                  value={formData.yearlyTarget}
-                  onChange={(e) => setFormData({ ...formData, yearlyTarget: e.target.value })}
-                  className="w-full px-3 py-2 border border-slate-300 rounded-lg focus:ring-2 focus:ring-blue-500 outline-none"
-                  placeholder="1000000"
-                />
-              </div>
+              {editingAdmin && (
+                <div>
+                  <label className="block text-sm font-medium text-slate-700 mb-1">Status</label>
+                  <select
+                    value={formData.isActive ? "ACTIVE" : "INACTIVE"}
+                    onChange={(e) => setFormData({ ...formData, isActive: e.target.value === "ACTIVE" })}
+                    className="w-full px-3 py-2 border border-slate-300 rounded-lg focus:ring-2 focus:ring-blue-500 outline-none bg-white"
+                  >
+                    <option value="ACTIVE">Active</option>
+                    <option value="INACTIVE">Inactive</option>
+                  </select>
+                </div>
+              )}
               
               <div className="flex justify-end gap-3 mt-6">
                 <button
