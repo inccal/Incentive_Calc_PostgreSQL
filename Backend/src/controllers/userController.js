@@ -42,7 +42,6 @@ export async function listUsersWithRelations({ page = 1, pageSize = 25, actor, r
   
   const where = { 
     role: { in: targetRoles },
-    isActive: true // Only return active users
   };
 
   if (actor && actor.role === Role.SUPER_ADMIN) {
@@ -325,9 +324,9 @@ export async function updateUserWithProfile(id, body, actor) {
       data.isActive = isActive;
     } else if (
       actor.role === Role.S1_ADMIN &&
-      user.role !== Role.SUPER_ADMIN &&
       user.role !== Role.S1_ADMIN
     ) {
+      // S1 can toggle active/inactive for all managed roles including heads.
       data.isActive = isActive;
     }
   }
