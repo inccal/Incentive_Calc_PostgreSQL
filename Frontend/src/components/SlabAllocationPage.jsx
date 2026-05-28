@@ -59,6 +59,7 @@ const SlabAllocationPage = () => {
 
     const filteredUsers = useMemo(() => {
         return users.filter(u => {
+            if (u.role !== 'TEAM_LEAD' && u.role !== 'EMPLOYEE') return false;
             const matchesSearch = u.name.toLowerCase().includes(searchTerm.toLowerCase()) || 
                                 u.email.toLowerCase().includes(searchTerm.toLowerCase());
             const matchesRole = roleFilter === 'ALL' || u.role === roleFilter;
@@ -210,7 +211,6 @@ const SlabAllocationPage = () => {
                                     <option value="ALL">All Roles</option>
                                     <option value="TEAM_LEAD">Team Leads</option>
                                     <option value="EMPLOYEE">Employees</option>
-                                    <option value="SUPER_ADMIN">Super Admins</option>
                                 </select>
                                 <select 
                                     value={teamFilter} 

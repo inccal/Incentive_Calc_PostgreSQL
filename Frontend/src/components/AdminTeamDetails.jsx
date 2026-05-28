@@ -544,7 +544,6 @@ const AdminTeamDetails = () => {
                     )}
                     <th className="pb-3 font-medium pl-4">Name</th>
                     <th className="pb-3 font-medium">Email</th>
-                    <th className="pb-3 font-medium">Achievement</th>
                     {canEditTarget && <th className="pb-3 font-medium">Slab comment</th>}
                     {activeTab === "members" && <th className="pb-3 font-medium">Manager</th>}
                     <th className="pb-3 font-medium text-right pr-4">Actions</th>
@@ -578,12 +577,6 @@ const AdminTeamDetails = () => {
                         </div>
                       </td>
                       <td className="py-4 text-slate-600">{user.email}</td>
-                      <td className="py-4 text-emerald-600 font-medium">
-                        {user.targetType === "PLACEMENTS" 
-                          ? `${user.placementsCount || 0} Placements` 
-                          : CalculationService.formatCurrency(user.revenue)
-                        }
-                      </td>
                       {canEditTarget && (
                         <td className="py-4 text-slate-600 max-w-[180px]">
                           <span
@@ -619,7 +612,7 @@ const AdminTeamDetails = () => {
                       <td
                         colSpan={
                           (showBulkCheckboxes ? 1 : 0) +
-                          (activeTab === "members" ? (canEditTarget ? 6 : 5) : (canEditTarget ? 5 : 4))
+                          (activeTab === "members" ? (canEditTarget ? 5 : 4) : (canEditTarget ? 4 : 3))
                         }
                         className="py-8 text-center text-slate-400"
                       >
