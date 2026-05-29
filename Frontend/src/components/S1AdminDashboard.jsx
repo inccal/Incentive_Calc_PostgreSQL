@@ -361,6 +361,27 @@ const S1AdminDashboard = () => {
   );
 };
 
+const countHierarchyByLevel = (teams, targetLevel) => {
+    let count = 0;
+    const normalizedTarget = targetLevel.toUpperCase();
+
+    const traverse = (nodes) => {
+        for (const node of nodes || []) {
+            if ((node.level || '').toUpperCase() === normalizedTarget) count++;
+            traverse(node.members);
+        }
+    };
+
+    for (const team of teams) {
+        for (const lead of team.teamLeads || []) {
+            if ((lead.level || 'L2').toUpperCase() === normalizedTarget) count++;
+            traverse(lead.members);
+        }
+    }
+
+    return count;
+};
+
 const HierarchyTab = ({ user }) => {
     const navigate = useNavigate();
     const [expandedAdmins, setExpandedAdmins] = useState({});
@@ -498,7 +519,9 @@ const HierarchyTab = ({ user }) => {
         return (
             <div className="space-y-8 animate-fadeInUp">
                 <CardSkeleton />
-                <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mb-8">
+                <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-5 gap-4 mb-8">
+                  <Skeleton className="h-32 rounded-xl" />
+                  <Skeleton className="h-32 rounded-xl" />
                   <Skeleton className="h-32 rounded-xl" />
                   <Skeleton className="h-32 rounded-xl" />
                   <Skeleton className="h-32 rounded-xl" />
@@ -513,6 +536,9 @@ const HierarchyTab = ({ user }) => {
     }
 
     const allTeams = [...hierarchyData.superAdmins.flatMap(a => a.teams), ...hierarchyData.unassignedTeams];
+    const totalL2 = countHierarchyByLevel(allTeams, 'L2');
+    const totalL3 = countHierarchyByLevel(allTeams, 'L3');
+    const totalRecruiters = countHierarchyByLevel(allTeams, 'L4');
     const totalTarget = allTeams.reduce((sum, team) => sum + (Number(team.teamTarget) || 0), 0);
     const avgPerformance = allTeams.length > 0 
         ? allTeams.reduce((sum, team) => sum + (Number(team.targetAchieved) || 0), 0) / allTeams.length 
@@ -556,13 +582,30 @@ const HierarchyTab = ({ user }) => {
             </div>
 
             {/* Stats Overview */}
-            <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mb-8">
+            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-5 gap-4 mb-8">
                 <StatCard 
-                    title="Total L1 - Heads" 
+                    level="L1"
+                    roleLabel="Head"
                     value={hierarchyData.superAdmins.length} 
                     change="Active"
                     trend="neutral"
                     icon={<svg className="w-6 h-6 text-blue-600" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M17 20h5v-2a3 3 0 00-5.356-1.857M17 20H7m10 0v-2c0-.656-.126-1.283-.356-1.857M7 20H2v-2a3 3 0 015.356-1.857M7 20v-2c0-.656.126-1.283.356-1.857m0 0a5.002 5.002 0 019.288 0M15 7a3 3 0 11-6 0 3 3 0 016 0zm6 3a2 2 0 11-4 0 2 2 0 014 0zM7 10a2 2 0 11-4 0 2 2 0 014 0z" /></svg>}
+                />
+                <StatCard 
+                    level="L2"
+                    roleLabel="Team Lead"
+                    value={totalL2} 
+                    change="Active"
+                    trend="neutral"
+                    icon={<svg className="w-6 h-6 text-amber-600" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z" /></svg>}
+                />
+                <StatCard 
+                    level="L3"
+                    roleLabel="Senior Recruiter"
+                    value={totalL3} 
+                    change="Active"
+                    trend="neutral"
+                    icon={<svg className="w-6 h-6 text-rose-600" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M17 20h5v-2a3 3 0 00-5.356-1.857M17 20H7m10 0v-2c0-.656-.126-1.283-.356-1.857M7 20H2v-2a3 3 0 015.356-1.857M7 20v-2c0-.656.126-1.283.356-1.857m0 0a5.002 5.002 0 019.288 0M15 7a3 3 0 11-6 0 3 3 0 016 0zm6 3a2 2 0 11-4 0 2 2 0 014 0zM7 10a2 2 0 11-4 0 2 2 0 014 0z" /></svg>}
                 />
                 <StatCard 
                     title="Total Teams" 
@@ -572,8 +615,9 @@ const HierarchyTab = ({ user }) => {
                     icon={<svg className="w-6 h-6 text-purple-600" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M19 11H5m14 0a2 2 0 012 2v6a2 2 0 01-2 2H5a2 2 0 01-2-2v-6a2 2 0 012-2m14 0V9a2 2 0 00-2-2M5 11V9a2 2 0 012-2m0 0V5a2 2 0 012-2h6a2 2 0 012 2v2M7 7h10" /></svg>}
                 />
                 <StatCard 
-                    title="Total Members" 
-                    value={allTeams.reduce((acc, team) => acc + (team.teamLeads?.reduce((sum, lead) => sum + (lead.members?.length || 0) + (lead.subLeads?.reduce((s, sl) => s + (sl.members?.length || 0), 0) || 0), 0) || 0), 0)}
+                    level="L4"
+                    roleLabel="Recruiter"
+                    value={totalRecruiters}
                     change="Active"
                     trend="neutral"
                     icon={<svg className="w-6 h-6 text-emerald-600" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M12 4.354a4 4 0 110 5.292M15 21H3v-1a6 6 0 0112 0v1zm0 0h6v-1a6 6 0 00-9-5.197M13 7a4 4 0 11-8 0 4 4 0 018 0z" /></svg>}
@@ -788,13 +832,23 @@ const HierarchyTab = ({ user }) => {
     );
 };
 
-const StatCard = ({ title, value, change, icon, trend }) => (
+const StatCard = ({ title, value, change, icon, trend, level, roleLabel }) => (
   <div className="bg-white/70 backdrop-blur-xl p-6 rounded-xl shadow-sm border border-white/60 hover:shadow-lg hover:shadow-blue-500/10 transition-all duration-300 transform hover:-translate-y-1">
     <div className="flex justify-between items-start mb-4">
        <div className="p-3 bg-white rounded-lg shadow-sm">{icon}</div>
        {trend === 'up' && <span className="bg-green-100 text-green-700 px-2 py-1 rounded-full text-xs font-medium border border-green-200">↑ Trending</span>}
     </div>
-    <p className="text-slate-500 text-sm mb-1 font-medium">{title}</p>
+    {level && roleLabel ? (
+      <div className="mb-1">
+        <div className="flex items-center gap-2 mb-1">
+          <span className="text-[10px] font-bold uppercase tracking-wider text-slate-500 bg-slate-100 px-2 py-0.5 rounded-full">{level}</span>
+          <span className="text-slate-700 text-sm font-semibold">{roleLabel}</span>
+        </div>
+        <p className="text-slate-400 text-xs font-medium">Total count</p>
+      </div>
+    ) : (
+      <p className="text-slate-500 text-sm mb-1 font-medium">{title}</p>
+    )}
     <div className="flex justify-between items-end">
        <h3 className="text-3xl font-bold text-slate-800 tracking-tight">{value}</h3>
        <span className="text-slate-500 text-xs font-medium bg-slate-100 px-2 py-1 rounded-full">{change}</span>

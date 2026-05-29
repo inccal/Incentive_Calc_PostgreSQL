@@ -15,12 +15,12 @@ const UserCreationModal = ({ isOpen, onClose, editingUser, onSuccess, teams = []
 
   const [error, setError] = useState("");
 
-  // Helper to determine the UI role representation
+  // Level takes precedence over role (L3 users may have TEAM_LEAD role in DB)
   const getUiRole = (role, level) => {
     const lvl = (level || "").toUpperCase();
-    if (role === "TEAM_LEAD" || lvl === "L2") return "TEAM_LEAD";
-    if (role === "EMPLOYEE" && lvl === "L3") return "SENIOR_RECRUITER";
-    return "RECRUITER"; // Default to L4 Recruiter
+    if (lvl === "L3") return "SENIOR_RECRUITER";
+    if (lvl === "L2" || role === "TEAM_LEAD") return "TEAM_LEAD";
+    return "RECRUITER";
   };
 
   const getManagerOptions = (teamId) => {
@@ -34,23 +34,26 @@ const UserCreationModal = ({ isOpen, onClose, editingUser, onSuccess, teams = []
     };
 
     const assigneeLevel = (formData.level || "L4").toUpperCase();
-    const team = teams.find((t) => t.id === teamId);
+    const team = teams.find((t) => String(t.id) === String(teamId));
     if (team) {
       (team.leads || []).forEach((lead) => {
-        const lvl = (lead.level || "").toUpperCase();
+        const lvl = (lead.level || "L2").toUpperCase();
         if (assigneeLevel === "L3" && lvl === "L2") add(lead);
+        else if (assigneeLevel === "L4" && (lvl === "L2" || lvl === "L3")) add(lead);
       });
       (team.members || []).forEach((m) => {
         const lvl = (m.level || "").toUpperCase();
-        if (assigneeLevel === "L4" && lvl === "L3") add(m);
+        if (assigneeLevel === "L4" && (lvl === "L3" || lvl === "L2")) add(m);
         else if (assigneeLevel === "L3" && lvl === "L2") add(m);
       });
     }
     (allMembers || []).forEach((m) => {
-      if (m.team?.id !== teamId) return;
+      if (String(m.team?.id) !== String(teamId) && String(m.teamId) !== String(teamId)) return;
       const lvl = (m.level || "").toUpperCase();
       if (assigneeLevel === "L4") {
-        if (lvl === "L3") add({ userId: m.id, name: m.name });
+        if (lvl === "L3" || lvl === "L2" || m.role === "TEAM_LEAD") {
+          add({ userId: m.id, name: m.name });
+        }
       } else if (assigneeLevel === "L3") {
         if (m.role === "TEAM_LEAD" || lvl === "L2") add({ userId: m.id, name: m.name });
       }
@@ -261,7 +264,7 @@ const UserCreationModal = ({ isOpen, onClose, editingUser, onSuccess, teams = []
               </select>
             </div>
             
-            {formData.teamId && formData.role === "EMPLOYEE" && (formData.level || "L4").toUpperCase() !== "L2" && (
+            {formData.teamId && (formData.level || "L4").toUpperCase() !== "L2" && (
               <div>
                 <label className="block text-xs font-semibold text-slate-700 mb-1 uppercase tracking-wide">Manager (Optional)</label>
                 <select
