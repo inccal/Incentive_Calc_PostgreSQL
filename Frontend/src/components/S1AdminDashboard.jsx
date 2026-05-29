@@ -10,7 +10,7 @@ import { useQuery, useQueryClient, keepPreviousData } from '@tanstack/react-quer
 import { Skeleton, CardSkeleton, TableRowSkeleton } from './common/Skeleton';
 import UserCreationModal from './UserCreationModal';
 import { motion, AnimatePresence } from 'framer-motion';
-import { getRoleDisplayName, matchesRoleFilter, getDisplayNameFromFilterValue } from '../utils/roleHelpers';
+import { getS1RoleDisplayName, getS1LevelDisplayName, matchesRoleFilter, getS1DisplayNameFromFilterValue } from '../utils/roleHelpers';
 import HeadPlacementsView from './HeadPlacementsView';
 import AuditChangesCell from './AuditChangesCell';
 import { formatAuditAction } from '../utils/auditLogFormat';
@@ -197,7 +197,7 @@ const S1AdminDashboard = () => {
           {[
             { id: 'hierarchy', label: 'Hierarchy', icon: 'hierarchy' },
             { id: 'members', label: 'Members', icon: 'users' },
-            { id: 'l1-admins', label: 'Heads', icon: 'crown' },
+            { id: 'l1-admins', label: 'L1 - Heads', icon: 'crown' },
             { id: 'placements', label: 'Placements', icon: 'placements' },
             { id: 'incentive-slabs', label: 'Incentive', icon: 'percent' },
             { id: 'audit-logs', label: 'Audit', icon: 'log' },
@@ -291,7 +291,7 @@ const S1AdminDashboard = () => {
               <h1 className="text-xl font-bold text-slate-900">
                 {activeTab === 'hierarchy' && 'Organization Hierarchy'}
                 {activeTab === 'members' && 'Member Management'}
-                {activeTab === 'l1-admins' && 'Head Management'}
+                {activeTab === 'l1-admins' && 'L1 - Head Management'}
                 {activeTab === 'audit-logs' && 'Audit Logs'}
                 {activeTab === 'settings' && 'Settings'}
               </h1>
@@ -307,7 +307,7 @@ const S1AdminDashboard = () => {
               {[
                 { id: 'hierarchy', label: 'Hierarchy' },
                 { id: 'members', label: 'Members' },
-                { id: 'l1-admins', label: 'Heads' },
+                { id: 'l1-admins', label: 'L1 - Heads' },
                 { id: 'audit-logs', label: 'Audit' },
                 { id: 'settings', label: 'Settings' },
               ].map((tab) => (
@@ -558,7 +558,7 @@ const HierarchyTab = ({ user }) => {
             {/* Stats Overview */}
             <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mb-8">
                 <StatCard 
-                    title="Total Super Admins" 
+                    title="Total L1 - Heads" 
                     value={hierarchyData.superAdmins.length} 
                     change="Active"
                     trend="neutral"
@@ -602,7 +602,7 @@ const HierarchyTab = ({ user }) => {
 
             {/* Super Admins List (Accordion) */}
             <div className="space-y-4">
-                <h3 className="text-center text-slate-500 font-medium mb-6 uppercase tracking-wider text-xs">Direct Reports (Heads)</h3>
+                <h3 className="text-center text-slate-500 font-medium mb-6 uppercase tracking-wider text-xs">Direct Reports (L1 - Heads)</h3>
                 
                 {hierarchyData.superAdmins.map(admin => (
                     <div key={admin.id} className="bg-white/70 backdrop-blur-xl rounded-2xl shadow-sm border border-white/60 overflow-hidden">
@@ -672,7 +672,7 @@ const HierarchyTab = ({ user }) => {
                                                                     <svg className="w-3.5 h-3.5" fill="currentColor" viewBox="0 0 20 20">
                                                                         <path d="M9 6a3 3 0 11-6 0 3 3 0 016 0zM17 6a3 3 0 11-6 0 3 3 0 016 0zM12.93 17c.046-.327.07-.66.07-1a6.97 6.97 0 00-1.5-4.33A5 5 0 0119 16v1h-6.07zM6 11a5 5 0 015 5v1H1v-1a5 5 0 015-5z" />
                                                                     </svg>
-                                                                    {team.teamLeads?.length || 0} Lead{team.teamLeads?.length !== 1 ? 's' : ''}
+                                                                    {team.teamLeads?.length || 0} L2 - Team Lead{team.teamLeads?.length !== 1 ? 's' : ''}
                                                                 </div>
                                                             </div>
                                                         </div>
@@ -762,7 +762,7 @@ const HierarchyTab = ({ user }) => {
                                             </div>
                                             
                                             <h4 className={`text-lg font-bold ${colors.text} mb-1`}>{team.name}</h4>
-                                            <p className="text-xs text-slate-500 mb-4">No Super Admin linked</p>
+                                            <p className="text-xs text-slate-500 mb-4">No L1 - Head linked</p>
                                             
                                             <div className="flex items-center justify-between pt-3 border-t border-slate-200/60">
                                                 <div className="flex flex-col">
@@ -914,7 +914,7 @@ const L1AdminsTab = () => {
       <div className="space-y-6 animate-fadeInUp">
           <div className="flex justify-between items-center">
              <div>
-                <h2 className="text-2xl font-bold text-slate-800">Super Admins (Head)</h2>
+                <h2 className="text-2xl font-bold text-slate-800">L1 - Heads</h2>
                 <Skeleton className="h-4 w-64 mt-1" />
              </div>
              <Skeleton className="h-10 w-40 rounded-lg" />
@@ -945,15 +945,15 @@ const L1AdminsTab = () => {
     <div className="space-y-6 animate-fadeInUp">
        <div className="flex justify-between items-center">
           <div>
-             <h2 className="text-2xl font-bold text-slate-800">Super Admins (Head)</h2>
-             <p className="text-slate-500 mt-1">Manage campaign managers and their datasets.</p>
+             <h2 className="text-2xl font-bold text-slate-800">L1 - Heads</h2>
+             <p className="text-slate-500 mt-1">Manage L1 - Head accounts and their teams.</p>
           </div>
           <button 
              onClick={openCreateModal}
              className="bg-blue-600 text-white px-5 py-2.5 rounded-lg hover:bg-blue-700 transition shadow-sm font-medium flex items-center gap-2 shadow-blue-500/30"
           >
              <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M12 4v16m8-8H4"></path></svg>
-             Create Super Admin
+             Create L1 - Head
           </button>
        </div>
   
@@ -983,7 +983,7 @@ const L1AdminsTab = () => {
                       </td>
                       <td className="py-4 text-slate-600">
                           <span className="bg-purple-100 text-purple-700 px-2 py-1 rounded-full text-xs font-medium border border-purple-200">
-                            {getRoleDisplayName(admin.role, admin.level)}
+                            {getS1RoleDisplayName(admin.role, admin.level)}
                           </span>
                       </td>
                       <td className="py-4">
@@ -1000,7 +1000,7 @@ const L1AdminsTab = () => {
                    </tr>
                 ))}
                 {admins.length === 0 && (
-                    <tr><td colSpan="4" className="text-center py-8 text-slate-500">No Super Admins found</td></tr>
+                    <tr><td colSpan="4" className="text-center py-8 text-slate-500">No L1 - Heads found</td></tr>
                 )}
              </tbody>
           </table>
@@ -1042,7 +1042,7 @@ const L1AdminsTab = () => {
             transition={{ duration: 0.2, ease: "easeOut" }}
             className="bg-white rounded-xl shadow-xl max-w-md w-full p-6 pointer-events-auto"
           >
-            <h2 className="text-xl font-bold text-slate-800 mb-4">{editingAdmin ? 'Edit Admin' : 'Create Super Admin'}</h2>
+            <h2 className="text-xl font-bold text-slate-800 mb-4">{editingAdmin ? 'Edit L1 - Head' : 'Create L1 - Head'}</h2>
             {editingAdmin && (
               <div className="mb-4">
                 <span
@@ -1272,8 +1272,8 @@ const MembersTab = () => {
           bVal = (b.email || '').toLowerCase();
           break;
         case 'role':
-          aVal = getRoleDisplayName(a.role, a.level).toLowerCase();
-          bVal = getRoleDisplayName(b.role, b.level).toLowerCase();
+          aVal = getS1RoleDisplayName(a.role, a.level).toLowerCase();
+          bVal = getS1RoleDisplayName(b.role, b.level).toLowerCase();
           break;
         case 'team':
           aVal = (a.team?.name || '').toLowerCase();
@@ -1448,9 +1448,9 @@ const MembersTab = () => {
                  className="w-full px-3 py-2.5 border border-slate-200 rounded-xl focus:ring-2 focus:ring-blue-500 focus:border-blue-500 outline-none transition-all bg-white/50 text-sm"
                >
                  <option value="">All Roles</option>
-                 <option value="TEAM_LEAD">Team Lead</option>
-                 <option value="EMPLOYEE_L3">Senior Recruiter</option>
-                 <option value="EMPLOYEE_L4">Recruiter</option>
+                 <option value="TEAM_LEAD">L2 - Team Lead</option>
+                 <option value="EMPLOYEE_L3">L3 - Senior Recruiter</option>
+                 <option value="EMPLOYEE_L4">L4 - Recruiter</option>
                </select>
              </div>
              <div>
@@ -1576,7 +1576,7 @@ const MembersTab = () => {
              )}
              {roleFilter && (
                <span className="inline-flex items-center gap-1 px-2.5 py-1 bg-violet-100 text-violet-700 rounded-lg text-xs font-medium">
-                 Role: {getDisplayNameFromFilterValue(roleFilter)}
+                 Role: {getS1DisplayNameFromFilterValue(roleFilter)}
                  <button onClick={() => setRoleFilter('')} className="hover:text-violet-900">×</button>
                </span>
              )}
@@ -1594,7 +1594,7 @@ const MembersTab = () => {
              )}
              {levelFilter && (
                <span className="inline-flex items-center gap-1 px-2.5 py-1 bg-amber-100 text-amber-700 rounded-lg text-xs font-medium">
-                 Level: {levelFilter}
+                 Level: {getS1LevelDisplayName(levelFilter)}
                  <button onClick={() => setLevelFilter('')} className="hover:text-amber-900">×</button>
                </span>
              )}
@@ -1702,7 +1702,7 @@ const MembersTab = () => {
                                (member.level || '').toUpperCase() === 'L3' ? 'bg-red-100 text-red-700 border-red-200' :
                                'bg-blue-100 text-blue-700 border-blue-200'
                              }`}>
-                               {getRoleDisplayName(member.role, member.level)}
+                               {getS1RoleDisplayName(member.role, member.level)}
                              </span>
                          </td>
                          <td className="py-4 text-slate-600 text-sm">
@@ -1814,6 +1814,7 @@ const MembersTab = () => {
           onSuccess={handleSuccess}
           teams={teams}
           allMembers={allMembers}
+          useS1RoleLabels
        />
     </motion.div>
   );
@@ -1965,7 +1966,13 @@ const AuditLogsTab = () => {
                             </td>
                             <td className="py-3 text-sm font-medium text-slate-700">
                                 {log.actor?.name || log.actorId}
-                                <span className="block text-[10px] text-slate-400 font-normal">{log.actor?.role}</span>
+                                <span className="block text-[10px] text-slate-400 font-normal">
+                                  {log.actor?.role === 'SUPER_ADMIN'
+                                    ? 'L1 - Head'
+                                    : log.actor?.role === 'S1_ADMIN'
+                                      ? 'S1 Admin'
+                                      : getS1RoleDisplayName(log.actor?.role, log.actor?.level)}
+                                </span>
                             </td>
                             <td className="py-3 text-sm text-slate-600">
                                 <span className="bg-slate-100 px-2 py-1 rounded text-xs border border-slate-200">
@@ -1977,7 +1984,7 @@ const AuditLogsTab = () => {
                             </td>
                             <td className="py-3 align-top">
                                 {log.changes ? (
-                                    <AuditChangesCell changes={log.changes} action={log.action} />
+                                    <AuditChangesCell changes={log.changes} action={log.action} useS1RoleLabels />
                                 ) : (
                                     <span className="text-sm text-slate-400">—</span>
                                 )}

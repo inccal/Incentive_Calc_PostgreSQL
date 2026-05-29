@@ -1,7 +1,7 @@
 import { useState, useEffect } from "react";
 import { apiRequest } from "../api/client";
 
-const UserCreationModal = ({ isOpen, onClose, editingUser, onSuccess, teams = [], allMembers = [], defaultRole = "EMPLOYEE" }) => {
+const UserCreationModal = ({ isOpen, onClose, editingUser, onSuccess, teams = [], allMembers = [], defaultRole = "EMPLOYEE", useS1RoleLabels = false }) => {
   const [formData, setFormData] = useState({
     name: "",
     email: "",
@@ -233,9 +233,9 @@ const UserCreationModal = ({ isOpen, onClose, editingUser, onSuccess, teams = []
                 onChange={(e) => handleUiRoleChange(e.target.value)}
                 className="w-full px-3 py-2 border border-slate-300 rounded-xl focus:ring-2 focus:ring-blue-500 focus:border-blue-500 outline-none transition-all bg-white"
               >
-                <option value="RECRUITER">Recruiter</option>
-                <option value="SENIOR_RECRUITER">Senior Recruiter</option>
-                <option value="TEAM_LEAD">Team Lead</option>
+                <option value="RECRUITER">{useS1RoleLabels ? "L4 - Recruiter" : "Recruiter"}</option>
+                <option value="SENIOR_RECRUITER">{useS1RoleLabels ? "L3 - Senior Recruiter" : "Senior Recruiter"}</option>
+                <option value="TEAM_LEAD">{useS1RoleLabels ? "L2 - Team Lead" : "Team Lead"}</option>
               </select>
             </div>
             <div>

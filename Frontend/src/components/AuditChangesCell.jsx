@@ -1,7 +1,7 @@
 import { formatAuditChanges } from "../utils/auditLogFormat";
 
-export default function AuditChangesCell({ changes, action }) {
-  const lines = formatAuditChanges(changes, action);
+export default function AuditChangesCell({ changes, action, useS1RoleLabels = false }) {
+  const lines = formatAuditChanges(changes, action, { s1Labels: useS1RoleLabels });
 
   return (
     <div className="text-sm text-slate-700 space-y-1 min-w-[240px] max-w-lg whitespace-normal">

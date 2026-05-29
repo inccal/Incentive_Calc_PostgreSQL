@@ -27,6 +27,47 @@ export const getRoleDisplayName = (role, level) => {
   return role;
 };
 
+const S1_PREFIX_BY_LABEL = {
+  Head: 'L1',
+  'Team Lead': 'L2',
+  'Senior Recruiter': 'L3',
+  Recruiter: 'L4',
+};
+
+/** Role label with L1–L4 prefix for S1 Admin dashboard only. */
+export const getS1RoleDisplayName = (role, level) => {
+  const base = getRoleDisplayName(role, level);
+  const prefix = S1_PREFIX_BY_LABEL[base];
+  return prefix ? `${prefix} - ${base}` : base;
+};
+
+/** Level-only label with prefix (e.g. L2 - Team Lead). */
+export const getS1LevelDisplayName = (level) => {
+  if (!level) return '—';
+  const normalized = String(level).trim().toUpperCase();
+  const map = {
+    L1: 'L1 - Head',
+    L2: 'L2 - Team Lead',
+    L3: 'L3 - Senior Recruiter',
+    L4: 'L4 - Recruiter',
+  };
+  return map[normalized] || normalized;
+};
+
+/** Filter chip / dropdown label for S1 Admin. */
+export const getS1DisplayNameFromFilterValue = (filterValue) => {
+  switch (filterValue) {
+    case 'TEAM_LEAD':
+      return 'L2 - Team Lead';
+    case 'EMPLOYEE_L3':
+      return 'L3 - Senior Recruiter';
+    case 'EMPLOYEE_L4':
+      return 'L4 - Recruiter';
+    default:
+      return getDisplayNameFromFilterValue(filterValue);
+  }
+};
+
 /**
  * Get filter value from display name (for dropdowns)
  * @param {string} displayName - Friendly display name

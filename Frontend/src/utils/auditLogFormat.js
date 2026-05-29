@@ -1,3 +1,5 @@
+import { getS1RoleDisplayName, getS1LevelDisplayName } from "./roleHelpers.js";
+
 const FIELD_LABELS = {
   name: "Name",
   email: "Email",
@@ -45,10 +47,18 @@ function looksLikeInternalId(value) {
   return /^c[a-z0-9]{20,}$/i.test(s) || (s.length >= 20 && !/\s/.test(s) && !s.includes("@"));
 }
 
-function formatScalar(key, value) {
+function formatScalar(key, value, options = {}) {
   if (value === null || value === undefined || value === "") return "—";
   if (looksLikeInternalId(String(value))) return "—";
-  if (key === "role") return ROLE_LABELS[value] || String(value);
+  if (key === "role") {
+    if (options.s1Labels) {
+      return getS1RoleDisplayName(value, options.contextLevel);
+    }
+    return ROLE_LABELS[value] || String(value);
+  }
+  if (key === "level" && options.s1Labels) {
+    return getS1LevelDisplayName(value);
+  }
   if (key === "isActive") return value ? "Active" : "Inactive";
   if (key === "provider" && value === "MICROSOFT_ENTRA_ID") return "Microsoft";
   if (key === "targetType") {
@@ -90,7 +100,7 @@ function flattenUserSnapshot(snapshot) {
   return flat;
 }
 
-function diffFlat(before, after) {
+function diffFlat(before, after, options = {}) {
   const lines = [];
   const keys = new Set([...Object.keys(before), ...Object.keys(after)]);
   for (const key of keys) {
@@ -99,8 +109,8 @@ function diffFlat(before, after) {
     const newVal = after[key];
     if (JSON.stringify(oldVal) === JSON.stringify(newVal)) continue;
 
-    const oldDisplay = formatScalar(key, oldVal);
-    const newDisplay = formatScalar(key, newVal);
+    const oldDisplay = formatScalar(key, oldVal, { ...options, contextLevel: before.level });
+    const newDisplay = formatScalar(key, newVal, { ...options, contextLevel: after.level });
     if (oldDisplay === "—" && newDisplay === "—") continue;
 
     const label = FIELD_LABELS[key] || key.replace(/([A-Z])/g, " $1").replace(/^./, (s) => s.toUpperCase());
@@ -121,27 +131,31 @@ function formatLoginChanges(changes) {
   return lines;
 }
 
-function formatCreateChanges(changes) {
+function formatCreateChanges(changes, options = {}) {
   const flat = flattenUserSnapshot(changes);
   const lines = [];
   if (flat.name) lines.push(`Created user: ${flat.name}`);
   if (flat.email) lines.push(`Email: ${flat.email}`);
-  if (flat.role) lines.push(`Role: ${formatScalar("role", flat.role)}`);
-  if (flat.level) lines.push(`Level: ${flat.level}`);
+  if (flat.role) {
+    lines.push(
+      `Role: ${formatScalar("role", flat.role, { ...options, contextLevel: flat.level })}`
+    );
+  }
+  if (flat.level) lines.push(`Level: ${formatScalar("level", flat.level, options)}`);
   if (flat.vbid) lines.push(`VB ID: ${flat.vbid}`);
   if (flat.team) lines.push(`Team: ${flat.team}`);
   if (flat.manager) lines.push(`Manager: ${flat.manager}`);
   return lines.length ? lines : ["New user created"];
 }
 
-function formatGenericFlat(changes) {
+function formatGenericFlat(changes, options = {}) {
   const lines = [];
   for (const [key, value] of Object.entries(changes)) {
     if (SKIP_KEYS.has(key) || value === null || value === undefined) continue;
     if (typeof value === "object") continue;
     if (looksLikeInternalId(String(value))) continue;
     const label = FIELD_LABELS[key] || key.replace(/_/g, " ");
-    lines.push(`${label}: ${formatScalar(key, value)}`);
+    lines.push(`${label}: ${formatScalar(key, value, options)}`);
   }
   return lines;
 }
@@ -150,11 +164,11 @@ function formatGenericFlat(changes) {
  * Turn audit log `changes` JSON into short, non-technical lines.
  * @returns {string[]}
  */
-export function formatAuditChanges(changes, action = "") {
+export function formatAuditChanges(changes, action = "", options = {}) {
   if (!changes) return ["No details recorded"];
   if (typeof changes === "string") {
     try {
-      return formatAuditChanges(JSON.parse(changes), action);
+      return formatAuditChanges(JSON.parse(changes), action, options);
     } catch {
       return [changes];
     }
@@ -164,7 +178,8 @@ export function formatAuditChanges(changes, action = "") {
   if (changes.before && changes.after) {
     const lines = diffFlat(
       flattenUserSnapshot(changes.before),
-      flattenUserSnapshot(changes.after)
+      flattenUserSnapshot(changes.after),
+      options
     );
     const who =
       changes.after?.name ||
@@ -182,10 +197,10 @@ export function formatAuditChanges(changes, action = "") {
   }
 
   if (action === "USER_CREATED" || (changes.name && changes.email && changes.role)) {
-    return formatCreateChanges(changes);
+    return formatCreateChanges(changes, options);
   }
 
-  const generic = formatGenericFlat(changes);
+  const generic = formatGenericFlat(changes, options);
   return generic.length ? generic : ["Action completed"];
 }
 
