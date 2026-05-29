@@ -4,6 +4,7 @@ import { apiRequest } from '../api/client';
 import { Skeleton, TableRowSkeleton } from './common/Skeleton';
 import IncentiveSlabTable from './common/IncentiveSlabTable';
 import FilterMultiSelect from './common/FilterMultiSelect';
+import { matchesRoleFilter } from '../utils/roleHelpers';
 
 const SlabAllocationPage = () => {
     const [users, setUsers] = useState([]);
@@ -63,7 +64,9 @@ const SlabAllocationPage = () => {
             if (u.role !== 'TEAM_LEAD' && u.role !== 'EMPLOYEE') return false;
             const matchesSearch = u.name.toLowerCase().includes(searchTerm.toLowerCase()) || 
                                 u.email.toLowerCase().includes(searchTerm.toLowerCase());
-            const matchesRole = roleFilters.length === 0 || roleFilters.includes(u.role);
+            const matchesRole =
+                roleFilters.length === 0 ||
+                roleFilters.some((filter) => matchesRoleFilter(u, filter));
             const matchesTeam = teamFilters.length === 0 || teamFilters.includes(u.teamName);
             const matchesStatus = statusFilter === 'ALL' || 
                                 (statusFilter === 'CONFIGURED' ? u.hasSlabConfigured : !u.hasSlabConfigured);
@@ -218,7 +221,8 @@ const SlabAllocationPage = () => {
                                     allLabel="All Roles"
                                     options={[
                                         { value: 'TEAM_LEAD', label: 'Team Leads' },
-                                        { value: 'EMPLOYEE', label: 'Employees' },
+                                        { value: 'EMPLOYEE_L3', label: 'Senior Recruiter' },
+                                        { value: 'EMPLOYEE_L4', label: 'Employees' },
                                     ]}
                                     selectedValues={roleFilters}
                                     onChange={setRoleFilters}
