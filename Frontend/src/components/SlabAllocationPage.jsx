@@ -3,6 +3,7 @@ import { motion, AnimatePresence } from 'framer-motion';
 import { apiRequest } from '../api/client';
 import { Skeleton, TableRowSkeleton } from './common/Skeleton';
 import IncentiveSlabTable from './common/IncentiveSlabTable';
+import FilterMultiSelect from './common/FilterMultiSelect';
 
 const SlabAllocationPage = () => {
     const [users, setUsers] = useState([]);
@@ -10,8 +11,8 @@ const SlabAllocationPage = () => {
     const [loading, setLoading] = useState(true);
     const [selectedUserIds, setSelectedUserIds] = useState(new Set());
     const [searchTerm, setSearchTerm] = useState('');
-    const [roleFilter, setRoleFilter] = useState('ALL');
-    const [teamFilter, setTeamFilter] = useState('ALL');
+    const [roleFilters, setRoleFilters] = useState([]);
+    const [teamFilters, setTeamFilters] = useState([]);
     const [statusFilter, setStatusFilter] = useState('ALL');
     
     // Editor State
@@ -62,13 +63,18 @@ const SlabAllocationPage = () => {
             if (u.role !== 'TEAM_LEAD' && u.role !== 'EMPLOYEE') return false;
             const matchesSearch = u.name.toLowerCase().includes(searchTerm.toLowerCase()) || 
                                 u.email.toLowerCase().includes(searchTerm.toLowerCase());
-            const matchesRole = roleFilter === 'ALL' || u.role === roleFilter;
-            const matchesTeam = teamFilter === 'ALL' || u.teamName === teamFilter;
+            const matchesRole = roleFilters.length === 0 || roleFilters.includes(u.role);
+            const matchesTeam = teamFilters.length === 0 || teamFilters.includes(u.teamName);
             const matchesStatus = statusFilter === 'ALL' || 
                                 (statusFilter === 'CONFIGURED' ? u.hasSlabConfigured : !u.hasSlabConfigured);
             return matchesSearch && matchesRole && matchesTeam && matchesStatus;
         });
-    }, [users, searchTerm, roleFilter, teamFilter, statusFilter]);
+    }, [users, searchTerm, roleFilters, teamFilters, statusFilter]);
+
+    const filteredUserIds = useMemo(() => filteredUsers.map((u) => u.id), [filteredUsers]);
+    const allFilteredSelected =
+        filteredUserIds.length > 0 && filteredUserIds.every((id) => selectedUserIds.has(id));
+    const someFilteredSelected = filteredUserIds.some((id) => selectedUserIds.has(id));
 
     const selectedMembersList = useMemo(
         () => users.filter((u) => selectedUserIds.has(u.id)),
@@ -91,10 +97,14 @@ const SlabAllocationPage = () => {
     };
 
     const selectAllFiltered = () => {
-        if (selectedUserIds.size === filteredUsers.length) {
-            setSelectedUserIds(new Set());
+        if (allFilteredSelected) {
+            setSelectedUserIds((prev) => {
+                const next = new Set(prev);
+                filteredUserIds.forEach((id) => next.delete(id));
+                return next;
+            });
         } else {
-            setSelectedUserIds(new Set(filteredUsers.map(u => u.id)));
+            setSelectedUserIds((prev) => new Set([...prev, ...filteredUserIds]));
         }
     };
 
@@ -203,23 +213,23 @@ const SlabAllocationPage = () => {
                                         className="w-full pl-10 pr-4 py-2 bg-white border border-slate-200 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-blue-500/20"
                                     />
                                 </div>
-                                <select 
-                                    value={roleFilter} 
-                                    onChange={(e) => setRoleFilter(e.target.value)}
-                                    className="px-3 py-2 bg-white border border-slate-200 rounded-lg text-sm focus:outline-none"
-                                >
-                                    <option value="ALL">All Roles</option>
-                                    <option value="TEAM_LEAD">Team Leads</option>
-                                    <option value="EMPLOYEE">Employees</option>
-                                </select>
-                                <select 
-                                    value={teamFilter} 
-                                    onChange={(e) => setTeamFilter(e.target.value)}
-                                    className="px-3 py-2 bg-white border border-slate-200 rounded-lg text-sm focus:outline-none"
-                                >
-                                    <option value="ALL">All Teams</option>
-                                    {teams.map(t => <option key={t} value={t}>{t}</option>)}
-                                </select>
+                                <FilterMultiSelect
+                                    label="Role"
+                                    allLabel="All Roles"
+                                    options={[
+                                        { value: 'TEAM_LEAD', label: 'Team Leads' },
+                                        { value: 'EMPLOYEE', label: 'Employees' },
+                                    ]}
+                                    selectedValues={roleFilters}
+                                    onChange={setRoleFilters}
+                                />
+                                <FilterMultiSelect
+                                    label="Team"
+                                    allLabel="All Teams"
+                                    options={teams.map((t) => ({ value: t, label: t }))}
+                                    selectedValues={teamFilters}
+                                    onChange={setTeamFilters}
+                                />
                                 <select 
                                     value={statusFilter} 
                                     onChange={(e) => setStatusFilter(e.target.value)}
@@ -238,7 +248,10 @@ const SlabAllocationPage = () => {
                                             <th className="px-6 py-4 w-12">
                                                 <input 
                                                     type="checkbox" 
-                                                    checked={selectedUserIds.size === filteredUsers.length && filteredUsers.length > 0}
+                                                    checked={allFilteredSelected}
+                                                    ref={(el) => {
+                                                        if (el) el.indeterminate = someFilteredSelected && !allFilteredSelected;
+                                                    }}
                                                     onChange={selectAllFiltered}
                                                     className="rounded text-blue-600 focus:ring-blue-500"
                                                 />
