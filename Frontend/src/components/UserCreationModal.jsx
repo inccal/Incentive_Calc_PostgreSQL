@@ -1,7 +1,7 @@
 import { useState, useEffect } from "react";
 import { apiRequest } from "../api/client";
 
-const UserCreationModal = ({ isOpen, onClose, editingUser, onSuccess, teams = [], defaultRole = "EMPLOYEE" }) => {
+const UserCreationModal = ({ isOpen, onClose, editingUser, onSuccess, teams = [], allMembers = [], defaultRole = "EMPLOYEE" }) => {
   const [formData, setFormData] = useState({
     name: "",
     email: "",
@@ -17,9 +17,46 @@ const UserCreationModal = ({ isOpen, onClose, editingUser, onSuccess, teams = []
 
   // Helper to determine the UI role representation
   const getUiRole = (role, level) => {
-    if (role === "TEAM_LEAD" || level === "L2") return "TEAM_LEAD";
-    if (role === "EMPLOYEE" && level === "L3") return "SENIOR_RECRUITER";
+    const lvl = (level || "").toUpperCase();
+    if (role === "TEAM_LEAD" || lvl === "L2") return "TEAM_LEAD";
+    if (role === "EMPLOYEE" && lvl === "L3") return "SENIOR_RECRUITER";
     return "RECRUITER"; // Default to L4 Recruiter
+  };
+
+  const getManagerOptions = (teamId) => {
+    if (!teamId) return [];
+    const byId = new Map();
+    const add = (person) => {
+      const id = person.userId || person.id;
+      if (!id || !person.name) return;
+      if (editingUser && String(id) === String(editingUser.id)) return;
+      byId.set(String(id), { userId: id, name: person.name });
+    };
+
+    const assigneeLevel = (formData.level || "L4").toUpperCase();
+    const team = teams.find((t) => t.id === teamId);
+    if (team) {
+      (team.leads || []).forEach((lead) => {
+        const lvl = (lead.level || "").toUpperCase();
+        if (assigneeLevel === "L3" && lvl === "L2") add(lead);
+      });
+      (team.members || []).forEach((m) => {
+        const lvl = (m.level || "").toUpperCase();
+        if (assigneeLevel === "L4" && lvl === "L3") add(m);
+        else if (assigneeLevel === "L3" && lvl === "L2") add(m);
+      });
+    }
+    (allMembers || []).forEach((m) => {
+      if (m.team?.id !== teamId) return;
+      const lvl = (m.level || "").toUpperCase();
+      if (assigneeLevel === "L4") {
+        if (lvl === "L3") add({ userId: m.id, name: m.name });
+      } else if (assigneeLevel === "L3") {
+        if (m.role === "TEAM_LEAD" || lvl === "L2") add({ userId: m.id, name: m.name });
+      }
+    });
+
+    return Array.from(byId.values()).sort((a, b) => a.name.localeCompare(b.name));
   };
 
   useEffect(() => {
@@ -75,7 +112,8 @@ const UserCreationModal = ({ isOpen, onClose, editingUser, onSuccess, teams = []
     setFormData(prev => ({
       ...prev,
       role: newRole,
-      level: newLevel
+      level: newLevel,
+      managerId: uiRole === "TEAM_LEAD" ? "" : prev.managerId,
     }));
   };
 
@@ -84,11 +122,16 @@ const UserCreationModal = ({ isOpen, onClose, editingUser, onSuccess, teams = []
     setError("");
     
     try {
+      const payload = { ...formData };
+      const lvl = (payload.level || "").toUpperCase();
+      if (payload.role === "TEAM_LEAD" || lvl === "L2") {
+        payload.managerId = "";
+      }
       const url = editingUser ? `/users/${editingUser.id}` : "/users";
       const method = editingUser ? "PUT" : "POST";
       const response = await apiRequest(url, {
         method,
-        body: JSON.stringify(formData),
+        body: JSON.stringify(payload),
       });
 
       if (!response.ok) {
@@ -227,11 +270,9 @@ const UserCreationModal = ({ isOpen, onClose, editingUser, onSuccess, teams = []
                   className="w-full px-3 py-2 border border-slate-300 rounded-xl focus:ring-2 focus:ring-blue-500 focus:border-blue-500 outline-none transition-all bg-white"
                 >
                   <option value="">Select Manager</option>
-                  {teams
-                    .find(t => t.id === formData.teamId)
-                    ?.leads?.map((lead) => (
-                      <option key={lead.userId} value={lead.userId}>
-                        {lead.name}
+                  {getManagerOptions(formData.teamId).map((mgr) => (
+                      <option key={mgr.userId} value={mgr.userId}>
+                        {mgr.name}
                       </option>
                     ))}
                 </select>

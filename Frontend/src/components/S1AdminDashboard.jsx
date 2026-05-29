@@ -1221,6 +1221,7 @@ const MembersTab = () => {
       filtered = filtered.filter(m => 
         (m.name || '').toLowerCase().includes(q) ||
         (m.email || '').toLowerCase().includes(q) ||
+        (m.vbid || '').toLowerCase().includes(q) ||
         (m.team?.name || '').toLowerCase().includes(q) ||
         (m.manager?.name || '').toLowerCase().includes(q)
       );
@@ -1697,8 +1698,8 @@ const MembersTab = () => {
                          </td>
                          <td className="py-4 text-slate-600">
                              <span className={`px-2.5 py-1 rounded-full text-xs font-medium border ${
-                               member.role === 'TEAM_LEAD' || member.level === 'L2' ? 'bg-amber-100 text-amber-700 border-amber-200' : 
-                               member.level === 'L3' ? 'bg-violet-100 text-violet-700 border-violet-200' :
+                               member.role === 'TEAM_LEAD' || (member.level || '').toUpperCase() === 'L2' ? 'bg-amber-100 text-amber-700 border-amber-200' : 
+                               (member.level || '').toUpperCase() === 'L3' ? 'bg-red-100 text-red-700 border-red-200' :
                                'bg-blue-100 text-blue-700 border-blue-200'
                              }`}>
                                {getRoleDisplayName(member.role, member.level)}
@@ -1812,6 +1813,7 @@ const MembersTab = () => {
           editingUser={editingUser}
           onSuccess={handleSuccess}
           teams={teams}
+          allMembers={allMembers}
        />
     </motion.div>
   );

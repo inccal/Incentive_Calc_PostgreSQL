@@ -457,11 +457,20 @@ export async function getSuperAdminOverview(currentUser, year) {
         });
     };
 
-    const leads = team.employees.filter(
-      (p) =>
-        levelL2L3(p) &&
-        (p.user.role === Role.TEAM_LEAD || String(p.level || "").toUpperCase() === "L2")
-    );
+    const isHierarchyRootLead = (p) => {
+      const lvl = String(p.level || "").toUpperCase();
+      if (!levelL2L3(p)) return false;
+      if (!(p.user.role === Role.TEAM_LEAD || lvl === "L2" || lvl === "L3")) return false;
+      if (!p.managerId) return true;
+      const manager = team.employees.find((e) => e.id === p.managerId);
+      if (!manager) return true;
+      const mgrLvl = String(manager.level || "").toUpperCase();
+      if (lvl === "L2" && (mgrLvl === "L2" || mgrLvl === "L3")) return false;
+      if (lvl === "L3" && (mgrLvl === "L2" || mgrLvl === "L3")) return false;
+      return true;
+    };
+
+    const leads = team.employees.filter(isHierarchyRootLead);
 
     const teamLeads = leads.map((lead) => {
       const hierarchyMembers = buildHierarchy(lead.id);

@@ -94,6 +94,7 @@ const AdminUserManagement = ({ embedded = false, autoOpenCreate = false, onModal
       filtered = filtered.filter(u => 
         (u.name || '').toLowerCase().includes(q) ||
         (u.email || '').toLowerCase().includes(q) ||
+        (u.vbid || '').toLowerCase().includes(q) ||
         (u.team?.name || '').toLowerCase().includes(q)
       );
     }
@@ -465,7 +466,7 @@ const AdminUserManagement = ({ embedded = false, autoOpenCreate = false, onModal
                     <span className={`px-2 py-1 rounded-full text-xs font-medium ${
                       user.role === 'SUPER_ADMIN' ? 'bg-purple-100 text-purple-700' :
                       user.role === 'TEAM_LEAD' || user.level === 'L2' ? 'bg-amber-100 text-amber-700' :
-                      user.level === 'L3' ? 'bg-violet-100 text-violet-700' :
+                      (user.level || '').toUpperCase() === 'L3' ? 'bg-red-100 text-red-700' :
                       'bg-blue-100 text-blue-700'
                     }`}>
                       {getRoleDisplayName(user.role, user.level)}
