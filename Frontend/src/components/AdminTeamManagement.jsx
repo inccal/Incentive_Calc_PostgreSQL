@@ -19,7 +19,6 @@ const AdminTeamManagement = () => {
   const [showModal, setShowModal] = useState(false);
   const [formData, setFormData] = useState({
     name: "",
-    color: "blue",
   });
 
   const handleSubmit = (e) => {
@@ -27,7 +26,7 @@ const AdminTeamManagement = () => {
     createTeam(formData, {
       onSuccess: () => {
         setShowModal(false);
-        setFormData({ name: "", color: "blue" });
+        setFormData({ name: "" });
       },
       onError: (err) => {
         alert(err.message);
@@ -133,13 +132,10 @@ const AdminTeamManagement = () => {
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
           {teams.map((team) => (
             <div key={team.id} className="bg-white rounded-xl shadow-sm border border-slate-200 overflow-hidden hover:shadow-md transition-shadow">
-              <div className={`h-2 w-full bg-${team.color}-500`}></div>
+              <div className="h-2 w-full bg-blue-500"></div>
               <div className="p-6">
                 <div className="flex justify-between items-start mb-4">
                   <h3 className="text-xl font-bold text-slate-800">{team.name}</h3>
-                  <span className={`px-2 py-1 rounded-full text-xs font-medium bg-${team.color}-100 text-${team.color}-700`}>
-                    {team.color}
-                  </span>
                 </div>
                 
                 <div className="space-y-3 mb-6">
@@ -209,22 +205,6 @@ const AdminTeamManagement = () => {
                     className="w-full px-3 py-2 border border-slate-300 rounded-lg focus:ring-2 focus:ring-blue-500 outline-none"
                     placeholder="e.g. Titans"
                   />
-                </div>
-                
-                <div>
-                  <label className="block text-sm font-medium text-slate-700 mb-1">Theme Color</label>
-                  <select
-                    value={formData.color}
-                    onChange={(e) => setFormData({ ...formData, color: e.target.value })}
-                    className="w-full px-3 py-2 border border-slate-300 rounded-lg focus:ring-2 focus:ring-blue-500 outline-none"
-                  >
-                    <option value="blue">Blue</option>
-                    <option value="green">Green</option>
-                    <option value="purple">Purple</option>
-                    <option value="orange">Orange</option>
-                    <option value="red">Red</option>
-                    <option value="teal">Teal</option>
-                  </select>
                 </div>
 
                 <div className="flex justify-end gap-3 mt-6">

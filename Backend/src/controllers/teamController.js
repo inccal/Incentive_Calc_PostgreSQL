@@ -3,6 +3,20 @@ import prisma from "../prisma.js";
 
 // const prisma = new PrismaClient();
 
+/** Read team target type from member profiles (Team Settings); fallback to legacy name heuristic. */
+function resolveTeamTargetType(team) {
+  const types = (team.employees || [])
+    .map((e) => e.targetType)
+    .filter(Boolean);
+  if (types.length > 0) {
+    const revenueCount = types.filter((t) => t === "REVENUE").length;
+    const placementsCount = types.filter((t) => t === "PLACEMENTS").length;
+    if (revenueCount >= placementsCount) return "REVENUE";
+    return "PLACEMENTS";
+  }
+  return team.name.toLowerCase().includes("vant") ? "REVENUE" : "PLACEMENTS";
+}
+
 export async function listTeamsWithMembers(currentUser) {
   let whereClause = { isActive: true };
 
@@ -86,7 +100,8 @@ export async function listTeamsWithMembers(currentUser) {
   };
 
   const data = teams.map((team) => {
-  const isVantageTeam = team.name.toLowerCase().includes("vant");
+  const targetType = resolveTeamTargetType(team);
+  const isVantageTeam = targetType === "REVENUE";
   const leads = team.employees.filter(
     (p) => p.user.role === Role.TEAM_LEAD
   );
@@ -121,9 +136,7 @@ export async function listTeamsWithMembers(currentUser) {
       return total + combinedCount;
     }, 0);
 
-    // Vantage team (name contains "vant") = REVENUE; all other teams = PLACEMENTS
-    const targetType = team.name.toLowerCase().includes('vant') ? 'REVENUE' : 'PLACEMENTS';
-
+    // Vantage team = REVENUE display; otherwise PLACEMENTS (from stored profile targetType)
     return {
       id: team.id,
       name: team.name,
@@ -137,7 +150,7 @@ export async function listTeamsWithMembers(currentUser) {
         userId: p.user.id,
         name: p.user.name,
         level: p.level,
-        target: getTarget(p, team.name.toLowerCase().includes("vant")),
+        target: getTarget(p, isVantageTeam),
         targetType: p.targetType,
       })),
       members: members.map((p) => ({
@@ -145,7 +158,7 @@ export async function listTeamsWithMembers(currentUser) {
         userId: p.user.id,
         name: p.user.name,
         level: p.level,
-        target: getTarget(p, team.name.toLowerCase().includes("vant")),
+        target: getTarget(p, isVantageTeam),
         targetType: p.targetType,
         revenue: (p.user.personalPlacements || []).reduce(
           (sum, e) => sum + Number(e.revenueUsd || 0),
@@ -429,7 +442,7 @@ export async function getTeamDetails(idOrSlug) {
       slabQualified: row.slabQualified != null ? String(row.slabQualified) : null,
     });
   });
-  const isVantageTeam = team.name.toLowerCase().includes("vant");
+  const isVantageTeam = resolveTeamTargetType(team) === "REVENUE";
   const getTargetFromSheet = (emp) => {
     const s = summaryByEmployeeId.get(emp.id);
     if (!s) return null;
@@ -477,8 +490,7 @@ export async function getTeamDetails(idOrSlug) {
     return total + count;
   }, 0);
 
-  // Vantage team (name contains "vant") = REVENUE; all other teams = PLACEMENTS
-  const targetType = team.name.toLowerCase().includes('vant') ? 'REVENUE' : 'PLACEMENTS';
+  const targetType = resolveTeamTargetType(team);
 
   return {
     id: team.id,
