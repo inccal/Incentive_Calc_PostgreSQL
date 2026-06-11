@@ -379,9 +379,10 @@ export async function getSuperAdminOverview(currentUser, year) {
       return descendants;
     };
 
-    // Vantage: same placement columns but display as revenue ($). Use placement target/done/%; isPlacementTeam false so frontend adds $.
-    const isVantageTeam = team.name.toLowerCase().includes('vant');
-    const isPlacementTeam = !team.name.toLowerCase().includes('vant');
+    // Vantage: same placement columns but display as revenue ($). Use team.targetType when set.
+    const teamTargetType = team.targetType || (team.name.toLowerCase().includes('vant') ? 'REVENUE' : 'PLACEMENTS');
+    const isVantageTeam = teamTargetType === 'REVENUE';
+    const isPlacementTeam = teamTargetType === 'PLACEMENTS';
 
     // Recursive function to build hierarchical structure for UI
     const buildHierarchy = (managerId) => {
@@ -521,17 +522,9 @@ export async function getSuperAdminOverview(currentUser, year) {
       return leadNode;
     });
 
-    const teamTarget = team.employees.reduce((sum, emp) => {
-      const ps = personalSummaryByUserId.get(emp.id);
-      const t = isVantageTeam ? ps?.yearlyRevenueTarget : (ps?.yearlyPlacementTarget ?? ps?.yearlyRevenueTarget);
-      return sum + (t != null ? Number(t) : 0);
-    }, 0);
-
-    const teamAchievedValue = isVantageTeam
-      ? team.employees.reduce((sum, emp) => sum + (placementsByEmployee.get(emp.id) || 0), 0)
-      : isPlacementTeam
-        ? team.employees.reduce((sum, emp) => sum + (placementsByEmployee.get(emp.id) || 0), 0)
-        : team.employees.reduce((sum, emp) => sum + (revenueByEmployee.get(emp.id) || 0), 0);
+    // Manual team-level target/achieved (set via admin panel)
+    const teamTarget = Number(team.yearlyTarget ?? 0);
+    const teamAchievedValue = Number(team.achievedValue ?? 0);
 
     const teamPercentage =
       teamTarget > 0 ? Math.round((teamAchievedValue / teamTarget) * 100) : 0;
@@ -542,8 +535,8 @@ export async function getSuperAdminOverview(currentUser, year) {
       color: team.color || "blue",
       teamTarget,
       targetAchieved: teamPercentage,
-      totalRevenue: teamAchievedValue, // Contains revenue OR placements count depending on type
-      isPlacementTeam, // Flag for frontend
+      totalRevenue: teamAchievedValue,
+      isPlacementTeam,
       teamLeads,
     };
   });

@@ -810,13 +810,14 @@ const TeamPage = () => {
                   {teamData?.teams?.map((team, teamIndex) => {
                     const colorClasses = getTeamColorClasses(team.color)
                     const isPlacementTeam = team.isPlacementTeam
-                    const calculatedTeamTarget = team.teamTarget || team.teamLeads?.reduce((sum, lead) => {
-                      const leadTarget = Number(lead.target || 0)
-                      return sum + leadTarget
-                    }, 0) || 0
+                    const teamTarget = Number(team.teamTarget ?? 0)
+                    const teamAchieved = Number(team.totalRevenue ?? 0)
                     const formattedTeamTarget = isPlacementTeam 
-                      ? calculatedTeamTarget 
-                      : CalculationService.formatCurrency(calculatedTeamTarget)
+                      ? teamTarget 
+                      : CalculationService.formatCurrency(teamTarget)
+                    const formattedTeamAchieved = isPlacementTeam
+                      ? teamAchieved
+                      : CalculationService.formatCurrency(teamAchieved)
                     const teamMembersCount = team.teamLeads?.reduce((acc, lead) => acc + (lead.members?.length || 0), 0) || 0
                     
                     return (
@@ -860,6 +861,18 @@ const TeamPage = () => {
                                   />
                                 </div>
                                 <div className="flex items-center gap-4 text-sm text-slate-600">
+                                  <div className="flex items-center gap-1.5">
+                                    <span className="text-slate-500">Target:</span>
+                                    <span className="font-semibold text-slate-800">
+                                      {isPlacementTeam ? `${formattedTeamTarget} Placements` : formattedTeamTarget}
+                                    </span>
+                                  </div>
+                                  <div className="flex items-center gap-1.5">
+                                    <span className="text-slate-500">Achieved:</span>
+                                    <span className="font-semibold text-emerald-600">
+                                      {isPlacementTeam ? `${formattedTeamAchieved} Placements` : formattedTeamAchieved}
+                                    </span>
+                                  </div>
                                   <div className="flex items-center gap-1.5">
                                     <svg className="w-4 h-4" fill="currentColor" viewBox="0 0 20 20">
                                       <path d="M13 6a3 3 0 11-6 0 3 3 0 016 0zM18 8a2 2 0 11-4 0 2 2 0 014 0zM14 15a4 4 0 00-8 0v3h8v-3z" />

@@ -13,12 +13,21 @@ function teamSlug(team) {
 const AdminTeamManagement = () => {
   const { user } = useAuth();
   const navigate = useNavigate();
-  const { teams, isLoading, error, createTeam, deleteTeam } = useTeams();
+  const { teams, isLoading, error, createTeam, deleteTeam, updateTeam } = useTeams();
+  const canEditTeamMetrics = user?.role === "S1_ADMIN" || user?.role === "SUPER_ADMIN";
   
   // Create Team Modal
   const [showModal, setShowModal] = useState(false);
   const [formData, setFormData] = useState({
     name: "",
+  });
+
+  // Edit team target/achieved modal
+  const [editTeam, setEditTeam] = useState(null);
+  const [editForm, setEditForm] = useState({
+    yearlyTarget: "",
+    achievedValue: "",
+    targetType: "PLACEMENTS",
   });
 
   const handleSubmit = (e) => {
@@ -41,6 +50,34 @@ const AdminTeamManagement = () => {
         alert(err.message);
       }
     });
+  };
+
+  const openEditModal = (team) => {
+    setEditTeam(team);
+    setEditForm({
+      yearlyTarget: String(team.yearlyTarget ?? 0),
+      achievedValue: String(team.achievedValue ?? team.totalPlacements ?? team.totalRevenue ?? 0),
+      targetType: team.targetType || "PLACEMENTS",
+    });
+  };
+
+  const handleEditSubmit = (e) => {
+    e.preventDefault();
+    if (!editTeam) return;
+    updateTeam(
+      {
+        teamId: editTeam.id,
+        data: {
+          yearlyTarget: Number(editForm.yearlyTarget) || 0,
+          achievedValue: Number(editForm.achievedValue) || 0,
+          targetType: editForm.targetType,
+        },
+      },
+      {
+        onSuccess: () => setEditTeam(null),
+        onError: (err) => alert(err.message),
+      }
+    );
   };
 
   if (isLoading) {
@@ -136,6 +173,18 @@ const AdminTeamManagement = () => {
               <div className="p-6">
                 <div className="flex justify-between items-start mb-4">
                   <h3 className="text-xl font-bold text-slate-800">{team.name}</h3>
+                  {canEditTeamMetrics && (
+                    <button
+                      type="button"
+                      onClick={() => openEditModal(team)}
+                      className="text-slate-400 hover:text-blue-600 p-1 rounded-lg hover:bg-blue-50 transition-colors"
+                      title="Edit target & achieved"
+                    >
+                      <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z" />
+                      </svg>
+                    </button>
+                  )}
                 </div>
                 
                 <div className="space-y-3 mb-6">
@@ -189,6 +238,67 @@ const AdminTeamManagement = () => {
             </div>
           ))}
         </div>
+
+        {editTeam && (
+          <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4">
+            <div className="bg-white rounded-xl shadow-xl max-w-md w-full p-6 animate-fadeIn">
+              <h2 className="text-xl font-bold text-slate-800 mb-1">Edit Team Metrics</h2>
+              <p className="text-sm text-slate-500 mb-4">{editTeam.name}</p>
+              <form onSubmit={handleEditSubmit} className="space-y-4">
+                <div>
+                  <label className="block text-sm font-medium text-slate-700 mb-1">Target Type</label>
+                  <select
+                    value={editForm.targetType}
+                    onChange={(e) => setEditForm({ ...editForm, targetType: e.target.value })}
+                    className="w-full px-3 py-2 border border-slate-300 rounded-lg focus:ring-2 focus:ring-blue-500 outline-none"
+                  >
+                    <option value="PLACEMENTS">Placement Based</option>
+                    <option value="REVENUE">Revenue Based</option>
+                  </select>
+                </div>
+                <div>
+                  <label className="block text-sm font-medium text-slate-700 mb-1">Total Target</label>
+                  <input
+                    type="number"
+                    min="0"
+                    step="any"
+                    required
+                    value={editForm.yearlyTarget}
+                    onChange={(e) => setEditForm({ ...editForm, yearlyTarget: e.target.value })}
+                    className="w-full px-3 py-2 border border-slate-300 rounded-lg focus:ring-2 focus:ring-blue-500 outline-none"
+                  />
+                </div>
+                <div>
+                  <label className="block text-sm font-medium text-slate-700 mb-1">Achieved</label>
+                  <input
+                    type="number"
+                    min="0"
+                    step="any"
+                    required
+                    value={editForm.achievedValue}
+                    onChange={(e) => setEditForm({ ...editForm, achievedValue: e.target.value })}
+                    className="w-full px-3 py-2 border border-slate-300 rounded-lg focus:ring-2 focus:ring-blue-500 outline-none"
+                  />
+                </div>
+                <div className="flex justify-end gap-3 mt-6">
+                  <button
+                    type="button"
+                    onClick={() => setEditTeam(null)}
+                    className="px-4 py-2 text-slate-600 hover:bg-slate-100 rounded-lg font-medium"
+                  >
+                    Cancel
+                  </button>
+                  <button
+                    type="submit"
+                    className="px-4 py-2 bg-blue-600 hover:bg-blue-700 text-white rounded-lg font-medium shadow-sm"
+                  >
+                    Save
+                  </button>
+                </div>
+              </form>
+            </div>
+          </div>
+        )}
 
         {showModal && (
           <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4">

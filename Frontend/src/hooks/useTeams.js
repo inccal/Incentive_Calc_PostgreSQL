@@ -48,6 +48,23 @@ export const useTeams = () => {
     },
   })
 
+  const updateTeamMutation = useMutation({
+    mutationFn: async ({ teamId, data }) => {
+      const response = await apiRequest(`/teams/${teamId}`, {
+        method: 'PUT',
+        body: JSON.stringify(data),
+      })
+      if (!response.ok) {
+        const errData = await response.json().catch(() => ({}))
+        throw new Error(errData.error || 'Failed to update team')
+      }
+      return response.json()
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries(['teams'])
+    },
+  })
+
   return {
     teams: teamsQuery.data,
     isLoading: teamsQuery.isLoading,
@@ -56,6 +73,8 @@ export const useTeams = () => {
     isCreating: createTeamMutation.isLoading,
     deleteTeam: deleteTeamMutation.mutate,
     isDeleting: deleteTeamMutation.isLoading,
+    updateTeam: updateTeamMutation.mutate,
+    isUpdating: updateTeamMutation.isLoading,
   }
 }
 

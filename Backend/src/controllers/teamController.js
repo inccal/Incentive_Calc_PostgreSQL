@@ -3,8 +3,9 @@ import prisma from "../prisma.js";
 
 // const prisma = new PrismaClient();
 
-/** Read team target type from member profiles (Team Settings); fallback to legacy name heuristic. */
+/** Read team target type from stored Team.targetType, else member profiles, else legacy name heuristic. */
 function resolveTeamTargetType(team) {
+  if (team.targetType) return team.targetType;
   const types = (team.employees || [])
     .map((e) => e.targetType)
     .filter(Boolean);
@@ -100,51 +101,32 @@ export async function listTeamsWithMembers(currentUser) {
   };
 
   const data = teams.map((team) => {
-  const targetType = resolveTeamTargetType(team);
-  const isVantageTeam = targetType === "REVENUE";
-  const leads = team.employees.filter(
-    (p) => p.user.role === Role.TEAM_LEAD
-  );
-  // Treat L2/L3 leads as "members" as well so they show up
-  // in the Team Members section for management and personal uploads.
-  const members = team.employees.filter((p) => {
-    if (p.user.role === Role.EMPLOYEE) return true;
-    if (p.user.role === Role.TEAM_LEAD) {
-      const lvl = (p.level || "").toUpperCase();
-      return lvl === "L2" || lvl === "L3";
-    }
-    return false;
-  });
-
-    // Aggregated target from sheet only (null treated as 0 for sum)
-    const aggregatedTarget = team.employees.reduce(
-      (sum, member) => sum + (getTarget(member, isVantageTeam) ?? 0),
-      0
+    const targetType = resolveTeamTargetType(team);
+    const isVantageTeam = targetType === "REVENUE";
+    const leads = team.employees.filter(
+      (p) => p.user.role === Role.TEAM_LEAD
     );
+    const members = team.employees.filter((p) => {
+      if (p.user.role === Role.EMPLOYEE) return true;
+      if (p.user.role === Role.TEAM_LEAD) {
+        const lvl = (p.level || "").toUpperCase();
+        return lvl === "L2" || lvl === "L3";
+      }
+      return false;
+    });
 
-    const aggregatedRevenue = team.employees.reduce((total, member) => {
-      const combinedPlacements = member.user.personalPlacements || [];
-      const memberRevenue = combinedPlacements.reduce(
-        (sum, entry) => sum + Number(entry.revenueUsd || 0),
-        0
-      );
-      return total + memberRevenue;
-    }, 0);
+    const yearlyTarget = Number(team.yearlyTarget ?? 0);
+    const achievedValue = Number(team.achievedValue ?? 0);
 
-    const aggregatedPlacementsCount = team.employees.reduce((total, member) => {
-      const combinedCount = (member.user.personalPlacements?.length || 0);
-      return total + combinedCount;
-    }, 0);
-
-    // Vantage team = REVENUE display; otherwise PLACEMENTS (from stored profile targetType)
     return {
       id: team.id,
       name: team.name,
       color: team.color,
-      yearlyTarget: aggregatedTarget, // Use aggregated target from leads
+      yearlyTarget,
+      achievedValue,
       targetType,
-      totalRevenue: aggregatedRevenue, // Add calculated revenue
-      totalPlacements: aggregatedPlacementsCount,
+      totalRevenue: targetType === "REVENUE" ? achievedValue : 0,
+      totalPlacements: targetType === "PLACEMENTS" ? achievedValue : 0,
       leads: leads.map((p) => ({
         id: p.id,
         userId: p.user.id,
@@ -208,18 +190,20 @@ export async function createTeam(payload, actorId) {
 }
 
 export async function updateTeam(id, payload, actorId) {
-  const { name, color, yearlyTarget, targetType } = payload;
+  const { name, color, yearlyTarget, achievedValue, targetType } = payload;
   const data = {};
   if (name !== undefined) data.name = name;
   if (color !== undefined) data.color = color;
   if (yearlyTarget !== undefined) data.yearlyTarget = yearlyTarget;
+  if (achievedValue !== undefined) data.achievedValue = achievedValue;
+  if (targetType !== undefined) data.targetType = targetType;
 
   const team = await prisma.team.update({
     where: { id },
     data,
   });
 
-  // Propagate targetType only (targets come from sheet)
+  // Propagate targetType to member profiles when changed
   if (targetType) {
     await prisma.employeeProfile.updateMany({
       where: { teamId: id, deletedAt: null },
@@ -233,7 +217,7 @@ export async function updateTeam(id, payload, actorId) {
       action: "TEAM_UPDATED",
       entityType: "Team",
       entityId: id,
-      changes: { name, color, yearlyTarget, targetType },
+      changes: { name, color, yearlyTarget, achievedValue, targetType },
     },
   });
 
@@ -450,56 +434,19 @@ export async function getTeamDetails(idOrSlug) {
     return t != null ? t : null;
   };
 
-  const aggregatedTarget = team.employees.reduce(
-    (sum, member) => sum + (getTargetFromSheet(member) ?? 0),
-    0
-  );
-
-  const aggregatedRevenue = team.employees.reduce((total, member) => {
-    const raw = member.user.personalPlacements || [];
-    const combinedPlacements = excludeSummaryOnly(raw);
-    const memberRevenue = combinedPlacements.reduce(
-      (sum, entry) => sum + Number(entry.revenue || entry.revenueUsd || 0),
-      0
-    );
-    
-    // For leads, also add team placement revenue
-    if (member.user.role === Role.TEAM_LEAD) {
-      const leadTeamPlacements = teamPlacementsByLead.get(member.user.id) || [];
-      const teamRevenue = leadTeamPlacements.reduce(
-        (sum, tp) => sum + Number(tp.revenueLeadUsd || 0),
-        0
-      );
-      return total + memberRevenue + teamRevenue;
-    }
-    
-    return total + memberRevenue;
-  }, 0);
-
-  const aggregatedPlacementsCount = team.employees.reduce((total, member) => {
-    const raw = member.user.personalPlacements || [];
-    const combinedPlacements = excludeSummaryOnly(raw);
-    let count = combinedPlacements.length;
-    
-    // For leads, also add team placement count
-    if (member.user.role === Role.TEAM_LEAD) {
-      const leadTeamPlacements = teamPlacementsByLead.get(member.user.id) || [];
-      count += leadTeamPlacements.length;
-    }
-    
-    return total + count;
-  }, 0);
-
   const targetType = resolveTeamTargetType(team);
+  const yearlyTarget = Number(team.yearlyTarget ?? 0);
+  const achievedValue = Number(team.achievedValue ?? 0);
 
   return {
     id: team.id,
     name: team.name,
     color: team.color,
-    yearlyTarget: aggregatedTarget,
+    yearlyTarget,
+    achievedValue,
     targetType,
-    totalRevenue: aggregatedRevenue,
-    totalPlacements: aggregatedPlacementsCount,
+    totalRevenue: targetType === "REVENUE" ? achievedValue : 0,
+    totalPlacements: targetType === "PLACEMENTS" ? achievedValue : 0,
     // Team Leads tab: show only team-sheet data (placements under this lead from team import), not personal/recruiter data
     leads: leads.map((p) => {
       const leadTeamPlacements = teamPlacementsByLead.get(p.user.id) || [];

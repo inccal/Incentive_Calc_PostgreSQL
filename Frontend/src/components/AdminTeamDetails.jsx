@@ -21,7 +21,7 @@ const AdminTeamDetails = () => {
   const { id } = useParams();
   const navigate = useNavigate();
   const { user: currentUser } = useAuth();
-  const canEditTarget = currentUser?.role === "S1_ADMIN";
+  const canEditTarget = currentUser?.role === "S1_ADMIN" || currentUser?.role === "SUPER_ADMIN";
   const canBulkComment = currentUser?.role === "S1_ADMIN";
   
   const { 
@@ -395,8 +395,8 @@ const AdminTeamDetails = () => {
               </span></span>
               <span>Achieved: <span className="font-semibold text-emerald-600">
                 {team.targetType === "PLACEMENTS"
-                  ? `${team.totalPlacements || 0} Placements`
-                  : CalculationService.formatCurrency(team.totalRevenue)
+                  ? `${team.achievedValue ?? team.totalPlacements ?? 0} Placements`
+                  : CalculationService.formatCurrency(team.achievedValue ?? team.totalRevenue ?? 0)
                 }
               </span></span>
             </div>
@@ -634,6 +634,8 @@ const AdminTeamDetails = () => {
               handleUpdateTeam({
                 name: formData.get("name"),
                 targetType: formData.get("targetType"),
+                yearlyTarget: Number(formData.get("yearlyTarget")) || 0,
+                achievedValue: Number(formData.get("achievedValue")) || 0,
               });
             }}>
               <div className="space-y-4">
@@ -657,23 +659,60 @@ const AdminTeamDetails = () => {
                     <option value="REVENUE">Revenue Based</option>
                     <option value="PLACEMENTS">Placement Based</option>
                   </select>
-                  <p className="text-xs text-slate-500 mt-1">
-                    Changing this will reset member targets if they are incompatible.
-                  </p>
                 </div>
 
-                <div className="bg-slate-50 p-3 rounded-lg border border-slate-200">
-                  <span className="text-sm text-slate-600">Total Target: </span>
-                  <span className="font-semibold text-slate-900">
-                    {team.targetType === "PLACEMENTS" 
-                      ? `${team.yearlyTarget || 0} Placements`
-                      : CalculationService.formatCurrency(team.yearlyTarget)
-                    }
-                  </span>
-                  <p className="text-xs text-slate-500 mt-1">
-                    Calculated automatically from member targets.
-                  </p>
-                </div>
+                {canEditTarget && (
+                  <>
+                    <div>
+                      <label className="block text-sm font-medium text-slate-700 mb-1">Total Target</label>
+                      <input
+                        name="yearlyTarget"
+                        type="number"
+                        min="0"
+                        step="any"
+                        defaultValue={team.yearlyTarget ?? 0}
+                        className="w-full px-3 py-2 border border-slate-300 rounded-lg focus:ring-2 focus:ring-blue-500 outline-none transition-all"
+                        required
+                      />
+                    </div>
+                    <div>
+                      <label className="block text-sm font-medium text-slate-700 mb-1">Achieved</label>
+                      <input
+                        name="achievedValue"
+                        type="number"
+                        min="0"
+                        step="any"
+                        defaultValue={team.achievedValue ?? team.totalPlacements ?? team.totalRevenue ?? 0}
+                        className="w-full px-3 py-2 border border-slate-300 rounded-lg focus:ring-2 focus:ring-blue-500 outline-none transition-all"
+                        required
+                      />
+                      <p className="text-xs text-slate-500 mt-1">
+                        Set manually — not calculated from member data.
+                      </p>
+                    </div>
+                  </>
+                )}
+
+                {!canEditTarget && (
+                  <div className="bg-slate-50 p-3 rounded-lg border border-slate-200 space-y-2">
+                    <div>
+                      <span className="text-sm text-slate-600">Total Target: </span>
+                      <span className="font-semibold text-slate-900">
+                        {team.targetType === "PLACEMENTS"
+                          ? `${team.yearlyTarget || 0} Placements`
+                          : CalculationService.formatCurrency(team.yearlyTarget)}
+                      </span>
+                    </div>
+                    <div>
+                      <span className="text-sm text-slate-600">Achieved: </span>
+                      <span className="font-semibold text-emerald-600">
+                        {team.targetType === "PLACEMENTS"
+                          ? `${team.achievedValue ?? team.totalPlacements ?? 0} Placements`
+                          : CalculationService.formatCurrency(team.achievedValue ?? team.totalRevenue ?? 0)}
+                      </span>
+                    </div>
+                  </div>
+                )}
               </div>
 
               <div className="flex justify-end gap-3 mt-6">

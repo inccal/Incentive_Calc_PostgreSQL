@@ -34,11 +34,13 @@ enum BillingStatus {
 }
 
 model Team {
-  id           String            @id @default(cuid())
-  name         String            @unique
-  color        String?
-  yearlyTarget Decimal           @db.Decimal(14, 2)
-  isActive     Boolean           @default(true)
+  id            String            @id @default(cuid())
+  name          String            @unique
+  color         String?
+  yearlyTarget  Decimal           @db.Decimal(14, 2)
+  achievedValue Decimal           @default(0) @db.Decimal(14, 2)
+  targetType    TargetType        @default(PLACEMENTS)
+  isActive      Boolean           @default(true)
   employees    EmployeeProfile[]
   createdAt    DateTime          @default(now())
   updatedAt    DateTime          @updatedAt

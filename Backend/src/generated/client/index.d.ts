@@ -75,7 +75,15 @@ export type SlabTemplate = $Result.DefaultSelection<Prisma.$SlabTemplatePayload>
  * Enums
  */
 export namespace $Enums {
-  export const Role: {
+  export const TargetType: {
+  REVENUE: 'REVENUE',
+  PLACEMENTS: 'PLACEMENTS'
+};
+
+export type TargetType = (typeof TargetType)[keyof typeof TargetType]
+
+
+export const Role: {
   S1_ADMIN: 'S1_ADMIN',
   SUPER_ADMIN: 'SUPER_ADMIN',
   TEAM_LEAD: 'TEAM_LEAD',
@@ -84,14 +92,6 @@ export namespace $Enums {
 };
 
 export type Role = (typeof Role)[keyof typeof Role]
-
-
-export const TargetType: {
-  REVENUE: 'REVENUE',
-  PLACEMENTS: 'PLACEMENTS'
-};
-
-export type TargetType = (typeof TargetType)[keyof typeof TargetType]
 
 
 export const PlacementImportType: {
@@ -103,13 +103,13 @@ export type PlacementImportType = (typeof PlacementImportType)[keyof typeof Plac
 
 }
 
-export type Role = $Enums.Role
-
-export const Role: typeof $Enums.Role
-
 export type TargetType = $Enums.TargetType
 
 export const TargetType: typeof $Enums.TargetType
+
+export type Role = $Enums.Role
+
+export const Role: typeof $Enums.Role
 
 export type PlacementImportType = $Enums.PlacementImportType
 
@@ -1927,10 +1927,12 @@ export namespace Prisma {
 
   export type TeamAvgAggregateOutputType = {
     yearlyTarget: Decimal | null
+    achievedValue: Decimal | null
   }
 
   export type TeamSumAggregateOutputType = {
     yearlyTarget: Decimal | null
+    achievedValue: Decimal | null
   }
 
   export type TeamMinAggregateOutputType = {
@@ -1938,6 +1940,8 @@ export namespace Prisma {
     name: string | null
     color: string | null
     yearlyTarget: Decimal | null
+    achievedValue: Decimal | null
+    targetType: $Enums.TargetType | null
     isActive: boolean | null
     createdAt: Date | null
     updatedAt: Date | null
@@ -1948,6 +1952,8 @@ export namespace Prisma {
     name: string | null
     color: string | null
     yearlyTarget: Decimal | null
+    achievedValue: Decimal | null
+    targetType: $Enums.TargetType | null
     isActive: boolean | null
     createdAt: Date | null
     updatedAt: Date | null
@@ -1958,6 +1964,8 @@ export namespace Prisma {
     name: number
     color: number
     yearlyTarget: number
+    achievedValue: number
+    targetType: number
     isActive: number
     createdAt: number
     updatedAt: number
@@ -1967,10 +1975,12 @@ export namespace Prisma {
 
   export type TeamAvgAggregateInputType = {
     yearlyTarget?: true
+    achievedValue?: true
   }
 
   export type TeamSumAggregateInputType = {
     yearlyTarget?: true
+    achievedValue?: true
   }
 
   export type TeamMinAggregateInputType = {
@@ -1978,6 +1988,8 @@ export namespace Prisma {
     name?: true
     color?: true
     yearlyTarget?: true
+    achievedValue?: true
+    targetType?: true
     isActive?: true
     createdAt?: true
     updatedAt?: true
@@ -1988,6 +2000,8 @@ export namespace Prisma {
     name?: true
     color?: true
     yearlyTarget?: true
+    achievedValue?: true
+    targetType?: true
     isActive?: true
     createdAt?: true
     updatedAt?: true
@@ -1998,6 +2012,8 @@ export namespace Prisma {
     name?: true
     color?: true
     yearlyTarget?: true
+    achievedValue?: true
+    targetType?: true
     isActive?: true
     createdAt?: true
     updatedAt?: true
@@ -2095,6 +2111,8 @@ export namespace Prisma {
     name: string
     color: string | null
     yearlyTarget: Decimal
+    achievedValue: Decimal
+    targetType: $Enums.TargetType
     isActive: boolean
     createdAt: Date
     updatedAt: Date
@@ -2124,6 +2142,8 @@ export namespace Prisma {
     name?: boolean
     color?: boolean
     yearlyTarget?: boolean
+    achievedValue?: boolean
+    targetType?: boolean
     isActive?: boolean
     createdAt?: boolean
     updatedAt?: boolean
@@ -2136,6 +2156,8 @@ export namespace Prisma {
     name?: boolean
     color?: boolean
     yearlyTarget?: boolean
+    achievedValue?: boolean
+    targetType?: boolean
     isActive?: boolean
     createdAt?: boolean
     updatedAt?: boolean
@@ -2146,6 +2168,8 @@ export namespace Prisma {
     name?: boolean
     color?: boolean
     yearlyTarget?: boolean
+    achievedValue?: boolean
+    targetType?: boolean
     isActive?: boolean
     createdAt?: boolean
     updatedAt?: boolean
@@ -2167,6 +2191,8 @@ export namespace Prisma {
       name: string
       color: string | null
       yearlyTarget: Prisma.Decimal
+      achievedValue: Prisma.Decimal
+      targetType: $Enums.TargetType
       isActive: boolean
       createdAt: Date
       updatedAt: Date
@@ -2568,6 +2594,8 @@ export namespace Prisma {
     readonly name: FieldRef<"Team", 'String'>
     readonly color: FieldRef<"Team", 'String'>
     readonly yearlyTarget: FieldRef<"Team", 'Decimal'>
+    readonly achievedValue: FieldRef<"Team", 'Decimal'>
+    readonly targetType: FieldRef<"Team", 'TargetType'>
     readonly isActive: FieldRef<"Team", 'Boolean'>
     readonly createdAt: FieldRef<"Team", 'DateTime'>
     readonly updatedAt: FieldRef<"Team", 'DateTime'>
@@ -13750,6 +13778,8 @@ export namespace Prisma {
     name: 'name',
     color: 'color',
     yearlyTarget: 'yearlyTarget',
+    achievedValue: 'achievedValue',
+    targetType: 'targetType',
     isActive: 'isActive',
     createdAt: 'createdAt',
     updatedAt: 'updatedAt'
@@ -14030,6 +14060,20 @@ export namespace Prisma {
 
 
   /**
+   * Reference to a field of type 'TargetType'
+   */
+  export type EnumTargetTypeFieldRefInput<$PrismaModel> = FieldRefInputType<$PrismaModel, 'TargetType'>
+    
+
+
+  /**
+   * Reference to a field of type 'TargetType[]'
+   */
+  export type ListEnumTargetTypeFieldRefInput<$PrismaModel> = FieldRefInputType<$PrismaModel, 'TargetType[]'>
+    
+
+
+  /**
    * Reference to a field of type 'Boolean'
    */
   export type BooleanFieldRefInput<$PrismaModel> = FieldRefInputType<$PrismaModel, 'Boolean'>
@@ -14061,20 +14105,6 @@ export namespace Prisma {
    * Reference to a field of type 'Role[]'
    */
   export type ListEnumRoleFieldRefInput<$PrismaModel> = FieldRefInputType<$PrismaModel, 'Role[]'>
-    
-
-
-  /**
-   * Reference to a field of type 'TargetType'
-   */
-  export type EnumTargetTypeFieldRefInput<$PrismaModel> = FieldRefInputType<$PrismaModel, 'TargetType'>
-    
-
-
-  /**
-   * Reference to a field of type 'TargetType[]'
-   */
-  export type ListEnumTargetTypeFieldRefInput<$PrismaModel> = FieldRefInputType<$PrismaModel, 'TargetType[]'>
     
 
 
@@ -14138,6 +14168,8 @@ export namespace Prisma {
     name?: StringFilter<"Team"> | string
     color?: StringNullableFilter<"Team"> | string | null
     yearlyTarget?: DecimalFilter<"Team"> | Decimal | DecimalJsLike | number | string
+    achievedValue?: DecimalFilter<"Team"> | Decimal | DecimalJsLike | number | string
+    targetType?: EnumTargetTypeFilter<"Team"> | $Enums.TargetType
     isActive?: BoolFilter<"Team"> | boolean
     createdAt?: DateTimeFilter<"Team"> | Date | string
     updatedAt?: DateTimeFilter<"Team"> | Date | string
@@ -14149,6 +14181,8 @@ export namespace Prisma {
     name?: SortOrder
     color?: SortOrderInput | SortOrder
     yearlyTarget?: SortOrder
+    achievedValue?: SortOrder
+    targetType?: SortOrder
     isActive?: SortOrder
     createdAt?: SortOrder
     updatedAt?: SortOrder
@@ -14163,6 +14197,8 @@ export namespace Prisma {
     NOT?: TeamWhereInput | TeamWhereInput[]
     color?: StringNullableFilter<"Team"> | string | null
     yearlyTarget?: DecimalFilter<"Team"> | Decimal | DecimalJsLike | number | string
+    achievedValue?: DecimalFilter<"Team"> | Decimal | DecimalJsLike | number | string
+    targetType?: EnumTargetTypeFilter<"Team"> | $Enums.TargetType
     isActive?: BoolFilter<"Team"> | boolean
     createdAt?: DateTimeFilter<"Team"> | Date | string
     updatedAt?: DateTimeFilter<"Team"> | Date | string
@@ -14174,6 +14210,8 @@ export namespace Prisma {
     name?: SortOrder
     color?: SortOrderInput | SortOrder
     yearlyTarget?: SortOrder
+    achievedValue?: SortOrder
+    targetType?: SortOrder
     isActive?: SortOrder
     createdAt?: SortOrder
     updatedAt?: SortOrder
@@ -14192,6 +14230,8 @@ export namespace Prisma {
     name?: StringWithAggregatesFilter<"Team"> | string
     color?: StringNullableWithAggregatesFilter<"Team"> | string | null
     yearlyTarget?: DecimalWithAggregatesFilter<"Team"> | Decimal | DecimalJsLike | number | string
+    achievedValue?: DecimalWithAggregatesFilter<"Team"> | Decimal | DecimalJsLike | number | string
+    targetType?: EnumTargetTypeWithAggregatesFilter<"Team"> | $Enums.TargetType
     isActive?: BoolWithAggregatesFilter<"Team"> | boolean
     createdAt?: DateTimeWithAggregatesFilter<"Team"> | Date | string
     updatedAt?: DateTimeWithAggregatesFilter<"Team"> | Date | string
@@ -15201,6 +15241,8 @@ export namespace Prisma {
     name: string
     color?: string | null
     yearlyTarget: Decimal | DecimalJsLike | number | string
+    achievedValue?: Decimal | DecimalJsLike | number | string
+    targetType?: $Enums.TargetType
     isActive?: boolean
     createdAt?: Date | string
     updatedAt?: Date | string
@@ -15212,6 +15254,8 @@ export namespace Prisma {
     name: string
     color?: string | null
     yearlyTarget: Decimal | DecimalJsLike | number | string
+    achievedValue?: Decimal | DecimalJsLike | number | string
+    targetType?: $Enums.TargetType
     isActive?: boolean
     createdAt?: Date | string
     updatedAt?: Date | string
@@ -15223,6 +15267,8 @@ export namespace Prisma {
     name?: StringFieldUpdateOperationsInput | string
     color?: NullableStringFieldUpdateOperationsInput | string | null
     yearlyTarget?: DecimalFieldUpdateOperationsInput | Decimal | DecimalJsLike | number | string
+    achievedValue?: DecimalFieldUpdateOperationsInput | Decimal | DecimalJsLike | number | string
+    targetType?: EnumTargetTypeFieldUpdateOperationsInput | $Enums.TargetType
     isActive?: BoolFieldUpdateOperationsInput | boolean
     createdAt?: DateTimeFieldUpdateOperationsInput | Date | string
     updatedAt?: DateTimeFieldUpdateOperationsInput | Date | string
@@ -15234,6 +15280,8 @@ export namespace Prisma {
     name?: StringFieldUpdateOperationsInput | string
     color?: NullableStringFieldUpdateOperationsInput | string | null
     yearlyTarget?: DecimalFieldUpdateOperationsInput | Decimal | DecimalJsLike | number | string
+    achievedValue?: DecimalFieldUpdateOperationsInput | Decimal | DecimalJsLike | number | string
+    targetType?: EnumTargetTypeFieldUpdateOperationsInput | $Enums.TargetType
     isActive?: BoolFieldUpdateOperationsInput | boolean
     createdAt?: DateTimeFieldUpdateOperationsInput | Date | string
     updatedAt?: DateTimeFieldUpdateOperationsInput | Date | string
@@ -15245,6 +15293,8 @@ export namespace Prisma {
     name: string
     color?: string | null
     yearlyTarget: Decimal | DecimalJsLike | number | string
+    achievedValue?: Decimal | DecimalJsLike | number | string
+    targetType?: $Enums.TargetType
     isActive?: boolean
     createdAt?: Date | string
     updatedAt?: Date | string
@@ -15255,6 +15305,8 @@ export namespace Prisma {
     name?: StringFieldUpdateOperationsInput | string
     color?: NullableStringFieldUpdateOperationsInput | string | null
     yearlyTarget?: DecimalFieldUpdateOperationsInput | Decimal | DecimalJsLike | number | string
+    achievedValue?: DecimalFieldUpdateOperationsInput | Decimal | DecimalJsLike | number | string
+    targetType?: EnumTargetTypeFieldUpdateOperationsInput | $Enums.TargetType
     isActive?: BoolFieldUpdateOperationsInput | boolean
     createdAt?: DateTimeFieldUpdateOperationsInput | Date | string
     updatedAt?: DateTimeFieldUpdateOperationsInput | Date | string
@@ -15265,6 +15317,8 @@ export namespace Prisma {
     name?: StringFieldUpdateOperationsInput | string
     color?: NullableStringFieldUpdateOperationsInput | string | null
     yearlyTarget?: DecimalFieldUpdateOperationsInput | Decimal | DecimalJsLike | number | string
+    achievedValue?: DecimalFieldUpdateOperationsInput | Decimal | DecimalJsLike | number | string
+    targetType?: EnumTargetTypeFieldUpdateOperationsInput | $Enums.TargetType
     isActive?: BoolFieldUpdateOperationsInput | boolean
     createdAt?: DateTimeFieldUpdateOperationsInput | Date | string
     updatedAt?: DateTimeFieldUpdateOperationsInput | Date | string
@@ -16466,6 +16520,13 @@ export namespace Prisma {
     not?: NestedDecimalFilter<$PrismaModel> | Decimal | DecimalJsLike | number | string
   }
 
+  export type EnumTargetTypeFilter<$PrismaModel = never> = {
+    equals?: $Enums.TargetType | EnumTargetTypeFieldRefInput<$PrismaModel>
+    in?: $Enums.TargetType[] | ListEnumTargetTypeFieldRefInput<$PrismaModel>
+    notIn?: $Enums.TargetType[] | ListEnumTargetTypeFieldRefInput<$PrismaModel>
+    not?: NestedEnumTargetTypeFilter<$PrismaModel> | $Enums.TargetType
+  }
+
   export type BoolFilter<$PrismaModel = never> = {
     equals?: boolean | BooleanFieldRefInput<$PrismaModel>
     not?: NestedBoolFilter<$PrismaModel> | boolean
@@ -16502,6 +16563,8 @@ export namespace Prisma {
     name?: SortOrder
     color?: SortOrder
     yearlyTarget?: SortOrder
+    achievedValue?: SortOrder
+    targetType?: SortOrder
     isActive?: SortOrder
     createdAt?: SortOrder
     updatedAt?: SortOrder
@@ -16509,6 +16572,7 @@ export namespace Prisma {
 
   export type TeamAvgOrderByAggregateInput = {
     yearlyTarget?: SortOrder
+    achievedValue?: SortOrder
   }
 
   export type TeamMaxOrderByAggregateInput = {
@@ -16516,6 +16580,8 @@ export namespace Prisma {
     name?: SortOrder
     color?: SortOrder
     yearlyTarget?: SortOrder
+    achievedValue?: SortOrder
+    targetType?: SortOrder
     isActive?: SortOrder
     createdAt?: SortOrder
     updatedAt?: SortOrder
@@ -16526,6 +16592,8 @@ export namespace Prisma {
     name?: SortOrder
     color?: SortOrder
     yearlyTarget?: SortOrder
+    achievedValue?: SortOrder
+    targetType?: SortOrder
     isActive?: SortOrder
     createdAt?: SortOrder
     updatedAt?: SortOrder
@@ -16533,6 +16601,7 @@ export namespace Prisma {
 
   export type TeamSumOrderByAggregateInput = {
     yearlyTarget?: SortOrder
+    achievedValue?: SortOrder
   }
 
   export type StringWithAggregatesFilter<$PrismaModel = never> = {
@@ -16585,6 +16654,16 @@ export namespace Prisma {
     _sum?: NestedDecimalFilter<$PrismaModel>
     _min?: NestedDecimalFilter<$PrismaModel>
     _max?: NestedDecimalFilter<$PrismaModel>
+  }
+
+  export type EnumTargetTypeWithAggregatesFilter<$PrismaModel = never> = {
+    equals?: $Enums.TargetType | EnumTargetTypeFieldRefInput<$PrismaModel>
+    in?: $Enums.TargetType[] | ListEnumTargetTypeFieldRefInput<$PrismaModel>
+    notIn?: $Enums.TargetType[] | ListEnumTargetTypeFieldRefInput<$PrismaModel>
+    not?: NestedEnumTargetTypeWithAggregatesFilter<$PrismaModel> | $Enums.TargetType
+    _count?: NestedIntFilter<$PrismaModel>
+    _min?: NestedEnumTargetTypeFilter<$PrismaModel>
+    _max?: NestedEnumTargetTypeFilter<$PrismaModel>
   }
 
   export type BoolWithAggregatesFilter<$PrismaModel = never> = {
@@ -16816,13 +16895,6 @@ export namespace Prisma {
     _max?: NestedDateTimeNullableFilter<$PrismaModel>
   }
 
-  export type EnumTargetTypeFilter<$PrismaModel = never> = {
-    equals?: $Enums.TargetType | EnumTargetTypeFieldRefInput<$PrismaModel>
-    in?: $Enums.TargetType[] | ListEnumTargetTypeFieldRefInput<$PrismaModel>
-    notIn?: $Enums.TargetType[] | ListEnumTargetTypeFieldRefInput<$PrismaModel>
-    not?: NestedEnumTargetTypeFilter<$PrismaModel> | $Enums.TargetType
-  }
-
   export type TeamNullableRelationFilter = {
     is?: TeamWhereInput | null
     isNot?: TeamWhereInput | null
@@ -16868,16 +16940,6 @@ export namespace Prisma {
     deletedAt?: SortOrder
     createdAt?: SortOrder
     updatedAt?: SortOrder
-  }
-
-  export type EnumTargetTypeWithAggregatesFilter<$PrismaModel = never> = {
-    equals?: $Enums.TargetType | EnumTargetTypeFieldRefInput<$PrismaModel>
-    in?: $Enums.TargetType[] | ListEnumTargetTypeFieldRefInput<$PrismaModel>
-    notIn?: $Enums.TargetType[] | ListEnumTargetTypeFieldRefInput<$PrismaModel>
-    not?: NestedEnumTargetTypeWithAggregatesFilter<$PrismaModel> | $Enums.TargetType
-    _count?: NestedIntFilter<$PrismaModel>
-    _min?: NestedEnumTargetTypeFilter<$PrismaModel>
-    _max?: NestedEnumTargetTypeFilter<$PrismaModel>
   }
 
   export type RefreshTokenCountOrderByAggregateInput = {
@@ -17505,6 +17567,10 @@ export namespace Prisma {
     divide?: Decimal | DecimalJsLike | number | string
   }
 
+  export type EnumTargetTypeFieldUpdateOperationsInput = {
+    set?: $Enums.TargetType
+  }
+
   export type BoolFieldUpdateOperationsInput = {
     set?: boolean
   }
@@ -17997,10 +18063,6 @@ export namespace Prisma {
     connect?: UserWhereUniqueInput
   }
 
-  export type EnumTargetTypeFieldUpdateOperationsInput = {
-    set?: $Enums.TargetType
-  }
-
   export type UserUpdateOneRequiredWithoutEmployeeProfileNestedInput = {
     create?: XOR<UserCreateWithoutEmployeeProfileInput, UserUncheckedCreateWithoutEmployeeProfileInput>
     connectOrCreate?: UserCreateOrConnectWithoutEmployeeProfileInput
@@ -18290,6 +18352,13 @@ export namespace Prisma {
     not?: NestedDecimalFilter<$PrismaModel> | Decimal | DecimalJsLike | number | string
   }
 
+  export type NestedEnumTargetTypeFilter<$PrismaModel = never> = {
+    equals?: $Enums.TargetType | EnumTargetTypeFieldRefInput<$PrismaModel>
+    in?: $Enums.TargetType[] | ListEnumTargetTypeFieldRefInput<$PrismaModel>
+    notIn?: $Enums.TargetType[] | ListEnumTargetTypeFieldRefInput<$PrismaModel>
+    not?: NestedEnumTargetTypeFilter<$PrismaModel> | $Enums.TargetType
+  }
+
   export type NestedBoolFilter<$PrismaModel = never> = {
     equals?: boolean | BooleanFieldRefInput<$PrismaModel>
     not?: NestedBoolFilter<$PrismaModel> | boolean
@@ -18378,6 +18447,16 @@ export namespace Prisma {
     _max?: NestedDecimalFilter<$PrismaModel>
   }
 
+  export type NestedEnumTargetTypeWithAggregatesFilter<$PrismaModel = never> = {
+    equals?: $Enums.TargetType | EnumTargetTypeFieldRefInput<$PrismaModel>
+    in?: $Enums.TargetType[] | ListEnumTargetTypeFieldRefInput<$PrismaModel>
+    notIn?: $Enums.TargetType[] | ListEnumTargetTypeFieldRefInput<$PrismaModel>
+    not?: NestedEnumTargetTypeWithAggregatesFilter<$PrismaModel> | $Enums.TargetType
+    _count?: NestedIntFilter<$PrismaModel>
+    _min?: NestedEnumTargetTypeFilter<$PrismaModel>
+    _max?: NestedEnumTargetTypeFilter<$PrismaModel>
+  }
+
   export type NestedBoolWithAggregatesFilter<$PrismaModel = never> = {
     equals?: boolean | BooleanFieldRefInput<$PrismaModel>
     not?: NestedBoolWithAggregatesFilter<$PrismaModel> | boolean
@@ -18440,23 +18519,6 @@ export namespace Prisma {
     _count?: NestedIntNullableFilter<$PrismaModel>
     _min?: NestedDateTimeNullableFilter<$PrismaModel>
     _max?: NestedDateTimeNullableFilter<$PrismaModel>
-  }
-
-  export type NestedEnumTargetTypeFilter<$PrismaModel = never> = {
-    equals?: $Enums.TargetType | EnumTargetTypeFieldRefInput<$PrismaModel>
-    in?: $Enums.TargetType[] | ListEnumTargetTypeFieldRefInput<$PrismaModel>
-    notIn?: $Enums.TargetType[] | ListEnumTargetTypeFieldRefInput<$PrismaModel>
-    not?: NestedEnumTargetTypeFilter<$PrismaModel> | $Enums.TargetType
-  }
-
-  export type NestedEnumTargetTypeWithAggregatesFilter<$PrismaModel = never> = {
-    equals?: $Enums.TargetType | EnumTargetTypeFieldRefInput<$PrismaModel>
-    in?: $Enums.TargetType[] | ListEnumTargetTypeFieldRefInput<$PrismaModel>
-    notIn?: $Enums.TargetType[] | ListEnumTargetTypeFieldRefInput<$PrismaModel>
-    not?: NestedEnumTargetTypeWithAggregatesFilter<$PrismaModel> | $Enums.TargetType
-    _count?: NestedIntFilter<$PrismaModel>
-    _min?: NestedEnumTargetTypeFilter<$PrismaModel>
-    _max?: NestedEnumTargetTypeFilter<$PrismaModel>
   }
   export type NestedJsonNullableFilter<$PrismaModel = never> = 
     | PatchUndefined<
@@ -19703,6 +19765,8 @@ export namespace Prisma {
     name: string
     color?: string | null
     yearlyTarget: Decimal | DecimalJsLike | number | string
+    achievedValue?: Decimal | DecimalJsLike | number | string
+    targetType?: $Enums.TargetType
     isActive?: boolean
     createdAt?: Date | string
     updatedAt?: Date | string
@@ -19713,6 +19777,8 @@ export namespace Prisma {
     name: string
     color?: string | null
     yearlyTarget: Decimal | DecimalJsLike | number | string
+    achievedValue?: Decimal | DecimalJsLike | number | string
+    targetType?: $Enums.TargetType
     isActive?: boolean
     createdAt?: Date | string
     updatedAt?: Date | string
@@ -19855,6 +19921,8 @@ export namespace Prisma {
     name?: StringFieldUpdateOperationsInput | string
     color?: NullableStringFieldUpdateOperationsInput | string | null
     yearlyTarget?: DecimalFieldUpdateOperationsInput | Decimal | DecimalJsLike | number | string
+    achievedValue?: DecimalFieldUpdateOperationsInput | Decimal | DecimalJsLike | number | string
+    targetType?: EnumTargetTypeFieldUpdateOperationsInput | $Enums.TargetType
     isActive?: BoolFieldUpdateOperationsInput | boolean
     createdAt?: DateTimeFieldUpdateOperationsInput | Date | string
     updatedAt?: DateTimeFieldUpdateOperationsInput | Date | string
@@ -19865,6 +19933,8 @@ export namespace Prisma {
     name?: StringFieldUpdateOperationsInput | string
     color?: NullableStringFieldUpdateOperationsInput | string | null
     yearlyTarget?: DecimalFieldUpdateOperationsInput | Decimal | DecimalJsLike | number | string
+    achievedValue?: DecimalFieldUpdateOperationsInput | Decimal | DecimalJsLike | number | string
+    targetType?: EnumTargetTypeFieldUpdateOperationsInput | $Enums.TargetType
     isActive?: BoolFieldUpdateOperationsInput | boolean
     createdAt?: DateTimeFieldUpdateOperationsInput | Date | string
     updatedAt?: DateTimeFieldUpdateOperationsInput | Date | string

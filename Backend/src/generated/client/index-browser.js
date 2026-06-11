@@ -127,6 +127,8 @@ exports.Prisma.TeamScalarFieldEnum = {
   name: 'name',
   color: 'color',
   yearlyTarget: 'yearlyTarget',
+  achievedValue: 'achievedValue',
+  targetType: 'targetType',
   isActive: 'isActive',
   createdAt: 'createdAt',
   updatedAt: 'updatedAt'
@@ -321,17 +323,17 @@ exports.Prisma.JsonNullValueFilter = {
   JsonNull: Prisma.JsonNull,
   AnyNull: Prisma.AnyNull
 };
+exports.TargetType = exports.$Enums.TargetType = {
+  REVENUE: 'REVENUE',
+  PLACEMENTS: 'PLACEMENTS'
+};
+
 exports.Role = exports.$Enums.Role = {
   S1_ADMIN: 'S1_ADMIN',
   SUPER_ADMIN: 'SUPER_ADMIN',
   TEAM_LEAD: 'TEAM_LEAD',
   LIMITED_ACCESS: 'LIMITED_ACCESS',
   EMPLOYEE: 'EMPLOYEE'
-};
-
-exports.TargetType = exports.$Enums.TargetType = {
-  REVENUE: 'REVENUE',
-  PLACEMENTS: 'PLACEMENTS'
 };
 
 exports.PlacementImportType = exports.$Enums.PlacementImportType = {
