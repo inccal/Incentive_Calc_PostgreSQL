@@ -1412,28 +1412,41 @@ const sanitizeSlabQualified = (val) => {
   return String(num);
 };
 
+// Picks the first value among header aliases that actually exists (not null/undefined/""),
+// without discarding legitimate falsy values like 0 the way `a || b` would.
+const firstVal = (...vals) => {
+  for (const v of vals) {
+    if (v !== null && v !== undefined && v !== "") return v;
+  }
+  return null;
+};
+
 // Helper to extract ALL summary fields from a row (using header mapping)
 const extractSummaryFields = (row, getVal) => {
-  const slabRaw = getVal(row, "slab qualified") || getVal(row, "slab") ? String(getVal(row, "slab qualified") || getVal(row, "slab")).trim() : null;
+  const slabRaw = firstVal(getVal(row, "slab qualified"), getVal(row, "slab"));
+  const vbCodeRaw = getVal(row, "vb code");
+  const recruiterNameRaw = firstVal(getVal(row, "recruiter name"), getVal(row, "lead name"), getVal(row, "lead"), getVal(row, "recruiter"));
+  const teamLeadNameRaw = firstVal(getVal(row, "team lead"), getVal(row, "team lead name"), getVal(row, "lead name"), getVal(row, "lead"));
+  const synopsisRaw = firstVal(getVal(row, "individual synopsis"), getVal(row, "synopsis"));
   return {
-    vbCode: getVal(row, "vb code") ? String(getVal(row, "vb code")).trim() : null,
-    recruiterName: getVal(row, "recruiter name") || getVal(row, "lead name") || getVal(row, "lead") || getVal(row, "recruiter") ? String(getVal(row, "recruiter name") || getVal(row, "lead name") || getVal(row, "lead") || getVal(row, "recruiter")).trim() : null,
-    teamLeadName: getVal(row, "team lead") || getVal(row, "team lead name") || getVal(row, "lead name") || getVal(row, "lead") ? String(getVal(row, "team lead") || getVal(row, "team lead name") || getVal(row, "lead name") || getVal(row, "lead")).trim() : null,
+    vbCode: vbCodeRaw ? String(vbCodeRaw).trim() : null,
+    recruiterName: recruiterNameRaw != null ? String(recruiterNameRaw).trim() : null,
+    teamLeadName: teamLeadNameRaw != null ? String(teamLeadNameRaw).trim() : null,
     yearlyTarget: parseNum(getVal(row, "yearly target")),
     achieved: parseNum(getVal(row, "achieved")),
-    targetAchievedPercent: sanitizePercent(getVal(row, "target achieved %") || getVal(row, "placement ach %") || getVal(row, "achieved %") || getVal(row, "ach %")),
-    yearlyPlacementTarget: parseNum(getVal(row, "yearly placement target") || getVal(row, "placement target")),
-    placementDone: parseNum(getVal(row, "placement done") || getVal(row, "placements done")),
-    placementAchPercent: sanitizePercent(getVal(row, "placement ach %") || getVal(row, "placement achieved %")),
-    yearlyRevenueTarget: parseNum(getVal(row, "yearly revenue target") || getVal(row, "revenue target") || getVal(row, "rev target")),
-    revenueAch: parseNum(getVal(row, "revenue ach") || getVal(row, "total revenue") || getVal(row, "rev ach")),
-    revenueTargetAchievedPercent: sanitizePercent(getVal(row, "revenue target achieved %") || getVal(row, "rev ach %") || getVal(row, "revenue ach %")),
-    totalRevenueGenerated: parseNum(getVal(row, "total revenue generated (usd)") || getVal(row, "revenue generated") || getVal(row, "total revenue") || getVal(row, "total revenue generated")),
+    targetAchievedPercent: sanitizePercent(firstVal(getVal(row, "target achieved %"), getVal(row, "placement ach %"), getVal(row, "achieved %"), getVal(row, "ach %"))),
+    yearlyPlacementTarget: parseNum(firstVal(getVal(row, "yearly placement target"), getVal(row, "placement target"))),
+    placementDone: parseNum(firstVal(getVal(row, "placement done"), getVal(row, "placements done"))),
+    placementAchPercent: sanitizePercent(firstVal(getVal(row, "placement ach %"), getVal(row, "placement achieved %"))),
+    yearlyRevenueTarget: parseNum(firstVal(getVal(row, "yearly revenue target"), getVal(row, "revenue target"), getVal(row, "rev target"))),
+    revenueAch: parseNum(firstVal(getVal(row, "revenue ach"), getVal(row, "total revenue"), getVal(row, "rev ach"))),
+    revenueTargetAchievedPercent: sanitizePercent(firstVal(getVal(row, "revenue target achieved %"), getVal(row, "rev ach %"), getVal(row, "revenue ach %"))),
+    totalRevenueGenerated: parseNum(firstVal(getVal(row, "total revenue generated (usd)"), getVal(row, "revenue generated"), getVal(row, "total revenue"), getVal(row, "total revenue generated"))),
     slabQualified: sanitizeSlabQualified(slabRaw),
-    totalIncentiveInr: parseNum(getVal(row, "total incentive in inr") || getVal(row, "incentive earned") || getVal(row, "total incentive") || getVal(row, "incentive") || getVal(row, "incentive amount")),
-    totalIncentivePaidInr: parseNum(getVal(row, "total incentive in inr (paid)") || getVal(row, "incentive paid") || getVal(row, "total incentive paid")),
+    totalIncentiveInr: parseNum(firstVal(getVal(row, "total incentive in inr"), getVal(row, "incentive earned"), getVal(row, "total incentive"), getVal(row, "incentive"), getVal(row, "incentive amount"))),
+    totalIncentivePaidInr: parseNum(firstVal(getVal(row, "total incentive in inr (paid)"), getVal(row, "incentive paid"), getVal(row, "total incentive paid"))),
     totalBalanceIncentiveAmount: parseNum(getVal(row, "balance incentive amount")),
-    individualSynopsis: getVal(row, "individual synopsis") || getVal(row, "synopsis") ? String(getVal(row, "individual synopsis") || getVal(row, "synopsis")).trim() : null,
+    individualSynopsis: synopsisRaw != null ? String(synopsisRaw).trim() : null,
   };
 };
 
@@ -1453,8 +1466,8 @@ const extractSummaryFromTeamNameRow = (row, isTeamImport = false) => {
       totalRevenueGenerated: parseNum(row[9]),
       slabQualified: sanitizeSlabQualified(slabRaw),
       totalIncentiveInr: parseNum(row[11]),
-      totalIncentivePaidInr: parseNum(row[12]) || null,
-      totalBalanceIncentiveAmount: parseNum(row[13]) || null,
+      totalIncentivePaidInr: parseNum(row[12]),
+      totalBalanceIncentiveAmount: parseNum(row[13]),
       individualSynopsis: parseNum(row[13]) !== null ? (row[14] ? String(row[14]).trim() : null) : (row[13] ? String(row[13]).trim() : null),
     };
   }
@@ -1469,8 +1482,8 @@ const extractSummaryFromTeamNameRow = (row, isTeamImport = false) => {
     totalRevenueGenerated: parseNum(row[7]),
     slabQualified: sanitizeSlabQualified(slabRaw),
     totalIncentiveInr: parseNum(row[9]),
-    totalIncentivePaidInr: parseNum(row[10]) || null,
-    totalBalanceIncentiveAmount: parseNum(row[11]) || null,
+    totalIncentivePaidInr: parseNum(row[10]),
+    totalBalanceIncentiveAmount: parseNum(row[11]),
     individualSynopsis: parseNum(row[11]) !== null ? (row[12] ? String(row[12]).trim() : null) : (row[11] ? String(row[11]).trim() : null),
   };
 };
