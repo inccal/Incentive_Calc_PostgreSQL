@@ -32,9 +32,15 @@ const RecursiveMemberNode = memo(({ member, expandedMembers, toggleMember, handl
   };
 
   if (hasChildren && !isLeaf) {
-    const achievedValue = isPlacementTeam 
-      ? (teamSummary.placementDone || member.totalPlacements || member.placements || 0)
-      : (teamSummary.revenueAch || member.totalRevenue || member.revenue || 0)
+    const firstDefined = (...vals) => {
+      for (const v of vals) {
+        if (v !== null && v !== undefined && v !== "") return v;
+      }
+      return 0;
+    };
+    const achievedValue = isPlacementTeam
+      ? firstDefined(teamSummary.placementDone, member.totalPlacements, member.placements)
+      : firstDefined(teamSummary.revenueAch, member.totalRevenue, member.revenue)
 
     return (
       <div className="relative animate-fadeIn">
@@ -73,7 +79,7 @@ const RecursiveMemberNode = memo(({ member, expandedMembers, toggleMember, handl
             <div className="flex items-center gap-3">
                {member.targetAchieved !== undefined && (
                  <PieChart 
-                   percentage={Number(isPlacementTeam ? (teamSummary.placementAchPercent || member.targetAchieved) : (teamSummary.revenueTargetAchievedPercent || member.targetAchieved))} 
+                   percentage={Number(isPlacementTeam ? firstDefined(teamSummary.placementAchPercent, member.targetAchieved) : firstDefined(teamSummary.revenueTargetAchievedPercent, member.targetAchieved))}
                    size={40} 
                    colorClass="text-slate-600" 
                  />
