@@ -249,7 +249,7 @@ router.get(
 
 router.get(
   "/employee/:id",
-  requireRole(Role.SUPER_ADMIN, Role.TEAM_LEAD, Role.EMPLOYEE),
+  requireRole(Role.SUPER_ADMIN, Role.S1_ADMIN, Role.TEAM_LEAD, Role.EMPLOYEE),
   async (req, res, next) => {
     try {
       const { id: idOrSlug } = req.params;

@@ -1040,6 +1040,14 @@ export async function getPersonalPlacementOverview(currentUser, userId) {
 
 export async function getTeamPlacementOverview(currentUser, leadId) {
   try {
+    const toNum = (value) => {
+      if (value == null || value === "") return null;
+      if (typeof value === "number" && Number.isFinite(value)) return value;
+      if (typeof value === "object" && typeof value.toNumber === "function") return value.toNumber();
+      const parsed = Number(value);
+      return Number.isFinite(parsed) ? parsed : null;
+    };
+
     // Only allow viewing another lead's data for SUPER_ADMIN/S1_ADMIN, or if current user is that lead's manager
     let targetId = leadId || currentUser.id;
     if (leadId && leadId !== currentUser.id) {
@@ -1352,5 +1360,4 @@ export async function getL1Placements(currentUser, filters = {}) {
 
   return { placements, teams, availablePlacementTypes, availableLeads };
 }
-
 
