@@ -437,7 +437,7 @@ export default function HeadPlacementsView({ allowEdit = false }) {
                   </label>
                   <label className="block">
                     <span className="text-xs font-medium text-slate-500">Total billed hours</span>
-                    <input type="number" value={editForm.totalBilledHours} onChange={(e) => updateEditForm('totalBilledHours', e.target.value)} className="mt-1 w-full rounded-lg border border-slate-200 px-3 py-2 text-sm focus:border-indigo-400 focus:outline-none focus:ring-2 focus:ring-indigo-400/20" />
+                    <input type="number" step="any" value={editForm.totalBilledHours} onChange={(e) => updateEditForm('totalBilledHours', e.target.value)} className="mt-1 w-full rounded-lg border border-slate-200 px-3 py-2 text-sm focus:border-indigo-400 focus:outline-none focus:ring-2 focus:ring-indigo-400/20" />
                   </label>
                   <label className="block">
                     <span className="text-xs font-medium text-slate-500">Revenue (USD)</span>

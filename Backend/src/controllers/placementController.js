@@ -76,12 +76,64 @@ const mapPlacementType = (type) => {
   return "PERMANENT";
 };
 
-// Shared helper to normalize string headers (collapses spaces around parentheses for consistency)
-const normalizeHeader = (h) => {
-  let normalized = String(h || "").trim().toLowerCase();
-  if (normalized === "pls id") return "plc id";
-  normalized = normalized.replace(/\s*\(\s*/g, "(").replace(/\s*\)\s*/g, ")");
-  return normalized;
+// Canonical Excel headers. Desktop Excel files commonly vary in dash characters,
+// spacing, currency suffixes and shortened labels. Resolve those differences in
+// one place so every import field (summary and placement) uses the same rules.
+const HEADER_ALIASES = {
+  "vb code": ["vb id", "vbid", "vb-code"],
+  "recruiter name": ["recruiter", "recruiter full name"],
+  "lead name": ["team lead name"],
+  "candidate name": ["candidate", "candidate full name"],
+  "plc id": ["pls id", "placement id", "plc-id"],
+  "placement year": ["year of placement"],
+  "placement type": ["type of placement"],
+  "billing status": ["bill status"],
+  "collection status": ["payment collection status"],
+  "total billed hours": ["billed hours", "total billing hours"],
+  "yearly placement target": ["annual placement target", "placement target"],
+  "placement done": ["placements done", "placements achieved"],
+  "placement ach %": ["placement achieved %", "placement achievement %"],
+  "yearly revenue target": ["annual revenue target", "revenue target", "rev target"],
+  "revenue ach": ["revenue achieved", "rev ach"],
+  "revenue target achieved %": ["revenue achieved %", "revenue ach %", "rev ach %"],
+  "total revenue generated(usd)": ["total revenue generated usd", "total revenue(usd)", "revenue generated(usd)"],
+  "revenue(usd)": ["revenue usd", "revenue amount(usd)"],
+  "revenue -lead(usd)": ["revenue-lead(usd)", "revenue - lead(usd)", "revenue lead(usd)", "revenue as lead(usd)", "revenue -lead usd", "revenue-lead usd"],
+  "incentive amount(usd)": ["incentive(usd)", "incentive amount usd"],
+  "incentive amount(inr)": ["incentive(inr)", "incentive amount inr", "incentive earned(inr)"],
+  "incentive paid(inr)": ["incentive paid", "incentive paid amount", "incentive paid inr", "paid incentive(inr)"],
+  "total incentive in inr": ["total incentive(inr)", "total incentive earned", "incentive earned"],
+  "total incentive in inr(paid)": ["total incentive paid(inr)", "total incentive paid", "paid total incentive in inr"],
+  "balance incentive amount": [
+    "balance incentive", "balance incentive(inr)", "balance incentive(usd)",
+    "balance incentive amount(inr)", "balance incentive amount(usd)",
+    "balance incentive amount inr", "balance incentive amount usd"
+  ],
+  "slab qualified": ["qualified slab", "slab qualification"],
+  "individual synopsis": ["synopsis", "individual summary"],
+};
+
+const HEADER_ALIAS_TO_CANONICAL = new Map();
+for (const [canonical, aliases] of Object.entries(HEADER_ALIASES)) {
+  HEADER_ALIAS_TO_CANONICAL.set(canonical, canonical);
+  for (const alias of aliases) HEADER_ALIAS_TO_CANONICAL.set(alias, canonical);
+}
+
+// Shared helper to normalize string headers.
+export const normalizeHeader = (h) => {
+  let normalized = String(h || "")
+    .replace(/[\u2010-\u2015\u2212]/g, "-")
+    .replace(/\u00a0/g, " ")
+    .trim()
+    .toLowerCase()
+    .replace(/\s+/g, " ")
+    .replace(/\s*\(\s*/g, "(")
+    .replace(/\s*\)\s*/g, ")")
+    .replace(/\s*-\s*/g, "-");
+
+  // Preserve the historical canonical spelling used by the importer.
+  if (normalized === "revenue-lead(usd)") normalized = "revenue -lead(usd)";
+  return HEADER_ALIAS_TO_CANONICAL.get(normalized) || normalized;
 };
 
 const shouldSkipDuplicateCheck = (plcId) => {
@@ -2312,6 +2364,20 @@ export async function importTeamPlacements(payload, actorId) {
     throw new Error("headers and rows must be arrays");
   }
 
+  // Report for import result dialog. This must exist before first-header
+  // validation, which can mark placementHeaderValid immediately.
+  const report = {
+    summaryRowsChecked: 0,
+    summaryRowsAccepted: 0,
+    summaryRowsRejectedWrongTeam: 0,
+    placementRowsChecked: 0,
+    placementsCreated: 0,
+    placementsUpdated: 0,
+    placementsRejectedWrongTeam: 0,
+    placementsRejectedLeadNotFound: 0,
+    placementHeaderValid: false,
+  };
+
   // Resolve panel team name when uploading from a team management panel (only accept data for this team)
   let expectedTeamName = null;
   if (teamId) {
@@ -2355,19 +2421,6 @@ export async function importTeamPlacements(payload, actorId) {
   let hasLeadHeader = initialHasLeadHeader;
   let hasSplitHeader = initialHasSplitHeader;
   console.log(`Headers validated. hasLeadHeader: ${hasLeadHeader}`);
-
-  // Report for import result dialog
-  const report = {
-    summaryRowsChecked: 0,
-    summaryRowsAccepted: 0,
-    summaryRowsRejectedWrongTeam: 0,
-    placementRowsChecked: 0,
-    placementsCreated: 0,
-    placementsUpdated: 0,
-    placementsRejectedWrongTeam: 0,
-    placementsRejectedLeadNotFound: 0,
-    placementHeaderValid: false,
-  };
 
   // Pre-fetching users and profiles for caching (include team so we can filter by sheet team name)
   console.log("Pre-fetching users and profiles for team import...");
@@ -3441,4 +3494,3 @@ export async function deleteAllPlacements(actorId) {
     };
   });
 }
-

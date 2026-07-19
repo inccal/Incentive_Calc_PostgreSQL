@@ -1025,7 +1025,8 @@ export async function getPersonalPlacementOverview(currentUser, userId) {
         revenue: Number(p.revenueUsd),
         revenueAsLead: Number(p.revenueUsd),
         incentiveAmountINR: Number(p.incentiveInr),
-        incentivePaidInr: Number(p.incentivePaidInr || 0),
+        incentivePaidInr: toNum(p.incentivePaidInr),
+        placementBalanceIncentiveAmount: toNum(p.placementBalanceIncentiveAmount),
         billedHours: p.totalBilledHours,
         recruiter: p.recruiterName,
       })),
@@ -1098,7 +1099,8 @@ export async function getTeamPlacementOverview(currentUser, leadId) {
         revenue: Number(p.revenueLeadUsd),
         incentiveInr: Number(p.incentiveInr),
         incentiveAmountINR: Number(p.incentiveInr),
-        incentivePaidInr: Number(p.incentivePaidInr || 0),
+        incentivePaidInr: toNum(p.incentivePaidInr),
+        placementBalanceIncentiveAmount: toNum(p.placementBalanceIncentiveAmount),
         totalBilledHours: p.totalBilledHours,
         billedHours: p.totalBilledHours,
         recruiter: p.recruiterName,
@@ -1313,6 +1315,7 @@ export async function getL1Placements(currentUser, filters = {}) {
         revenueUsd: toNum(p.revenueUsd),
         incentiveInr: toNum(p.incentiveInr),
         incentivePaidInr: toNum(p.incentivePaidInr),
+        placementBalanceIncentiveAmount: toNum(p.placementBalanceIncentiveAmount),
       };
     }),
     ...teamRows.filter((p) => !isSummaryRow(p)).map((p) => {
@@ -1338,6 +1341,7 @@ export async function getL1Placements(currentUser, filters = {}) {
         revenueUsd: toNum(p.revenueLeadUsd),
         incentiveInr: toNum(p.incentiveInr),
         incentivePaidInr: toNum(p.incentivePaidInr),
+        placementBalanceIncentiveAmount: toNum(p.placementBalanceIncentiveAmount),
       };
     }),
   ].sort((a, b) => {

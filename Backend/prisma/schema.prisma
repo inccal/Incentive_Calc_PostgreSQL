@@ -210,7 +210,7 @@ model PersonalPlacement {
   placementType    String
   billingStatus    String
   collectionStatus String?
-  totalBilledHours Int?
+  totalBilledHours Decimal? @db.Decimal(14, 2)
   revenueUsd       Decimal  @db.Decimal(14, 2)
   incentiveInr     Decimal  @db.Decimal(14, 2)
   incentivePaidInr Decimal? @db.Decimal(14, 2)
@@ -261,7 +261,7 @@ model TeamPlacement {
   placementType    String
   billingStatus    String
   collectionStatus String?
-  totalBilledHours Int?
+  totalBilledHours Decimal? @db.Decimal(14, 2)
   revenueLeadUsd   Decimal  @db.Decimal(14, 2)
   incentiveInr     Decimal  @db.Decimal(14, 2)
   incentivePaidInr Decimal? @db.Decimal(14, 2)
@@ -317,4 +317,3 @@ model SlabTemplate {
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
 }
-

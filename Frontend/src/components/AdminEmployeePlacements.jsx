@@ -791,9 +791,9 @@ const AdminEmployeePlacements = () => {
                           <td className="py-3 px-2 text-slate-600">{p.billedHours || "-"}</td>
                           <td className="py-3 px-2 text-emerald-600 font-medium">{CalculationService.formatCurrency(p.revenue)}</td>
                           <td className="py-3 px-2 text-slate-600">{p.revenueAsLead || "-"}</td>
-                          <td className="py-3 px-2 text-slate-600">{p.incentiveAmountInr ? CalculationService.formatCurrency(p.incentiveAmountInr, "INR") : "-"}</td>
-                          <td className="py-3 px-2 text-slate-600">{p.incentivePaidInr || "-"}</td>
-                          <td className="py-3 px-2 text-slate-600">{p.placementBalanceIncentiveAmount || "-"}</td>
+                          <td className="py-3 px-2 text-slate-600">{p.incentiveAmountInr != null ? CalculationService.formatCurrency(p.incentiveAmountInr, "INR") : "-"}</td>
+                          <td className="py-3 px-2 text-slate-600">{p.incentivePaidInr != null ? CalculationService.formatCurrency(p.incentivePaidInr, "INR") : "-"}</td>
+                          <td className="py-3 px-2 text-slate-600">{p.placementBalanceIncentiveAmount != null ? CalculationService.formatCurrency(p.placementBalanceIncentiveAmount, "INR") : "-"}</td>
                           <td className="py-3 px-2 text-right flex gap-2 justify-end">
                             <button onClick={() => handleEdit(p)} className="text-blue-600 hover:text-blue-800 text-xs">Edit</button>
                             <button onClick={() => handleDelete(p.id)} className="text-red-500 hover:text-red-700 text-xs">Del</button>
@@ -887,9 +887,9 @@ const AdminEmployeePlacements = () => {
                             <td className="py-3 px-2 text-slate-600">{p.billedHours || "-"}</td>
                             <td className="py-3 px-2 text-emerald-600 font-medium">{CalculationService.formatCurrency(p.revenue)}</td>
                             <td className="py-3 px-2 text-slate-600">{p.revenueAsLead || "-"}</td>
-                            <td className="py-3 px-2 text-slate-600">{p.incentiveAmountInr ? CalculationService.formatCurrency(p.incentiveAmountInr, "INR") : "-"}</td>
-                            <td className="py-3 px-2 text-slate-600">{p.incentivePaidInr || "-"}</td>
-                            <td className="py-3 px-2 text-slate-600">{p.placementBalanceIncentiveAmount || "-"}</td>
+                            <td className="py-3 px-2 text-slate-600">{p.incentiveAmountInr != null ? CalculationService.formatCurrency(p.incentiveAmountInr, "INR") : "-"}</td>
+                            <td className="py-3 px-2 text-slate-600">{p.incentivePaidInr != null ? CalculationService.formatCurrency(p.incentivePaidInr, "INR") : "-"}</td>
+                            <td className="py-3 px-2 text-slate-600">{p.placementBalanceIncentiveAmount != null ? CalculationService.formatCurrency(p.placementBalanceIncentiveAmount, "INR") : "-"}</td>
                             <td className="py-3 px-2 text-right flex gap-2 justify-end">
                               <button onClick={() => handleEdit(p)} className="text-blue-600 hover:text-blue-800 text-xs">Edit</button>
                               <button onClick={() => handleDelete(p.id)} className="text-red-500 hover:text-red-700 text-xs">Del</button>
@@ -976,9 +976,9 @@ const AdminEmployeePlacements = () => {
                           <td className="py-3 px-2 text-slate-600">{p.billedHours || "-"}</td>
                           <td className="py-3 px-2 text-emerald-600 font-medium">{CalculationService.formatCurrency(p.revenue)}</td>
                           <td className="py-3 px-2 text-slate-600">{p.revenueAsLead || "-"}</td>
-                          <td className="py-3 px-2 text-slate-600">{p.incentiveAmountInr ? CalculationService.formatCurrency(p.incentiveAmountInr, "INR") : "-"}</td>
-                          <td className="py-3 px-2 text-slate-600">{p.incentivePaidInr || "-"}</td>
-                          <td className="py-3 px-2 text-slate-600">{p.placementBalanceIncentiveAmount || "-"}</td>
+                          <td className="py-3 px-2 text-slate-600">{p.incentiveAmountInr != null ? CalculationService.formatCurrency(p.incentiveAmountInr, "INR") : "-"}</td>
+                          <td className="py-3 px-2 text-slate-600">{p.incentivePaidInr != null ? CalculationService.formatCurrency(p.incentivePaidInr, "INR") : "-"}</td>
+                          <td className="py-3 px-2 text-slate-600">{p.placementBalanceIncentiveAmount != null ? CalculationService.formatCurrency(p.placementBalanceIncentiveAmount, "INR") : "-"}</td>
                           <td className="py-3 px-2 text-right flex gap-2 justify-end">
                             <button onClick={() => handleEdit(p)} className="text-blue-600 hover:text-blue-800 text-xs">Edit</button>
                             <button onClick={() => handleDelete(p.id)} className="text-red-500 hover:text-red-700 text-xs">Del</button>

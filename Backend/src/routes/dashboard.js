@@ -113,7 +113,8 @@ const processEmployeeData = async (employee) => {
     collectionStatus: p.collectionStatus,
     incentivePayoutEta: null,
     incentiveAmountInr: Number(p.incentiveInr),
-    incentivePaidInr: Number(p.incentivePaidInr || 0),
+    incentivePaidInr: p.incentivePaidInr != null ? Number(p.incentivePaidInr) : null,
+    placementBalanceIncentiveAmount: p.placementBalanceIncentiveAmount != null ? Number(p.placementBalanceIncentiveAmount) : null,
     monthlyBilling: [],
   }));
 
@@ -142,7 +143,8 @@ const processEmployeeData = async (employee) => {
     collectionStatus: p.collectionStatus,
     incentivePayoutEta: null,
     incentiveAmountInr: Number(p.incentiveInr),
-    incentivePaidInr: Number(p.incentivePaidInr || 0),
+    incentivePaidInr: p.incentivePaidInr != null ? Number(p.incentivePaidInr) : null,
+    placementBalanceIncentiveAmount: p.placementBalanceIncentiveAmount != null ? Number(p.placementBalanceIncentiveAmount) : null,
     monthlyBilling: [],
   }));
 

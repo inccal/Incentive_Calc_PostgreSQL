@@ -674,10 +674,10 @@ const TeamLeadPage = () => {
                           <td className="px-4 py-2 text-slate-600">{p.billingStatus}</td>
                           <td className="px-4 py-2 text-slate-600">{p.collectionStatus ?? '-'}</td>
                           <td className="px-4 py-2 text-slate-600">{p.totalBilledHours ?? '-'}</td>
-                          <td className="px-4 py-2 text-slate-600">{p.revenueUsd}</td>
-                          <td className="px-4 py-2 text-slate-600">{p.incentiveInr}</td>
-                          <td className="px-4 py-2 text-slate-600">{p.incentivePaidInr ?? '-'}</td>
-                          <td className="px-4 py-2 text-slate-600">{p.placementBalanceIncentiveAmount ?? '-'}</td>
+                          <td className="px-4 py-2 text-slate-600">{CalculationService.formatCurrency(p.revenueUsd)}</td>
+                          <td className="px-4 py-2 text-slate-600">{CalculationService.formatCurrency(p.incentiveInr, 'INR')}</td>
+                          <td className="px-4 py-2 text-slate-600">{CalculationService.formatCurrency(p.incentivePaidInr, 'INR')}</td>
+                          <td className="px-4 py-2 text-slate-600">{CalculationService.formatCurrency(p.placementBalanceIncentiveAmount, 'INR')}</td>
                         </tr>
                       ))
                     : (teamSheetData?.placements || []).map((p) => (
@@ -694,10 +694,10 @@ const TeamLeadPage = () => {
                           <td className="px-4 py-2 text-slate-600">{p.billingStatus}</td>
                           <td className="px-4 py-2 text-slate-600">{p.collectionStatus ?? '-'}</td>
                           <td className="px-4 py-2 text-slate-600">{p.totalBilledHours ?? '-'}</td>
-                          <td className="px-4 py-2 text-slate-600">{p.revenueLeadUsd}</td>
-                          <td className="px-4 py-2 text-slate-600">{p.incentiveInr}</td>
-                          <td className="px-4 py-2 text-slate-600">{p.incentivePaidInr ?? '-'}</td>
-                          <td className="px-4 py-2 text-slate-600">{p.placementBalanceIncentiveAmount ?? '-'}</td>
+                          <td className="px-4 py-2 text-slate-600">{CalculationService.formatCurrency(p.revenueLeadUsd)}</td>
+                          <td className="px-4 py-2 text-slate-600">{CalculationService.formatCurrency(p.incentiveInr, 'INR')}</td>
+                          <td className="px-4 py-2 text-slate-600">{CalculationService.formatCurrency(p.incentivePaidInr, 'INR')}</td>
+                          <td className="px-4 py-2 text-slate-600">{CalculationService.formatCurrency(p.placementBalanceIncentiveAmount, 'INR')}</td>
                         </tr>
                       ))}
                   {((viewMode === 'personal'

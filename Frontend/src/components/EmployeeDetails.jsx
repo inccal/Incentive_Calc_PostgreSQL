@@ -115,6 +115,7 @@ const EmployeeDetails = () => {
       incentivePayoutETA: p.incentivePayoutEta ? p.incentivePayoutEta.slice(0, 10) : '',
       incentiveAmountINR: CalculationService.formatCurrency(p.incentiveAmountInr, 'INR'),
       incentivePaidInr: p.incentivePaidInr,
+      placementBalanceIncentiveAmount: p.placementBalanceIncentiveAmount,
       monthlyBilling: (p.monthlyBilling || []).map((mb) => ({
         month: mb.month,
         hours: mb.hours || 0,
@@ -219,6 +220,16 @@ const EmployeeDetails = () => {
               : totalPlacementIncentiveInr));
     const incentiveInrNum = incentiveInr ?? 0;
 
+    const totalPlacementBalanceIncentiveInr = (rawData.placements || []).reduce(
+      (sum, placement) => sum + (Number(placement.placementBalanceIncentiveAmount) || 0),
+      0
+    );
+    const balanceIncentiveAmountInr = personalViewNoData || teamViewNoData
+      ? null
+      : (isTeamView || isPersonalView)
+          ? (activeSummary?.totalBalanceIncentiveAmount ?? null)
+          : totalPlacementBalanceIncentiveInr;
+
     return {
       id: rawData.id,
       loginVBCode: rawData.vbid || 'VB' + String(rawData.id).slice(-3),
@@ -254,6 +265,9 @@ const EmployeeDetails = () => {
       comment: rawData.comment ?? null,
       incentiveUSD: incentiveInr != null ? CalculationService.formatCurrency(incentiveInrNum / 80) : null,
       incentiveINR: incentiveInr != null ? CalculationService.formatCurrency(incentiveInrNum, 'INR') : null,
+      balanceIncentiveAmountINR: balanceIncentiveAmountInr != null
+        ? CalculationService.formatCurrency(balanceIncentiveAmountInr, 'INR')
+        : null,
       placements,
       // Summary data for dual-target detection
       teamSummary,
@@ -1461,32 +1475,16 @@ const EmployeeDetails = () => {
                           <td className="px-4 py-4 text-sm text-slate-600">{placement.collectionStatus ?? '-'}</td>
                           <td className="px-4 py-4 text-sm text-slate-600">{placement.totalBilledHours ?? '-'}</td>
                           <td className="px-4 py-4 text-sm text-slate-600 font-medium">
-                            {placement.revenueLeadUsd 
-                              ? (typeof placement.revenueLeadUsd === 'number' 
-                                  ? CalculationService.formatCurrency(placement.revenueLeadUsd)
-                                  : placement.revenueLeadUsd)
-                              : '-'}
+                            {CalculationService.formatCurrency(placement.revenueLeadUsd)}
                           </td>
                           <td className="px-4 py-4 text-sm text-slate-600 font-semibold text-green-600">
-                            {placement.incentiveInr 
-                              ? (typeof placement.incentiveInr === 'number'
-                                  ? CalculationService.formatCurrency(placement.incentiveInr, 'INR')
-                                  : placement.incentiveInr)
-                              : '-'}
+                            {CalculationService.formatCurrency(placement.incentiveInr, 'INR')}
                           </td>
                           <td className="px-4 py-4 text-sm text-slate-600">
-                            {placement.incentivePaidInr 
-                              ? (typeof placement.incentivePaidInr === 'number'
-                                  ? CalculationService.formatCurrency(placement.incentivePaidInr, 'INR')
-                                  : placement.incentivePaidInr)
-                              : '-'}
+                            {CalculationService.formatCurrency(placement.incentivePaidInr, 'INR')}
                           </td>
                           <td className="px-4 py-4 text-sm text-slate-600">
-                            {placement.placementBalanceIncentiveAmount 
-                              ? (typeof placement.placementBalanceIncentiveAmount === 'number'
-                                  ? CalculationService.formatCurrency(placement.placementBalanceIncentiveAmount, 'INR')
-                                  : placement.placementBalanceIncentiveAmount)
-                              : '-'}
+                            {CalculationService.formatCurrency(placement.placementBalanceIncentiveAmount, 'INR')}
                           </td>
                         </>
                       ) : viewMode === 'personal' ? (
@@ -1563,32 +1561,16 @@ const EmployeeDetails = () => {
                             </div>
                           </td>
                           <td className="px-4 py-4 text-sm text-slate-600 font-medium">
-                            {placement.revenue 
-                              ? (typeof placement.revenue === 'number' 
-                                  ? CalculationService.formatCurrency(placement.revenue)
-                                  : placement.revenue)
-                              : '-'}
+                            {CalculationService.formatCurrency(placement.revenue)}
                           </td>
                           <td className="px-4 py-4 text-sm text-slate-600 font-semibold text-green-600">
-                            {placement.incentiveAmountINR 
-                              ? (typeof placement.incentiveAmountINR === 'number'
-                                  ? CalculationService.formatCurrency(placement.incentiveAmountINR, 'INR')
-                                  : placement.incentiveAmountINR)
-                              : '-'}
+                            {CalculationService.formatCurrency(placement.incentiveAmountINR, 'INR')}
                           </td>
                           <td className="px-4 py-4 text-sm text-slate-600">
-                            {placement.incentivePaidInr 
-                              ? (typeof placement.incentivePaidInr === 'number'
-                                  ? CalculationService.formatCurrency(placement.incentivePaidInr, 'INR')
-                                  : placement.incentivePaidInr)
-                              : '-'}
+                            {CalculationService.formatCurrency(placement.incentivePaidInr, 'INR')}
                           </td>
                           <td className="px-4 py-4 text-sm text-slate-600">
-                            {placement.placementBalanceIncentiveAmount 
-                              ? (typeof placement.placementBalanceIncentiveAmount === 'number'
-                                  ? CalculationService.formatCurrency(placement.placementBalanceIncentiveAmount, 'INR')
-                                  : placement.placementBalanceIncentiveAmount)
-                              : '-'}
+                            {CalculationService.formatCurrency(placement.placementBalanceIncentiveAmount, 'INR')}
                           </td>
                         </>
                       ) : (
@@ -1665,16 +1647,16 @@ const EmployeeDetails = () => {
                               )}
                             </div>
                           </td>
-                          <td className="px-4 py-4 text-sm text-slate-600 font-medium">{placement.revenue}</td>
-                          <td className="px-4 py-4 text-sm text-slate-600 font-semibold text-green-600">{placement.incentiveAmountINR}</td>
+                          <td className="px-4 py-4 text-sm text-slate-600 font-medium">{CalculationService.formatCurrency(placement.revenue)}</td>
+                          <td className="px-4 py-4 text-sm text-slate-600 font-semibold text-green-600">{CalculationService.formatCurrency(placement.incentiveAmountINR, 'INR')}</td>
                           <td className="px-4 py-4 text-sm text-slate-600">
                             <span className="text-slate-700 font-medium">
-                              {placement.incentivePaidInr || '-'}
+                              {CalculationService.formatCurrency(placement.incentivePaidInr, 'INR')}
                             </span>
                           </td>
                           <td className="px-4 py-4 text-sm text-slate-600">
                             <span className="text-slate-700 font-medium">
-                              {placement.placementBalanceIncentiveAmount || '-'}
+                              {CalculationService.formatCurrency(placement.placementBalanceIncentiveAmount, 'INR')}
                             </span>
                           </td>
                         </>

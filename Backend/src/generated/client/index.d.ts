@@ -9217,7 +9217,7 @@ export namespace Prisma {
 
   export type PersonalPlacementAvgAggregateOutputType = {
     placementYear: number | null
-    totalBilledHours: number | null
+    totalBilledHours: Decimal | null
     revenueUsd: Decimal | null
     incentiveInr: Decimal | null
     incentivePaidInr: Decimal | null
@@ -9233,7 +9233,7 @@ export namespace Prisma {
 
   export type PersonalPlacementSumAggregateOutputType = {
     placementYear: number | null
-    totalBilledHours: number | null
+    totalBilledHours: Decimal | null
     revenueUsd: Decimal | null
     incentiveInr: Decimal | null
     incentivePaidInr: Decimal | null
@@ -9261,7 +9261,7 @@ export namespace Prisma {
     placementType: string | null
     billingStatus: string | null
     collectionStatus: string | null
-    totalBilledHours: number | null
+    totalBilledHours: Decimal | null
     revenueUsd: Decimal | null
     incentiveInr: Decimal | null
     incentivePaidInr: Decimal | null
@@ -9294,7 +9294,7 @@ export namespace Prisma {
     placementType: string | null
     billingStatus: string | null
     collectionStatus: string | null
-    totalBilledHours: number | null
+    totalBilledHours: Decimal | null
     revenueUsd: Decimal | null
     incentiveInr: Decimal | null
     incentivePaidInr: Decimal | null
@@ -9580,7 +9580,7 @@ export namespace Prisma {
     placementType: string
     billingStatus: string
     collectionStatus: string | null
-    totalBilledHours: number | null
+    totalBilledHours: Decimal | null
     revenueUsd: Decimal
     incentiveInr: Decimal
     incentivePaidInr: Decimal | null
@@ -9750,7 +9750,7 @@ export namespace Prisma {
       placementType: string
       billingStatus: string
       collectionStatus: string | null
-      totalBilledHours: number | null
+      totalBilledHours: Prisma.Decimal | null
       revenueUsd: Prisma.Decimal
       incentiveInr: Prisma.Decimal
       incentivePaidInr: Prisma.Decimal | null
@@ -10175,7 +10175,7 @@ export namespace Prisma {
     readonly placementType: FieldRef<"PersonalPlacement", 'String'>
     readonly billingStatus: FieldRef<"PersonalPlacement", 'String'>
     readonly collectionStatus: FieldRef<"PersonalPlacement", 'String'>
-    readonly totalBilledHours: FieldRef<"PersonalPlacement", 'Int'>
+    readonly totalBilledHours: FieldRef<"PersonalPlacement", 'Decimal'>
     readonly revenueUsd: FieldRef<"PersonalPlacement", 'Decimal'>
     readonly incentiveInr: FieldRef<"PersonalPlacement", 'Decimal'>
     readonly incentivePaidInr: FieldRef<"PersonalPlacement", 'Decimal'>
@@ -10553,7 +10553,7 @@ export namespace Prisma {
 
   export type TeamPlacementAvgAggregateOutputType = {
     placementYear: number | null
-    totalBilledHours: number | null
+    totalBilledHours: Decimal | null
     revenueLeadUsd: Decimal | null
     incentiveInr: Decimal | null
     incentivePaidInr: Decimal | null
@@ -10572,7 +10572,7 @@ export namespace Prisma {
 
   export type TeamPlacementSumAggregateOutputType = {
     placementYear: number | null
-    totalBilledHours: number | null
+    totalBilledHours: Decimal | null
     revenueLeadUsd: Decimal | null
     incentiveInr: Decimal | null
     incentivePaidInr: Decimal | null
@@ -10606,7 +10606,7 @@ export namespace Prisma {
     placementType: string | null
     billingStatus: string | null
     collectionStatus: string | null
-    totalBilledHours: number | null
+    totalBilledHours: Decimal | null
     revenueLeadUsd: Decimal | null
     incentiveInr: Decimal | null
     incentivePaidInr: Decimal | null
@@ -10643,7 +10643,7 @@ export namespace Prisma {
     placementType: string | null
     billingStatus: string | null
     collectionStatus: string | null
-    totalBilledHours: number | null
+    totalBilledHours: Decimal | null
     revenueLeadUsd: Decimal | null
     incentiveInr: Decimal | null
     incentivePaidInr: Decimal | null
@@ -10955,7 +10955,7 @@ export namespace Prisma {
     placementType: string
     billingStatus: string
     collectionStatus: string | null
-    totalBilledHours: number | null
+    totalBilledHours: Decimal | null
     revenueLeadUsd: Decimal
     incentiveInr: Decimal
     incentivePaidInr: Decimal | null
@@ -11141,7 +11141,7 @@ export namespace Prisma {
       placementType: string
       billingStatus: string
       collectionStatus: string | null
-      totalBilledHours: number | null
+      totalBilledHours: Prisma.Decimal | null
       revenueLeadUsd: Prisma.Decimal
       incentiveInr: Prisma.Decimal
       incentivePaidInr: Prisma.Decimal | null
@@ -11570,7 +11570,7 @@ export namespace Prisma {
     readonly placementType: FieldRef<"TeamPlacement", 'String'>
     readonly billingStatus: FieldRef<"TeamPlacement", 'String'>
     readonly collectionStatus: FieldRef<"TeamPlacement", 'String'>
-    readonly totalBilledHours: FieldRef<"TeamPlacement", 'Int'>
+    readonly totalBilledHours: FieldRef<"TeamPlacement", 'Decimal'>
     readonly revenueLeadUsd: FieldRef<"TeamPlacement", 'Decimal'>
     readonly incentiveInr: FieldRef<"TeamPlacement", 'Decimal'>
     readonly incentivePaidInr: FieldRef<"TeamPlacement", 'Decimal'>
@@ -14751,7 +14751,7 @@ export namespace Prisma {
     placementType?: StringFilter<"PersonalPlacement"> | string
     billingStatus?: StringFilter<"PersonalPlacement"> | string
     collectionStatus?: StringNullableFilter<"PersonalPlacement"> | string | null
-    totalBilledHours?: IntNullableFilter<"PersonalPlacement"> | number | null
+    totalBilledHours?: DecimalNullableFilter<"PersonalPlacement"> | Decimal | DecimalJsLike | number | string | null
     revenueUsd?: DecimalFilter<"PersonalPlacement"> | Decimal | DecimalJsLike | number | string
     incentiveInr?: DecimalFilter<"PersonalPlacement"> | Decimal | DecimalJsLike | number | string
     incentivePaidInr?: DecimalNullableFilter<"PersonalPlacement"> | Decimal | DecimalJsLike | number | string | null
@@ -14824,7 +14824,7 @@ export namespace Prisma {
     placementType?: StringFilter<"PersonalPlacement"> | string
     billingStatus?: StringFilter<"PersonalPlacement"> | string
     collectionStatus?: StringNullableFilter<"PersonalPlacement"> | string | null
-    totalBilledHours?: IntNullableFilter<"PersonalPlacement"> | number | null
+    totalBilledHours?: DecimalNullableFilter<"PersonalPlacement"> | Decimal | DecimalJsLike | number | string | null
     revenueUsd?: DecimalFilter<"PersonalPlacement"> | Decimal | DecimalJsLike | number | string
     incentiveInr?: DecimalFilter<"PersonalPlacement"> | Decimal | DecimalJsLike | number | string
     incentivePaidInr?: DecimalNullableFilter<"PersonalPlacement"> | Decimal | DecimalJsLike | number | string | null
@@ -14900,7 +14900,7 @@ export namespace Prisma {
     placementType?: StringWithAggregatesFilter<"PersonalPlacement"> | string
     billingStatus?: StringWithAggregatesFilter<"PersonalPlacement"> | string
     collectionStatus?: StringNullableWithAggregatesFilter<"PersonalPlacement"> | string | null
-    totalBilledHours?: IntNullableWithAggregatesFilter<"PersonalPlacement"> | number | null
+    totalBilledHours?: DecimalNullableWithAggregatesFilter<"PersonalPlacement"> | Decimal | DecimalJsLike | number | string | null
     revenueUsd?: DecimalWithAggregatesFilter<"PersonalPlacement"> | Decimal | DecimalJsLike | number | string
     incentiveInr?: DecimalWithAggregatesFilter<"PersonalPlacement"> | Decimal | DecimalJsLike | number | string
     incentivePaidInr?: DecimalNullableWithAggregatesFilter<"PersonalPlacement"> | Decimal | DecimalJsLike | number | string | null
@@ -14939,7 +14939,7 @@ export namespace Prisma {
     placementType?: StringFilter<"TeamPlacement"> | string
     billingStatus?: StringFilter<"TeamPlacement"> | string
     collectionStatus?: StringNullableFilter<"TeamPlacement"> | string | null
-    totalBilledHours?: IntNullableFilter<"TeamPlacement"> | number | null
+    totalBilledHours?: DecimalNullableFilter<"TeamPlacement"> | Decimal | DecimalJsLike | number | string | null
     revenueLeadUsd?: DecimalFilter<"TeamPlacement"> | Decimal | DecimalJsLike | number | string
     incentiveInr?: DecimalFilter<"TeamPlacement"> | Decimal | DecimalJsLike | number | string
     incentivePaidInr?: DecimalNullableFilter<"TeamPlacement"> | Decimal | DecimalJsLike | number | string | null
@@ -15020,7 +15020,7 @@ export namespace Prisma {
     placementType?: StringFilter<"TeamPlacement"> | string
     billingStatus?: StringFilter<"TeamPlacement"> | string
     collectionStatus?: StringNullableFilter<"TeamPlacement"> | string | null
-    totalBilledHours?: IntNullableFilter<"TeamPlacement"> | number | null
+    totalBilledHours?: DecimalNullableFilter<"TeamPlacement"> | Decimal | DecimalJsLike | number | string | null
     revenueLeadUsd?: DecimalFilter<"TeamPlacement"> | Decimal | DecimalJsLike | number | string
     incentiveInr?: DecimalFilter<"TeamPlacement"> | Decimal | DecimalJsLike | number | string
     incentivePaidInr?: DecimalNullableFilter<"TeamPlacement"> | Decimal | DecimalJsLike | number | string | null
@@ -15104,7 +15104,7 @@ export namespace Prisma {
     placementType?: StringWithAggregatesFilter<"TeamPlacement"> | string
     billingStatus?: StringWithAggregatesFilter<"TeamPlacement"> | string
     collectionStatus?: StringNullableWithAggregatesFilter<"TeamPlacement"> | string | null
-    totalBilledHours?: IntNullableWithAggregatesFilter<"TeamPlacement"> | number | null
+    totalBilledHours?: DecimalNullableWithAggregatesFilter<"TeamPlacement"> | Decimal | DecimalJsLike | number | string | null
     revenueLeadUsd?: DecimalWithAggregatesFilter<"TeamPlacement"> | Decimal | DecimalJsLike | number | string
     incentiveInr?: DecimalWithAggregatesFilter<"TeamPlacement"> | Decimal | DecimalJsLike | number | string
     incentivePaidInr?: DecimalNullableWithAggregatesFilter<"TeamPlacement"> | Decimal | DecimalJsLike | number | string | null
@@ -15887,7 +15887,7 @@ export namespace Prisma {
     placementType: string
     billingStatus: string
     collectionStatus?: string | null
-    totalBilledHours?: number | null
+    totalBilledHours?: Decimal | DecimalJsLike | number | string | null
     revenueUsd: Decimal | DecimalJsLike | number | string
     incentiveInr: Decimal | DecimalJsLike | number | string
     incentivePaidInr?: Decimal | DecimalJsLike | number | string | null
@@ -15922,7 +15922,7 @@ export namespace Prisma {
     placementType: string
     billingStatus: string
     collectionStatus?: string | null
-    totalBilledHours?: number | null
+    totalBilledHours?: Decimal | DecimalJsLike | number | string | null
     revenueUsd: Decimal | DecimalJsLike | number | string
     incentiveInr: Decimal | DecimalJsLike | number | string
     incentivePaidInr?: Decimal | DecimalJsLike | number | string | null
@@ -15953,7 +15953,7 @@ export namespace Prisma {
     placementType?: StringFieldUpdateOperationsInput | string
     billingStatus?: StringFieldUpdateOperationsInput | string
     collectionStatus?: NullableStringFieldUpdateOperationsInput | string | null
-    totalBilledHours?: NullableIntFieldUpdateOperationsInput | number | null
+    totalBilledHours?: NullableDecimalFieldUpdateOperationsInput | Decimal | DecimalJsLike | number | string | null
     revenueUsd?: DecimalFieldUpdateOperationsInput | Decimal | DecimalJsLike | number | string
     incentiveInr?: DecimalFieldUpdateOperationsInput | Decimal | DecimalJsLike | number | string
     incentivePaidInr?: NullableDecimalFieldUpdateOperationsInput | Decimal | DecimalJsLike | number | string | null
@@ -15988,7 +15988,7 @@ export namespace Prisma {
     placementType?: StringFieldUpdateOperationsInput | string
     billingStatus?: StringFieldUpdateOperationsInput | string
     collectionStatus?: NullableStringFieldUpdateOperationsInput | string | null
-    totalBilledHours?: NullableIntFieldUpdateOperationsInput | number | null
+    totalBilledHours?: NullableDecimalFieldUpdateOperationsInput | Decimal | DecimalJsLike | number | string | null
     revenueUsd?: DecimalFieldUpdateOperationsInput | Decimal | DecimalJsLike | number | string
     incentiveInr?: DecimalFieldUpdateOperationsInput | Decimal | DecimalJsLike | number | string
     incentivePaidInr?: NullableDecimalFieldUpdateOperationsInput | Decimal | DecimalJsLike | number | string | null
@@ -16021,7 +16021,7 @@ export namespace Prisma {
     placementType: string
     billingStatus: string
     collectionStatus?: string | null
-    totalBilledHours?: number | null
+    totalBilledHours?: Decimal | DecimalJsLike | number | string | null
     revenueUsd: Decimal | DecimalJsLike | number | string
     incentiveInr: Decimal | DecimalJsLike | number | string
     incentivePaidInr?: Decimal | DecimalJsLike | number | string | null
@@ -16052,7 +16052,7 @@ export namespace Prisma {
     placementType?: StringFieldUpdateOperationsInput | string
     billingStatus?: StringFieldUpdateOperationsInput | string
     collectionStatus?: NullableStringFieldUpdateOperationsInput | string | null
-    totalBilledHours?: NullableIntFieldUpdateOperationsInput | number | null
+    totalBilledHours?: NullableDecimalFieldUpdateOperationsInput | Decimal | DecimalJsLike | number | string | null
     revenueUsd?: DecimalFieldUpdateOperationsInput | Decimal | DecimalJsLike | number | string
     incentiveInr?: DecimalFieldUpdateOperationsInput | Decimal | DecimalJsLike | number | string
     incentivePaidInr?: NullableDecimalFieldUpdateOperationsInput | Decimal | DecimalJsLike | number | string | null
@@ -16085,7 +16085,7 @@ export namespace Prisma {
     placementType?: StringFieldUpdateOperationsInput | string
     billingStatus?: StringFieldUpdateOperationsInput | string
     collectionStatus?: NullableStringFieldUpdateOperationsInput | string | null
-    totalBilledHours?: NullableIntFieldUpdateOperationsInput | number | null
+    totalBilledHours?: NullableDecimalFieldUpdateOperationsInput | Decimal | DecimalJsLike | number | string | null
     revenueUsd?: DecimalFieldUpdateOperationsInput | Decimal | DecimalJsLike | number | string
     incentiveInr?: DecimalFieldUpdateOperationsInput | Decimal | DecimalJsLike | number | string
     incentivePaidInr?: NullableDecimalFieldUpdateOperationsInput | Decimal | DecimalJsLike | number | string | null
@@ -16119,7 +16119,7 @@ export namespace Prisma {
     placementType: string
     billingStatus: string
     collectionStatus?: string | null
-    totalBilledHours?: number | null
+    totalBilledHours?: Decimal | DecimalJsLike | number | string | null
     revenueLeadUsd: Decimal | DecimalJsLike | number | string
     incentiveInr: Decimal | DecimalJsLike | number | string
     incentivePaidInr?: Decimal | DecimalJsLike | number | string | null
@@ -16158,7 +16158,7 @@ export namespace Prisma {
     placementType: string
     billingStatus: string
     collectionStatus?: string | null
-    totalBilledHours?: number | null
+    totalBilledHours?: Decimal | DecimalJsLike | number | string | null
     revenueLeadUsd: Decimal | DecimalJsLike | number | string
     incentiveInr: Decimal | DecimalJsLike | number | string
     incentivePaidInr?: Decimal | DecimalJsLike | number | string | null
@@ -16193,7 +16193,7 @@ export namespace Prisma {
     placementType?: StringFieldUpdateOperationsInput | string
     billingStatus?: StringFieldUpdateOperationsInput | string
     collectionStatus?: NullableStringFieldUpdateOperationsInput | string | null
-    totalBilledHours?: NullableIntFieldUpdateOperationsInput | number | null
+    totalBilledHours?: NullableDecimalFieldUpdateOperationsInput | Decimal | DecimalJsLike | number | string | null
     revenueLeadUsd?: DecimalFieldUpdateOperationsInput | Decimal | DecimalJsLike | number | string
     incentiveInr?: DecimalFieldUpdateOperationsInput | Decimal | DecimalJsLike | number | string
     incentivePaidInr?: NullableDecimalFieldUpdateOperationsInput | Decimal | DecimalJsLike | number | string | null
@@ -16232,7 +16232,7 @@ export namespace Prisma {
     placementType?: StringFieldUpdateOperationsInput | string
     billingStatus?: StringFieldUpdateOperationsInput | string
     collectionStatus?: NullableStringFieldUpdateOperationsInput | string | null
-    totalBilledHours?: NullableIntFieldUpdateOperationsInput | number | null
+    totalBilledHours?: NullableDecimalFieldUpdateOperationsInput | Decimal | DecimalJsLike | number | string | null
     revenueLeadUsd?: DecimalFieldUpdateOperationsInput | Decimal | DecimalJsLike | number | string
     incentiveInr?: DecimalFieldUpdateOperationsInput | Decimal | DecimalJsLike | number | string
     incentivePaidInr?: NullableDecimalFieldUpdateOperationsInput | Decimal | DecimalJsLike | number | string | null
@@ -16269,7 +16269,7 @@ export namespace Prisma {
     placementType: string
     billingStatus: string
     collectionStatus?: string | null
-    totalBilledHours?: number | null
+    totalBilledHours?: Decimal | DecimalJsLike | number | string | null
     revenueLeadUsd: Decimal | DecimalJsLike | number | string
     incentiveInr: Decimal | DecimalJsLike | number | string
     incentivePaidInr?: Decimal | DecimalJsLike | number | string | null
@@ -16304,7 +16304,7 @@ export namespace Prisma {
     placementType?: StringFieldUpdateOperationsInput | string
     billingStatus?: StringFieldUpdateOperationsInput | string
     collectionStatus?: NullableStringFieldUpdateOperationsInput | string | null
-    totalBilledHours?: NullableIntFieldUpdateOperationsInput | number | null
+    totalBilledHours?: NullableDecimalFieldUpdateOperationsInput | Decimal | DecimalJsLike | number | string | null
     revenueLeadUsd?: DecimalFieldUpdateOperationsInput | Decimal | DecimalJsLike | number | string
     incentiveInr?: DecimalFieldUpdateOperationsInput | Decimal | DecimalJsLike | number | string
     incentivePaidInr?: NullableDecimalFieldUpdateOperationsInput | Decimal | DecimalJsLike | number | string | null
@@ -16341,7 +16341,7 @@ export namespace Prisma {
     placementType?: StringFieldUpdateOperationsInput | string
     billingStatus?: StringFieldUpdateOperationsInput | string
     collectionStatus?: NullableStringFieldUpdateOperationsInput | string | null
-    totalBilledHours?: NullableIntFieldUpdateOperationsInput | number | null
+    totalBilledHours?: NullableDecimalFieldUpdateOperationsInput | Decimal | DecimalJsLike | number | string | null
     revenueLeadUsd?: DecimalFieldUpdateOperationsInput | Decimal | DecimalJsLike | number | string
     incentiveInr?: DecimalFieldUpdateOperationsInput | Decimal | DecimalJsLike | number | string
     incentivePaidInr?: NullableDecimalFieldUpdateOperationsInput | Decimal | DecimalJsLike | number | string | null
@@ -18995,7 +18995,7 @@ export namespace Prisma {
     placementType: string
     billingStatus: string
     collectionStatus?: string | null
-    totalBilledHours?: number | null
+    totalBilledHours?: Decimal | DecimalJsLike | number | string | null
     revenueUsd: Decimal | DecimalJsLike | number | string
     incentiveInr: Decimal | DecimalJsLike | number | string
     incentivePaidInr?: Decimal | DecimalJsLike | number | string | null
@@ -19028,7 +19028,7 @@ export namespace Prisma {
     placementType: string
     billingStatus: string
     collectionStatus?: string | null
-    totalBilledHours?: number | null
+    totalBilledHours?: Decimal | DecimalJsLike | number | string | null
     revenueUsd: Decimal | DecimalJsLike | number | string
     incentiveInr: Decimal | DecimalJsLike | number | string
     incentivePaidInr?: Decimal | DecimalJsLike | number | string | null
@@ -19072,7 +19072,7 @@ export namespace Prisma {
     placementType: string
     billingStatus: string
     collectionStatus?: string | null
-    totalBilledHours?: number | null
+    totalBilledHours?: Decimal | DecimalJsLike | number | string | null
     revenueLeadUsd: Decimal | DecimalJsLike | number | string
     incentiveInr: Decimal | DecimalJsLike | number | string
     incentivePaidInr?: Decimal | DecimalJsLike | number | string | null
@@ -19109,7 +19109,7 @@ export namespace Prisma {
     placementType: string
     billingStatus: string
     collectionStatus?: string | null
-    totalBilledHours?: number | null
+    totalBilledHours?: Decimal | DecimalJsLike | number | string | null
     revenueLeadUsd: Decimal | DecimalJsLike | number | string
     incentiveInr: Decimal | DecimalJsLike | number | string
     incentivePaidInr?: Decimal | DecimalJsLike | number | string | null
@@ -19459,7 +19459,7 @@ export namespace Prisma {
     placementType?: StringFilter<"PersonalPlacement"> | string
     billingStatus?: StringFilter<"PersonalPlacement"> | string
     collectionStatus?: StringNullableFilter<"PersonalPlacement"> | string | null
-    totalBilledHours?: IntNullableFilter<"PersonalPlacement"> | number | null
+    totalBilledHours?: DecimalNullableFilter<"PersonalPlacement"> | Decimal | DecimalJsLike | number | string | null
     revenueUsd?: DecimalFilter<"PersonalPlacement"> | Decimal | DecimalJsLike | number | string
     incentiveInr?: DecimalFilter<"PersonalPlacement"> | Decimal | DecimalJsLike | number | string
     incentivePaidInr?: DecimalNullableFilter<"PersonalPlacement"> | Decimal | DecimalJsLike | number | string | null
@@ -19514,7 +19514,7 @@ export namespace Prisma {
     placementType?: StringFilter<"TeamPlacement"> | string
     billingStatus?: StringFilter<"TeamPlacement"> | string
     collectionStatus?: StringNullableFilter<"TeamPlacement"> | string | null
-    totalBilledHours?: IntNullableFilter<"TeamPlacement"> | number | null
+    totalBilledHours?: DecimalNullableFilter<"TeamPlacement"> | Decimal | DecimalJsLike | number | string | null
     revenueLeadUsd?: DecimalFilter<"TeamPlacement"> | Decimal | DecimalJsLike | number | string
     incentiveInr?: DecimalFilter<"TeamPlacement"> | Decimal | DecimalJsLike | number | string
     incentivePaidInr?: DecimalNullableFilter<"TeamPlacement"> | Decimal | DecimalJsLike | number | string | null
@@ -20300,7 +20300,7 @@ export namespace Prisma {
     placementType: string
     billingStatus: string
     collectionStatus?: string | null
-    totalBilledHours?: number | null
+    totalBilledHours?: Decimal | DecimalJsLike | number | string | null
     revenueUsd: Decimal | DecimalJsLike | number | string
     incentiveInr: Decimal | DecimalJsLike | number | string
     incentivePaidInr?: Decimal | DecimalJsLike | number | string | null
@@ -20333,7 +20333,7 @@ export namespace Prisma {
     placementType: string
     billingStatus: string
     collectionStatus?: string | null
-    totalBilledHours?: number | null
+    totalBilledHours?: Decimal | DecimalJsLike | number | string | null
     revenueUsd: Decimal | DecimalJsLike | number | string
     incentiveInr: Decimal | DecimalJsLike | number | string
     incentivePaidInr?: Decimal | DecimalJsLike | number | string | null
@@ -20377,7 +20377,7 @@ export namespace Prisma {
     placementType: string
     billingStatus: string
     collectionStatus?: string | null
-    totalBilledHours?: number | null
+    totalBilledHours?: Decimal | DecimalJsLike | number | string | null
     revenueLeadUsd: Decimal | DecimalJsLike | number | string
     incentiveInr: Decimal | DecimalJsLike | number | string
     incentivePaidInr?: Decimal | DecimalJsLike | number | string | null
@@ -20414,7 +20414,7 @@ export namespace Prisma {
     placementType: string
     billingStatus: string
     collectionStatus?: string | null
-    totalBilledHours?: number | null
+    totalBilledHours?: Decimal | DecimalJsLike | number | string | null
     revenueLeadUsd: Decimal | DecimalJsLike | number | string
     incentiveInr: Decimal | DecimalJsLike | number | string
     incentivePaidInr?: Decimal | DecimalJsLike | number | string | null
@@ -21113,7 +21113,7 @@ export namespace Prisma {
     placementType: string
     billingStatus: string
     collectionStatus?: string | null
-    totalBilledHours?: number | null
+    totalBilledHours?: Decimal | DecimalJsLike | number | string | null
     revenueUsd: Decimal | DecimalJsLike | number | string
     incentiveInr: Decimal | DecimalJsLike | number | string
     incentivePaidInr?: Decimal | DecimalJsLike | number | string | null
@@ -21148,7 +21148,7 @@ export namespace Prisma {
     placementType: string
     billingStatus: string
     collectionStatus?: string | null
-    totalBilledHours?: number | null
+    totalBilledHours?: Decimal | DecimalJsLike | number | string | null
     revenueLeadUsd: Decimal | DecimalJsLike | number | string
     incentiveInr: Decimal | DecimalJsLike | number | string
     incentivePaidInr?: Decimal | DecimalJsLike | number | string | null
@@ -21389,7 +21389,7 @@ export namespace Prisma {
     placementType?: StringFieldUpdateOperationsInput | string
     billingStatus?: StringFieldUpdateOperationsInput | string
     collectionStatus?: NullableStringFieldUpdateOperationsInput | string | null
-    totalBilledHours?: NullableIntFieldUpdateOperationsInput | number | null
+    totalBilledHours?: NullableDecimalFieldUpdateOperationsInput | Decimal | DecimalJsLike | number | string | null
     revenueUsd?: DecimalFieldUpdateOperationsInput | Decimal | DecimalJsLike | number | string
     incentiveInr?: DecimalFieldUpdateOperationsInput | Decimal | DecimalJsLike | number | string
     incentivePaidInr?: NullableDecimalFieldUpdateOperationsInput | Decimal | DecimalJsLike | number | string | null
@@ -21422,7 +21422,7 @@ export namespace Prisma {
     placementType?: StringFieldUpdateOperationsInput | string
     billingStatus?: StringFieldUpdateOperationsInput | string
     collectionStatus?: NullableStringFieldUpdateOperationsInput | string | null
-    totalBilledHours?: NullableIntFieldUpdateOperationsInput | number | null
+    totalBilledHours?: NullableDecimalFieldUpdateOperationsInput | Decimal | DecimalJsLike | number | string | null
     revenueUsd?: DecimalFieldUpdateOperationsInput | Decimal | DecimalJsLike | number | string
     incentiveInr?: DecimalFieldUpdateOperationsInput | Decimal | DecimalJsLike | number | string
     incentivePaidInr?: NullableDecimalFieldUpdateOperationsInput | Decimal | DecimalJsLike | number | string | null
@@ -21454,7 +21454,7 @@ export namespace Prisma {
     placementType?: StringFieldUpdateOperationsInput | string
     billingStatus?: StringFieldUpdateOperationsInput | string
     collectionStatus?: NullableStringFieldUpdateOperationsInput | string | null
-    totalBilledHours?: NullableIntFieldUpdateOperationsInput | number | null
+    totalBilledHours?: NullableDecimalFieldUpdateOperationsInput | Decimal | DecimalJsLike | number | string | null
     revenueUsd?: DecimalFieldUpdateOperationsInput | Decimal | DecimalJsLike | number | string
     incentiveInr?: DecimalFieldUpdateOperationsInput | Decimal | DecimalJsLike | number | string
     incentivePaidInr?: NullableDecimalFieldUpdateOperationsInput | Decimal | DecimalJsLike | number | string | null
@@ -21488,7 +21488,7 @@ export namespace Prisma {
     placementType?: StringFieldUpdateOperationsInput | string
     billingStatus?: StringFieldUpdateOperationsInput | string
     collectionStatus?: NullableStringFieldUpdateOperationsInput | string | null
-    totalBilledHours?: NullableIntFieldUpdateOperationsInput | number | null
+    totalBilledHours?: NullableDecimalFieldUpdateOperationsInput | Decimal | DecimalJsLike | number | string | null
     revenueLeadUsd?: DecimalFieldUpdateOperationsInput | Decimal | DecimalJsLike | number | string
     incentiveInr?: DecimalFieldUpdateOperationsInput | Decimal | DecimalJsLike | number | string
     incentivePaidInr?: NullableDecimalFieldUpdateOperationsInput | Decimal | DecimalJsLike | number | string | null
@@ -21525,7 +21525,7 @@ export namespace Prisma {
     placementType?: StringFieldUpdateOperationsInput | string
     billingStatus?: StringFieldUpdateOperationsInput | string
     collectionStatus?: NullableStringFieldUpdateOperationsInput | string | null
-    totalBilledHours?: NullableIntFieldUpdateOperationsInput | number | null
+    totalBilledHours?: NullableDecimalFieldUpdateOperationsInput | Decimal | DecimalJsLike | number | string | null
     revenueLeadUsd?: DecimalFieldUpdateOperationsInput | Decimal | DecimalJsLike | number | string
     incentiveInr?: DecimalFieldUpdateOperationsInput | Decimal | DecimalJsLike | number | string
     incentivePaidInr?: NullableDecimalFieldUpdateOperationsInput | Decimal | DecimalJsLike | number | string | null
@@ -21561,7 +21561,7 @@ export namespace Prisma {
     placementType?: StringFieldUpdateOperationsInput | string
     billingStatus?: StringFieldUpdateOperationsInput | string
     collectionStatus?: NullableStringFieldUpdateOperationsInput | string | null
-    totalBilledHours?: NullableIntFieldUpdateOperationsInput | number | null
+    totalBilledHours?: NullableDecimalFieldUpdateOperationsInput | Decimal | DecimalJsLike | number | string | null
     revenueLeadUsd?: DecimalFieldUpdateOperationsInput | Decimal | DecimalJsLike | number | string
     incentiveInr?: DecimalFieldUpdateOperationsInput | Decimal | DecimalJsLike | number | string
     incentivePaidInr?: NullableDecimalFieldUpdateOperationsInput | Decimal | DecimalJsLike | number | string | null
@@ -21618,7 +21618,7 @@ export namespace Prisma {
     placementType: string
     billingStatus: string
     collectionStatus?: string | null
-    totalBilledHours?: number | null
+    totalBilledHours?: Decimal | DecimalJsLike | number | string | null
     revenueUsd: Decimal | DecimalJsLike | number | string
     incentiveInr: Decimal | DecimalJsLike | number | string
     incentivePaidInr?: Decimal | DecimalJsLike | number | string | null
@@ -21653,7 +21653,7 @@ export namespace Prisma {
     placementType: string
     billingStatus: string
     collectionStatus?: string | null
-    totalBilledHours?: number | null
+    totalBilledHours?: Decimal | DecimalJsLike | number | string | null
     revenueLeadUsd: Decimal | DecimalJsLike | number | string
     incentiveInr: Decimal | DecimalJsLike | number | string
     incentivePaidInr?: Decimal | DecimalJsLike | number | string | null
@@ -21685,7 +21685,7 @@ export namespace Prisma {
     placementType?: StringFieldUpdateOperationsInput | string
     billingStatus?: StringFieldUpdateOperationsInput | string
     collectionStatus?: NullableStringFieldUpdateOperationsInput | string | null
-    totalBilledHours?: NullableIntFieldUpdateOperationsInput | number | null
+    totalBilledHours?: NullableDecimalFieldUpdateOperationsInput | Decimal | DecimalJsLike | number | string | null
     revenueUsd?: DecimalFieldUpdateOperationsInput | Decimal | DecimalJsLike | number | string
     incentiveInr?: DecimalFieldUpdateOperationsInput | Decimal | DecimalJsLike | number | string
     incentivePaidInr?: NullableDecimalFieldUpdateOperationsInput | Decimal | DecimalJsLike | number | string | null
@@ -21718,7 +21718,7 @@ export namespace Prisma {
     placementType?: StringFieldUpdateOperationsInput | string
     billingStatus?: StringFieldUpdateOperationsInput | string
     collectionStatus?: NullableStringFieldUpdateOperationsInput | string | null
-    totalBilledHours?: NullableIntFieldUpdateOperationsInput | number | null
+    totalBilledHours?: NullableDecimalFieldUpdateOperationsInput | Decimal | DecimalJsLike | number | string | null
     revenueUsd?: DecimalFieldUpdateOperationsInput | Decimal | DecimalJsLike | number | string
     incentiveInr?: DecimalFieldUpdateOperationsInput | Decimal | DecimalJsLike | number | string
     incentivePaidInr?: NullableDecimalFieldUpdateOperationsInput | Decimal | DecimalJsLike | number | string | null
@@ -21750,7 +21750,7 @@ export namespace Prisma {
     placementType?: StringFieldUpdateOperationsInput | string
     billingStatus?: StringFieldUpdateOperationsInput | string
     collectionStatus?: NullableStringFieldUpdateOperationsInput | string | null
-    totalBilledHours?: NullableIntFieldUpdateOperationsInput | number | null
+    totalBilledHours?: NullableDecimalFieldUpdateOperationsInput | Decimal | DecimalJsLike | number | string | null
     revenueUsd?: DecimalFieldUpdateOperationsInput | Decimal | DecimalJsLike | number | string
     incentiveInr?: DecimalFieldUpdateOperationsInput | Decimal | DecimalJsLike | number | string
     incentivePaidInr?: NullableDecimalFieldUpdateOperationsInput | Decimal | DecimalJsLike | number | string | null
@@ -21784,7 +21784,7 @@ export namespace Prisma {
     placementType?: StringFieldUpdateOperationsInput | string
     billingStatus?: StringFieldUpdateOperationsInput | string
     collectionStatus?: NullableStringFieldUpdateOperationsInput | string | null
-    totalBilledHours?: NullableIntFieldUpdateOperationsInput | number | null
+    totalBilledHours?: NullableDecimalFieldUpdateOperationsInput | Decimal | DecimalJsLike | number | string | null
     revenueLeadUsd?: DecimalFieldUpdateOperationsInput | Decimal | DecimalJsLike | number | string
     incentiveInr?: DecimalFieldUpdateOperationsInput | Decimal | DecimalJsLike | number | string
     incentivePaidInr?: NullableDecimalFieldUpdateOperationsInput | Decimal | DecimalJsLike | number | string | null
@@ -21821,7 +21821,7 @@ export namespace Prisma {
     placementType?: StringFieldUpdateOperationsInput | string
     billingStatus?: StringFieldUpdateOperationsInput | string
     collectionStatus?: NullableStringFieldUpdateOperationsInput | string | null
-    totalBilledHours?: NullableIntFieldUpdateOperationsInput | number | null
+    totalBilledHours?: NullableDecimalFieldUpdateOperationsInput | Decimal | DecimalJsLike | number | string | null
     revenueLeadUsd?: DecimalFieldUpdateOperationsInput | Decimal | DecimalJsLike | number | string
     incentiveInr?: DecimalFieldUpdateOperationsInput | Decimal | DecimalJsLike | number | string
     incentivePaidInr?: NullableDecimalFieldUpdateOperationsInput | Decimal | DecimalJsLike | number | string | null
@@ -21857,7 +21857,7 @@ export namespace Prisma {
     placementType?: StringFieldUpdateOperationsInput | string
     billingStatus?: StringFieldUpdateOperationsInput | string
     collectionStatus?: NullableStringFieldUpdateOperationsInput | string | null
-    totalBilledHours?: NullableIntFieldUpdateOperationsInput | number | null
+    totalBilledHours?: NullableDecimalFieldUpdateOperationsInput | Decimal | DecimalJsLike | number | string | null
     revenueLeadUsd?: DecimalFieldUpdateOperationsInput | Decimal | DecimalJsLike | number | string
     incentiveInr?: DecimalFieldUpdateOperationsInput | Decimal | DecimalJsLike | number | string
     incentivePaidInr?: NullableDecimalFieldUpdateOperationsInput | Decimal | DecimalJsLike | number | string | null
