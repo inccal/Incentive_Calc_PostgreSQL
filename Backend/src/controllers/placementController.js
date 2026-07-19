@@ -1457,10 +1457,17 @@ export async function bulkUpdateMetrics(metricsData, actorId) {
       */
 
       if (Object.keys(updateData).length > 0) {
-        await prisma.employeeProfile.update({
+        const updates = [prisma.employeeProfile.update({
           where: { id: profile.id },
           data: updateData
-        });
+        })];
+        if (Object.prototype.hasOwnProperty.call(updateData, "managerId")) {
+          updates.push(prisma.user.update({
+            where: { id: profile.id },
+            data: { managerId: updateData.managerId }
+          }));
+        }
+        await prisma.$transaction(updates);
         results.updated++;
       }
 

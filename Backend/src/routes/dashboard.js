@@ -172,7 +172,7 @@ const processEmployeeData = async (employee) => {
     name: employee.name,
     role: employee.role, // Include role so frontend can check if user is TEAM_LEAD
     team: employee.employeeProfile.team?.name || null,
-    teamLead: employee.employeeProfile.manager?.name || null,
+    teamLead: employee.employeeProfile.manager?.name || employee.manager?.name || null,
     level: employee.employeeProfile.level || "L4",
     vbid: employee.employeeProfile.vbid || null,
     yearlyTarget,
@@ -234,6 +234,7 @@ router.get(
       const employee = await prisma.user.findUnique({
         where: { id: userId },
         include: {
+          manager: true,
           employeeProfile: {
             include: {
               team: true,
@@ -282,6 +283,7 @@ router.get(
       const employee = await prisma.user.findUnique({
         where: { id: employeeId },
         include: {
+          manager: true,
           employeeProfile: {
             include: {
               team: true,

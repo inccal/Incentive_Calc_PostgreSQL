@@ -62,6 +62,7 @@ export async function listTeamsWithMembers(currentUser) {
           user: {
             include: {
               personalPlacements: true,
+              manager: true,
             },
           },
           manager: true,
@@ -268,8 +269,8 @@ export async function bulkAssignEmployeesToTeam(teamId, userIds, actorId, option
     include: { employeeProfile: true },
   });
 
-  await Promise.all(
-    employees.map((user) =>
+  await prisma.$transaction(
+    employees.flatMap((user) => [
       prisma.employeeProfile.upsert({
         where: { id: user.id },
         create: {
@@ -283,8 +284,11 @@ export async function bulkAssignEmployeesToTeam(teamId, userIds, actorId, option
           teamId,
           ...(managerId !== undefined && { managerId }),
         },
-      })
-    )
+      }),
+      ...(managerId !== undefined
+        ? [prisma.user.update({ where: { id: user.id }, data: { managerId } })]
+        : []),
+    ])
   );
 
   await prisma.auditLog.create({
@@ -338,6 +342,7 @@ export async function getTeamDetails(idOrSlug) {
         user: {
           include: {
             personalPlacements: true,
+            manager: true,
           },
         },
         manager: true,
@@ -485,8 +490,8 @@ export async function getTeamDetails(idOrSlug) {
         targetType: p.targetType,
         slabQualified: summaryByEmployeeId.get(p.id)?.slabQualified ?? null,
         comment: p.comment || null,
-        managerName: p.manager?.name || null,
-        managerId: p.managerId,
+        managerName: p.manager?.name || p.user.manager?.name || null,
+        managerId: p.managerId || p.user.managerId || null,
         revenue: combinedPlacements.reduce(
           (sum, e) => sum + Number(e.revenue || e.revenueUsd || 0),
           0
@@ -512,13 +517,16 @@ export async function removeMemberFromTeam(teamId, userId, actorId) {
   // If it's a lead, check if they have assignees?
   // For now, just unassign.
   
-  await prisma.employeeProfile.update({
-    where: { id: userId },
-    data: {
-      teamId: null,
-      managerId: null, // Also remove manager assignment if leaving team
-    },
-  });
+  await prisma.$transaction([
+    prisma.employeeProfile.update({
+      where: { id: userId },
+      data: {
+        teamId: null,
+        managerId: null,
+      },
+    }),
+    prisma.user.update({ where: { id: userId }, data: { managerId: null } }),
+  ]);
 
   await prisma.auditLog.create({
     data: {
@@ -695,5 +703,3 @@ export async function assignTeamLead(teamId, userId, actorId) {
 
   return updated;
 }
-
-

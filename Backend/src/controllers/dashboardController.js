@@ -79,12 +79,14 @@ export async function isManagedDescendant(managerId, targetId) {
   let managerIds = [managerId];
 
   while (managerIds.length > 0) {
-    const directReports = await prisma.employeeProfile.findMany({
+    const directReports = await prisma.user.findMany({
       where: {
-        managerId: { in: managerIds },
         isActive: true,
-        deletedAt: null,
-        user: { is: { isActive: true } },
+        employeeProfile: { is: { isActive: true, deletedAt: null } },
+        OR: [
+          { managerId: { in: managerIds } },
+          { employeeProfile: { is: { managerId: { in: managerIds } } } },
+        ],
       },
       select: { id: true },
     });
@@ -399,11 +401,12 @@ export async function getSuperAdminOverview(currentUser, year) {
     // Build manager -> employees map for this team
     const employeesByManager = new Map();
     team.employees.forEach((emp) => {
-      if (emp.managerId) {
-        if (!employeesByManager.has(emp.managerId)) {
-          employeesByManager.set(emp.managerId, []);
+      const managerId = emp.managerId || emp.user?.managerId;
+      if (managerId) {
+        if (!employeesByManager.has(managerId)) {
+          employeesByManager.set(managerId, []);
         }
-        employeesByManager.get(emp.managerId).push(emp);
+        employeesByManager.get(managerId).push(emp);
       }
     });
 
@@ -505,8 +508,9 @@ export async function getSuperAdminOverview(currentUser, year) {
       const lvl = String(p.level || "").toUpperCase();
       if (!levelL2L3(p)) return false;
       if (!(p.user.role === Role.TEAM_LEAD || lvl === "L2" || lvl === "L3")) return false;
-      if (!p.managerId) return true;
-      const manager = team.employees.find((e) => e.id === p.managerId);
+      const managerId = p.managerId || p.user?.managerId;
+      if (!managerId) return true;
+      const manager = team.employees.find((e) => e.id === managerId);
       if (!manager) return true;
       const mgrLvl = String(manager.level || "").toUpperCase();
       if (lvl === "L2" && (mgrLvl === "L2" || mgrLvl === "L3")) return false;
@@ -654,6 +658,7 @@ export async function getTeamLeadOverview(currentUser, year) {
       employeeProfile: true,
       personalPlacements: true,
       teamPlacements: true,
+      manager: true,
     },
   });
 
@@ -800,11 +805,12 @@ export async function getTeamLeadOverview(currentUser, year) {
 
   allTeamMembers.forEach((emp) => {
     // Build Manager Map
-    if (emp.employeeProfile?.managerId) {
-        if (!employeesByManager.has(emp.employeeProfile.managerId)) {
-            employeesByManager.set(emp.employeeProfile.managerId, []);
+    const managerId = emp.employeeProfile?.managerId || emp.managerId;
+    if (managerId) {
+        if (!employeesByManager.has(managerId)) {
+            employeesByManager.set(managerId, []);
         }
-        employeesByManager.get(emp.employeeProfile.managerId).push(emp);
+        employeesByManager.get(managerId).push(emp);
     }
 
     // Build Revenue Map (personal + team placements only)

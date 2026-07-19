@@ -48,6 +48,7 @@ function getClientMeta(req) {
 
 function buildAuthUser(user) {
   const profile = user.employeeProfile;
+  const manager = profile?.manager || user.manager || null;
 
   return {
     id: user.id,
@@ -63,11 +64,11 @@ function buildAuthUser(user) {
           color: profile.team.color,
         }
       : null,
-    manager: profile?.manager
+    manager: manager
       ? {
-          id: profile.manager.id,
-          name: profile.manager.name,
-          email: profile.manager.email,
+          id: manager.id,
+          name: manager.name,
+          email: manager.email,
         }
       : null,
     level: profile?.level,
@@ -185,6 +186,7 @@ async function resolveActiveUserFromEntra(entraUser) {
     user = await prisma.user.findFirst({
       where: { entraObjectId: entraUser.objectId },
       include: {
+        manager: true,
         employeeProfile: { include: { team: true, manager: true } },
       },
     });
@@ -194,6 +196,7 @@ async function resolveActiveUserFromEntra(entraUser) {
     user = await prisma.user.findFirst({
       where: { email: { equals: entraUser.email, mode: "insensitive" } },
       include: {
+        manager: true,
         employeeProfile: { include: { team: true, manager: true } },
       },
     });
@@ -202,6 +205,7 @@ async function resolveActiveUserFromEntra(entraUser) {
         where: { id: user.id },
         data: { entraObjectId: entraUser.objectId, email: entraUser.email },
         include: {
+          manager: true,
           employeeProfile: { include: { team: true, manager: true } },
         },
       });
@@ -485,6 +489,7 @@ router.get("/me", authenticate, async (req, res, next) => {
     const user = await prisma.user.findUnique({
       where: { id: req.user.id },
       include: {
+        manager: true,
         employeeProfile: {
           include: {
             team: true,

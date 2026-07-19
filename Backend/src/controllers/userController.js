@@ -108,6 +108,7 @@ export async function listUsersWithRelations({ page = 1, pageSize = 25, actor, r
     prisma.user.findMany({
       where,
       include: {
+        manager: true,
         employeeProfile: {
           include: { team: true, manager: true },
         },
@@ -118,7 +119,9 @@ export async function listUsersWithRelations({ page = 1, pageSize = 25, actor, r
     }),
   ]);
 
-  const data = users.map((u) => ({
+  const data = users.map((u) => {
+    const manager = u.employeeProfile?.manager || u.manager || null;
+    return ({
     id: u.id,
     email: u.email,
     name: u.name,
@@ -132,17 +135,18 @@ export async function listUsersWithRelations({ page = 1, pageSize = 25, actor, r
           name: u.employeeProfile.team.name,
         }
       : null,
-    managerId: u.employeeProfile?.managerId || null,
+    managerId: u.employeeProfile?.managerId || u.managerId || null,
     teamId: u.employeeProfile?.teamId || null,
-    manager: u.employeeProfile?.manager
+    manager: manager
       ? {
-          id: u.employeeProfile.manager.id,
-          name: u.employeeProfile.manager.name,
+          id: manager.id,
+          name: manager.name,
         }
       : null,
     yearlyTarget: null,
     targetType: u.employeeProfile?.targetType || "REVENUE",
-  }));
+    });
+  });
 
   return {
     data,
@@ -159,6 +163,7 @@ export async function getUserById(id) {
   const user = await prisma.user.findUnique({
     where: { id },
     include: {
+      manager: true,
       employeeProfile: {
         include: { team: true, manager: true },
       },
@@ -171,6 +176,8 @@ export async function getUserById(id) {
     throw error;
   }
 
+  const manager = user.employeeProfile?.manager || user.manager || null;
+  const managerId = user.employeeProfile?.managerId || user.managerId || null;
   return {
     id: user.id,
     email: user.email,
@@ -178,7 +185,11 @@ export async function getUserById(id) {
     role: user.role,
     isActive: user.isActive,
     vbid: user.vbid,
-    employeeProfile: user.employeeProfile,
+    managerId,
+    manager: manager ? { id: manager.id, name: manager.name } : null,
+    employeeProfile: user.employeeProfile
+      ? { ...user.employeeProfile, managerId, manager }
+      : null,
   };
 }
 
@@ -687,4 +698,3 @@ export async function softDeleteUser(id, actorId) {
 
   return user;
 }
-
