@@ -16,7 +16,7 @@ const EmployeeDetails = () => {
   const location = useLocation()
   const params = useParams()
   const [searchParams, setSearchParams] = useSearchParams()
-  const { user } = useAuth()
+  const { user, logout } = useAuth()
   const { employeeId: stateEmployeeId } = location.state || {}
 
   const employeeIdToFetch = stateEmployeeId || params.id
@@ -83,6 +83,7 @@ const EmployeeDetails = () => {
   // Sheet-backed personal/team placements for this employee/lead
   const [personalSheetData, setPersonalSheetData] = useState(null);
   const [teamSheetData, setTeamSheetData] = useState(null);
+  const [sheetDataErrors, setSheetDataErrors] = useState({ personal: null, team: null });
  
   const employeeData = useMemo(() => {
     if (!rawData) return null
@@ -278,7 +279,7 @@ const EmployeeDetails = () => {
   }, [rawData, viewMode, personalSheetData, teamSheetData])
 
   const handleLogout = () => {
-    navigate('/')
+    logout().finally(() => navigate('/', { replace: true }))
   }
 
   const navigateToProfileEdit = () => {
@@ -361,40 +362,58 @@ const EmployeeDetails = () => {
   // When L4 (EMPLOYEE) views the page they can only see their own data; fetch personal-placements without userId so backend uses current user (no dependency on resolvedEmployeeId).
   // When admin/team-lead views an employee, use resolvedEmployeeId so we get that employee's data.
   useEffect(() => {
-    const isL4Self = user?.role === 'EMPLOYEE';
+    const isL4Self = user?.role === 'EMPLOYEE' || user?.role === 'LIMITED_ACCESS';
     const shouldFetchPersonal = isL4Self ? !!user?.id : !!resolvedEmployeeId;
-    if (!shouldFetchPersonal) return;
+    if (!shouldFetchPersonal) {
+      setPersonalSheetData(null);
+      setTeamSheetData(null);
+      setSheetDataErrors({ personal: null, team: null });
+      return;
+    }
     let cancelled = false;
-    const load = async () => {
+    // Never show the previously viewed employee's rows while a new request is
+    // in flight. That transient cross-user mix-up looks like a data mismatch.
+    setPersonalSheetData(null);
+    setTeamSheetData(null);
+    setSheetDataErrors({ personal: null, team: null });
+
+    const fetchPlacementData = async (url, label) => {
       try {
-        const personalUrl = isL4Self
-          ? '/dashboard/personal-placements'
-          : `/dashboard/personal-placements?userId=${resolvedEmployeeId}`;
-        const [personalRes, teamRes] = isL4Self
-          ? [await apiRequest(personalUrl), { ok: false }]
-          : await Promise.all([
-              apiRequest(personalUrl),
-              apiRequest(`/dashboard/team-placements?leadId=${resolvedEmployeeId}`),
-            ]);
-        if (!cancelled) {
-          if (personalRes.ok) {
-            const p = await personalRes.json();
-            setPersonalSheetData(p);
-          } else {
-            setPersonalSheetData(null);
-          }
-          if (!isL4Self && teamRes.ok) {
-            const t = await teamRes.json();
-            setTeamSheetData(t);
-          } else if (!isL4Self) {
-            setTeamSheetData(null);
-          }
+        const response = await apiRequest(url);
+        if (!response.ok) {
+          const body = await response.json().catch(() => ({}));
+          return {
+            data: null,
+            error: body.error || `Failed to load ${label.toLowerCase()} placement data`,
+          };
         }
+        return { data: await response.json(), error: null };
       } catch {
-        if (!cancelled) {
-          setPersonalSheetData(null);
-          setTeamSheetData(null);
-        }
+        return {
+          data: null,
+          error: `Unable to reach the server for ${label.toLowerCase()} placement data`,
+        };
+      }
+    };
+
+    const load = async () => {
+      const personalUrl = isL4Self
+        ? '/dashboard/personal-placements'
+        : `/dashboard/personal-placements?userId=${resolvedEmployeeId}`;
+      const [personalResult, teamResult] = await Promise.all([
+        fetchPlacementData(personalUrl, 'Personal'),
+        isL4Self
+          ? Promise.resolve({ data: null, error: null })
+          : fetchPlacementData(`/dashboard/team-placements?leadId=${resolvedEmployeeId}`, 'Team'),
+      ]);
+
+      if (!cancelled) {
+        setPersonalSheetData(personalResult.data);
+        setTeamSheetData(teamResult.data);
+        setSheetDataErrors({
+          personal: personalResult.error,
+          team: teamResult.error,
+        });
       }
     };
     load();
@@ -402,6 +421,10 @@ const EmployeeDetails = () => {
       cancelled = true;
     };
   }, [user?.role, user?.id, employeeIdToFetch, rawData?.id, resolvedEmployeeId]);
+
+  const placementLoadError = viewMode === 'team'
+    ? sheetDataErrors.team
+    : sheetDataErrors.personal;
 
   const handleBack = () => {
     if (user?.role === 'SUPER_ADMIN') {
@@ -649,7 +672,7 @@ const EmployeeDetails = () => {
     )
   }
 
-  const isL4ViewingSelf = user?.role === 'EMPLOYEE' && employeeData?.id === user?.id
+  const isL4ViewingSelf = ['EMPLOYEE', 'LIMITED_ACCESS'].includes(user?.role) && employeeData?.id === user?.id
   if (isL4ViewingSelf && employeeData) {
     return (
       <L4DashboardView
@@ -658,6 +681,7 @@ const EmployeeDetails = () => {
         formatPlacementDate={formatPlacementDate}
         personalSheetData={personalSheetData}
         teamSheetData={teamSheetData}
+        placementLoadError={placementLoadError}
         onLogout={handleLogout}
       />
     )
@@ -1390,6 +1414,11 @@ const EmployeeDetails = () => {
                 Details of placements and billing status
               </h2>
             </div>
+            {placementLoadError && (
+              <div role="alert" className="mb-4 rounded-xl border border-red-200 bg-red-50 px-4 py-3 text-sm font-medium text-red-700">
+                {placementLoadError}. Please retry or contact an administrator if the problem continues.
+              </div>
+            )}
             <div className="overflow-x-auto rounded-2xl border border-slate-200">
               <table className="w-full">
                 <thead className="bg-gradient-to-r from-slate-700 to-slate-800 text-white">

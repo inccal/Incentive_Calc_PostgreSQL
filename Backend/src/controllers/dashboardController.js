@@ -66,6 +66,49 @@ export async function getSuperAdminSubordinateEmployeeIds(currentUser) {
   return new Set([currentUser.id, ...userIds]);
 }
 
+/**
+ * Return true when targetId appears anywhere below managerId in the active
+ * employee reporting tree. This supports L2 -> L3 -> L4 access, not just
+ * direct reports, and guards against malformed hierarchy cycles.
+ */
+export async function isManagedDescendant(managerId, targetId) {
+  if (!managerId || !targetId) return false;
+  if (managerId === targetId) return true;
+
+  const visited = new Set([managerId]);
+  let managerIds = [managerId];
+
+  while (managerIds.length > 0) {
+    const directReports = await prisma.employeeProfile.findMany({
+      where: {
+        managerId: { in: managerIds },
+        isActive: true,
+        deletedAt: null,
+        user: { is: { isActive: true } },
+      },
+      select: { id: true },
+    });
+
+    const nextManagerIds = [];
+    for (const report of directReports) {
+      if (report.id === targetId) return true;
+      if (!visited.has(report.id)) {
+        visited.add(report.id);
+        nextManagerIds.push(report.id);
+      }
+    }
+    managerIds = nextManagerIds;
+  }
+
+  return false;
+}
+
+function forbiddenPlacementAccess() {
+  return Object.assign(new Error("You do not have access to this employee's placement data"), {
+    statusCode: 403,
+  });
+}
+
 export async function getSuperAdminOverview(currentUser, year) {
   try {
     console.log(`[getSuperAdminOverview] Called for ${currentUser.id} (${currentUser.role}) with year: ${year}`);
@@ -958,20 +1001,16 @@ export async function getTeamLeadOverview(currentUser, year) {
 
 export async function getPersonalPlacementOverview(currentUser, userId) {
   try {
-    // Only allow viewing another user's data for SUPER_ADMIN/S1_ADMIN, or if TEAM_LEAD and the user is their subordinate
-    let targetId = userId || currentUser.id;
+    // Admins may view anyone. Team leads may view any active descendant in
+    // their reporting tree. Other roles are limited to their own data.
+    const targetId = userId || currentUser.id;
     if (userId && userId !== currentUser.id) {
       const canViewOthers = currentUser.role === Role.SUPER_ADMIN || currentUser.role === Role.S1_ADMIN;
       if (!canViewOthers) {
-        if (currentUser.role === Role.TEAM_LEAD) {
-          const isSubordinate = await prisma.employeeProfile.findFirst({
-            where: { id: userId, managerId: currentUser.id },
-          });
-          if (isSubordinate) targetId = userId;
-          else targetId = currentUser.id;
-        } else {
-          targetId = currentUser.id;
-        }
+        const canViewDescendant =
+          currentUser.role === Role.TEAM_LEAD &&
+          await isManagedDescendant(currentUser.id, userId);
+        if (!canViewDescendant) throw forbiddenPlacementAccess();
       }
     }
 
@@ -1022,9 +1061,9 @@ export async function getPersonalPlacementOverview(currentUser, userId) {
     return {
       placements: placementList.map(p => ({
         ...p,
-        revenue: Number(p.revenueUsd),
-        revenueAsLead: Number(p.revenueUsd),
-        incentiveAmountINR: Number(p.incentiveInr),
+        revenue: toNum(p.revenueUsd),
+        revenueAsLead: toNum(p.revenueUsd),
+        incentiveAmountINR: toNum(p.incentiveInr),
         incentivePaidInr: toNum(p.incentivePaidInr),
         placementBalanceIncentiveAmount: toNum(p.placementBalanceIncentiveAmount),
         billedHours: p.totalBilledHours,
@@ -1048,21 +1087,16 @@ export async function getTeamPlacementOverview(currentUser, leadId) {
       return Number.isFinite(parsed) ? parsed : null;
     };
 
-    // Only allow viewing another lead's data for SUPER_ADMIN/S1_ADMIN, or if current user is that lead's manager
-    let targetId = leadId || currentUser.id;
+    // Admins may view any lead. Team leads may view a subordinate lead at any
+    // depth in their active reporting tree.
+    const targetId = leadId || currentUser.id;
     if (leadId && leadId !== currentUser.id) {
       const canViewOthers = currentUser.role === Role.SUPER_ADMIN || currentUser.role === Role.S1_ADMIN;
       if (!canViewOthers) {
-        const isManagerOfLead = await prisma.employeeProfile.findFirst({
-          where: { id: leadId, managerId: currentUser.id },
-        });
-        if (!isManagerOfLead) {
-          targetId = currentUser.id;
-        } else {
-          targetId = leadId;
-        }
-      } else {
-        targetId = leadId;
+        const canViewDescendant =
+          currentUser.role === Role.TEAM_LEAD &&
+          await isManagedDescendant(currentUser.id, leadId);
+        if (!canViewDescendant) throw forbiddenPlacementAccess();
       }
     }
 
@@ -1103,10 +1137,10 @@ export async function getTeamPlacementOverview(currentUser, leadId) {
     return {
       placements: placementList.map(p => ({
         ...p,
-        revenueLeadUsd: Number(p.revenueLeadUsd),
-        revenue: Number(p.revenueLeadUsd),
-        incentiveInr: Number(p.incentiveInr),
-        incentiveAmountINR: Number(p.incentiveInr),
+        revenueLeadUsd: toNum(p.revenueLeadUsd),
+        revenue: toNum(p.revenueLeadUsd),
+        incentiveInr: toNum(p.incentiveInr),
+        incentiveAmountINR: toNum(p.incentiveInr),
         incentivePaidInr: toNum(p.incentivePaidInr),
         placementBalanceIncentiveAmount: toNum(p.placementBalanceIncentiveAmount),
         totalBilledHours: p.totalBilledHours,
@@ -1360,4 +1394,3 @@ export async function getL1Placements(currentUser, filters = {}) {
 
   return { placements, teams, availablePlacementTypes, availableLeads };
 }
-

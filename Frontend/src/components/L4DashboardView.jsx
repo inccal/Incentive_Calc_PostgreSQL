@@ -118,6 +118,7 @@ export default function L4DashboardView({
   formatPlacementDate,
   personalSheetData,
   teamSheetData,
+  placementLoadError,
   onLogout,
 }) {
   const [activeTab, setActiveTab] = useState('overview')
@@ -263,11 +264,6 @@ export default function L4DashboardView({
     ? Number(activeSummary.achieved ?? activeSummary.placementDone)
     : null
 
-  // Check if this is Vantedge team L4 - only these should show dollar signs for placements
-  const isVantedgeL4 = employeeData?.teamName && 
-    employeeData.teamName.toLowerCase().includes('vantedge') && 
-    employeeData?.level === 'L4'
-
   // For personal view: use placement target/done from personal summary
   // For team view: use revenue target/achieved from team summary (or placement if no revenue)
   const isRevenueTarget = employeeData?.targetType === 'REVENUE'
@@ -331,11 +327,10 @@ export default function L4DashboardView({
       : (isRevenueTarget ? employeeData?.rawRevenueGenerated : employeeData?.rawPlacementsCount)
   }
 
-  // Basic logic: if placement target or placement done is more than 2 digits (>= 100), treat as revenue and show $; if 2 digits or less, treat as number of placements (no $)
-  const targetNum = Number(targetValue) || 0
-  const achievedNum = Number(achievedValue) || 0
-  const isRevenueByMagnitude = targetNum >= 100 || achievedNum >= 100
-  const shouldFormatAsCurrency = isRevenueByMagnitude
+  // Use the same persisted target type as employee preview. Inferring the
+  // unit from value size can display a large placement target as currency or
+  // a small revenue value as a placement count.
+  const shouldFormatAsCurrency = isRevenueTarget
   const showRevenueLabels = shouldFormatAsCurrency
 
   const targetDisplay =
@@ -640,6 +635,11 @@ export default function L4DashboardView({
         </motion.header>
 
       <main className="flex-1 p-6">
+        {placementLoadError && (
+          <div role="alert" className="mb-5 rounded-xl border border-red-200 bg-red-50 px-4 py-3 text-sm font-medium text-red-700">
+            {placementLoadError}. Please retry or contact an administrator if the problem continues.
+          </div>
+        )}
         <AnimatePresence mode="wait">
           {activeTab === 'overview' && (
             <motion.section

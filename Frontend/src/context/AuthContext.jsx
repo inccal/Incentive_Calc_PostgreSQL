@@ -11,6 +11,11 @@ export function AuthProvider({ children }) {
     let mounted = true;
 
     const initializeSession = async () => {
+      // Microsoft login establishes the authoritative session in HTTP-only
+      // cookies. A token left in localStorage by a previous account/refresh
+      // must not override a newly issued cookie on a shared browser.
+      clearAuthStorage();
+
       const stored = localStorage.getItem("user");
       if (stored) {
         try {
@@ -31,6 +36,10 @@ export function AuthProvider({ children }) {
             setUser(data.user);
             localStorage.setItem("user", JSON.stringify(data.user));
           }
+        } else if (response.status === 401 || response.status === 403) {
+          clearAuthStorage();
+          localStorage.removeItem("user");
+          if (mounted) setUser(null);
         }
       } catch {
         // Ignore bootstrap errors; user remains logged out.
@@ -77,6 +86,11 @@ export function AuthProvider({ children }) {
   };
 
   const logout = async () => {
+    // End the visible session immediately. Server-side token revocation is
+    // still attempted, but a slow network must not trap the user on the page.
+    clearAuthStorage();
+    setUser(null);
+    localStorage.removeItem("user");
     try {
       await apiRequest(
         "/auth/logout",
@@ -86,9 +100,6 @@ export function AuthProvider({ children }) {
         { skipAuth: true }
       );
     } catch {}
-    clearAuthStorage();
-    setUser(null);
-    localStorage.removeItem("user");
   };
 
   const value = {

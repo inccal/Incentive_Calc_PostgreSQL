@@ -1928,7 +1928,10 @@ export async function importPersonalPlacements(payload, actorId) {
       
       employee = await findEmployeeByVbOrName(vbCode, recruiterName);
       if (!employee) {
-        // Skip rows where we can't find the employee instead of failing entire import
+        batchErrors.push({
+          rowIndex,
+          message: `Employee not found for VB Code "${vbCode || ""}" / Recruiter Name "${recruiterName || ""}"`,
+        });
         continue;
       }
       // Update current tracking and mark as in person block
@@ -1956,8 +1959,7 @@ export async function importPersonalPlacements(payload, actorId) {
 
       if (!shouldSkipDuplicateCheckLocal(plcId)) {
         if (localPlcIds.has(normalizedPlcId)) {
-          console.log(`Skipping duplicate PLC ID ${plcId} for ${currentEmployee.user.firstName} in same sheet block`);
-          continue; // Skip this row as it's a duplicate in the same sheet for the same person
+          console.warn(`Duplicate PLC ID ${plcId} in the same employee block; the later row will be used.`);
         }
         localPlcIds.add(normalizedPlcId);
       }
@@ -1969,7 +1971,7 @@ export async function importPersonalPlacements(payload, actorId) {
 
     const doj = parseDateCell(getVal(row, "doj"));
     if (!doj) {
-      // Skip rows with invalid DOJ instead of failing entire import
+      batchErrors.push({ rowIndex, message: "Invalid or missing DOJ; placement row was skipped" });
       continue;
     }
 
@@ -2889,6 +2891,10 @@ export async function importTeamPlacements(payload, actorId) {
           report.placementsRejectedWrongTeam += 1;
         } else {
           report.placementsRejectedLeadNotFound += 1;
+          batchErrors.push({
+            rowIndex,
+            message: `Lead not found for VB Code "${vbCode || ""}" / Lead Name "${leadName || ""}"`,
+          });
         }
         continue;
       }
@@ -2912,8 +2918,7 @@ export async function importTeamPlacements(payload, actorId) {
       const normalizedPlcId = plcId.toLowerCase();
       if (!shouldSkipDuplicateCheck(plcId)) {
         if (localPlcIds.has(normalizedPlcId)) {
-          console.log(`Skipping duplicate PLC ID ${plcId} for lead ${currentLeadUser.name} in same sheet block`);
-          continue; // Skip this row as it's a duplicate in the same sheet for the same lead
+          console.warn(`Duplicate PLC ID ${plcId} in the same lead block; the later row will be used.`);
         }
         localPlcIds.add(normalizedPlcId);
       }

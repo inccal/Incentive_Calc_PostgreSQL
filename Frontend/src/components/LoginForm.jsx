@@ -13,7 +13,7 @@ const LoginForm = () => {
     if (user.role === 'S1_ADMIN') return navigate('/admin/dashboard', { replace: true })
     if (user.role === 'SUPER_ADMIN') return navigate('/team', { replace: true })
     if (user.role === 'TEAM_LEAD') return navigate('/teamlead', { replace: true })
-    if (user.role === 'EMPLOYEE') {
+    if (user.role === 'EMPLOYEE' || user.role === 'LIMITED_ACCESS') {
       const slug = (user.name ?? '').toLowerCase().replace(/\s+/g, '-').replace(/[^a-z0-9-]/g, '') || user.id
       return navigate(`/employee/${slug}`, { replace: true, state: { employeeId: user.id } })
     }
@@ -114,4 +114,3 @@ const LoginForm = () => {
 }
 
 export default LoginForm
-

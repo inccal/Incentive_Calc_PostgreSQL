@@ -3,9 +3,14 @@ import { apiRequest } from '../api/client'
 
 export const useEmployeeDetails = (employeeId, userRole, currentUserId) => {
   return useQuery({
-    queryKey: ['employee', employeeId],
+    // Scope cached employee data to the authenticated viewer as well as the
+    // target, preventing a previous login's cached response from being reused.
+    queryKey: ['employee', employeeId, userRole, currentUserId],
     queryFn: async () => {
-      const isSelf = userRole === 'EMPLOYEE' && (!employeeId || employeeId === currentUserId)
+      // Employee-like roles can only view themselves. Always use the dedicated
+      // self endpoint so URL slugs, duplicate names, or stale navigation state
+      // can never select another employee record.
+      const isSelf = ['EMPLOYEE', 'LIMITED_ACCESS'].includes(userRole)
       let endpoint = isSelf
         ? '/dashboard/employee'
         : `/dashboard/employee/${employeeId}`
@@ -17,7 +22,7 @@ export const useEmployeeDetails = (employeeId, userRole, currentUserId) => {
       }
       return response.json()
     },
-    enabled: !!employeeId || (userRole === 'EMPLOYEE' && !employeeId),
+    enabled: !!employeeId || (['EMPLOYEE', 'LIMITED_ACCESS'].includes(userRole) && !employeeId),
   })
 }
 
@@ -35,7 +40,7 @@ export const useUpdateVbid = () => {
       return response.json()
     },
     onSuccess: (data, variables) => {
-      queryClient.invalidateQueries(['employee', variables.employeeId])
+      queryClient.invalidateQueries({ queryKey: ['employee', variables.employeeId] })
     }
   })
 }

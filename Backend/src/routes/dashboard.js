@@ -11,10 +11,19 @@ import {
   getL1Placements,
   resolveEmployeeId,
   getSuperAdminSubordinateEmployeeIds,
+  isManagedDescendant,
 } from "../controllers/dashboardController.js";
 
 const router = express.Router();
 // const prisma = new PrismaClient();
+
+const toNullableNumber = (value) => {
+  if (value == null || value === "") return null;
+  if (typeof value === "number" && Number.isFinite(value)) return value;
+  if (typeof value === "object" && typeof value.toNumber === "function") return value.toNumber();
+  const parsed = Number(value);
+  return Number.isFinite(parsed) ? parsed : null;
+};
 
 // Helper to process employee data
 const processEmployeeData = async (employee) => {
@@ -108,13 +117,13 @@ const processEmployeeData = async (employee) => {
     client: p.client,
     placementType: p.placementType, // Keep exact value from sheet
     billedHours: p.totalBilledHours,
-    revenue: Number(p.revenueUsd),
+    revenue: toNullableNumber(p.revenueUsd),
     billingStatus: p.billingStatus,
     collectionStatus: p.collectionStatus,
     incentivePayoutEta: null,
-    incentiveAmountInr: Number(p.incentiveInr),
-    incentivePaidInr: p.incentivePaidInr != null ? Number(p.incentivePaidInr) : null,
-    placementBalanceIncentiveAmount: p.placementBalanceIncentiveAmount != null ? Number(p.placementBalanceIncentiveAmount) : null,
+    incentiveAmountInr: toNullableNumber(p.incentiveInr),
+    incentivePaidInr: toNullableNumber(p.incentivePaidInr),
+    placementBalanceIncentiveAmount: toNullableNumber(p.placementBalanceIncentiveAmount),
     monthlyBilling: [],
   }));
 
@@ -131,20 +140,20 @@ const processEmployeeData = async (employee) => {
     placementSharing: p.splitWith,
     placementCredit: null,
     totalRevenue: p.totalRevenueGenerated,
-    revenueAsLead: Number(p.revenueLeadUsd),
+    revenueAsLead: toNullableNumber(p.revenueLeadUsd),
     doi: null,
     doj: p.doj,
     doq: p.doq,
     client: p.client,
     placementType: p.placementType, // Keep exact value from sheet
     billedHours: p.totalBilledHours,
-    revenue: Number(p.revenueLeadUsd),
+    revenue: toNullableNumber(p.revenueLeadUsd),
     billingStatus: p.billingStatus,
     collectionStatus: p.collectionStatus,
     incentivePayoutEta: null,
-    incentiveAmountInr: Number(p.incentiveInr),
-    incentivePaidInr: p.incentivePaidInr != null ? Number(p.incentivePaidInr) : null,
-    placementBalanceIncentiveAmount: p.placementBalanceIncentiveAmount != null ? Number(p.placementBalanceIncentiveAmount) : null,
+    incentiveAmountInr: toNullableNumber(p.incentiveInr),
+    incentivePaidInr: toNullableNumber(p.incentivePaidInr),
+    placementBalanceIncentiveAmount: toNullableNumber(p.placementBalanceIncentiveAmount),
     monthlyBilling: [],
   }));
 
@@ -216,7 +225,7 @@ router.get(
 
 router.get(
   "/employee",
-  requireRole(Role.EMPLOYEE),
+  requireRole(Role.EMPLOYEE, Role.LIMITED_ACCESS),
   // cacheMiddleware(60),
   async (req, res, next) => {
     try {
@@ -249,7 +258,7 @@ router.get(
 
 router.get(
   "/employee/:id",
-  requireRole(Role.SUPER_ADMIN, Role.S1_ADMIN, Role.TEAM_LEAD, Role.EMPLOYEE),
+  requireRole(Role.SUPER_ADMIN, Role.S1_ADMIN, Role.TEAM_LEAD, Role.EMPLOYEE, Role.LIMITED_ACCESS),
   async (req, res, next) => {
     try {
       const { id: idOrSlug } = req.params;
@@ -300,7 +309,7 @@ router.get(
         allowed = subordinateIds.has(employeeId);
       }
       if (!allowed && isTeamLead) {
-        allowed = employee.employeeProfile.managerId === viewerId;
+        allowed = await isManagedDescendant(viewerId, employeeId);
       }
       if (!allowed) {
         return res.status(403).json({ error: "Forbidden" });
@@ -319,7 +328,7 @@ router.get(
 
 router.get(
   "/personal-placements",
-  requireRole(Role.EMPLOYEE, Role.TEAM_LEAD, Role.S1_ADMIN, Role.SUPER_ADMIN),
+  requireRole(Role.EMPLOYEE, Role.LIMITED_ACCESS, Role.TEAM_LEAD, Role.S1_ADMIN, Role.SUPER_ADMIN),
   async (req, res, next) => {
     try {
       // S1_ADMIN/SUPER_ADMIN can view anyone; TEAM_LEAD can pass userId to view a subordinate (controller validates)
