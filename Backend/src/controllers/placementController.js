@@ -220,6 +220,38 @@ const REQUIRED_TEAM_PLACEMENT_HEADERS = [
   "revenue -lead (usd)", "incentive amount (inr)", "incentive paid (inr)"
 ];
 
+// Older L2 workbooks use a repeated block layout:
+//   Lead Name | Yearly Placement Target | ...
+//   Recruiter Name | Lead | Split With | ... | PLC ID | ...
+// In those files the first placement column contains the candidate/person name,
+// despite being labelled "Recruiter Name". Keep support for both layouts.
+export const isTeamSummaryHeader = (headers) => {
+  const set = new Set(headers.map(normalizeHeader));
+  const hasLead = set.has("lead name") || set.has("lead");
+  const hasTarget = set.has("yearly placement target") || set.has("yearly revenue target") || set.has("yearly target");
+  return hasLead && hasTarget && !set.has("plc id");
+};
+
+export const isTeamPlacementHeader = (headers) => {
+  const set = new Set(headers.map(normalizeHeader));
+  const hasPerson = set.has("candidate name") || set.has("recruiter name");
+  const hasLead = set.has("lead name") || set.has("lead");
+  return hasPerson && hasLead && set.has("plc id") && set.has("doj");
+};
+
+export const buildTeamPlacementHeaderMap = (headers) => {
+  const map = {};
+  headers.map(normalizeHeader).forEach((header, index) => {
+    if (header) map[header] = index;
+  });
+  // Legacy L2 sheets mislabel the candidate column as Recruiter Name.
+  if (map["candidate name"] === undefined && map["recruiter name"] !== undefined) {
+    map["candidate name"] = map["recruiter name"];
+    delete map["recruiter name"];
+  }
+  return map;
+};
+
 // Recruiter/personal sheet: summary block (fewer columns than team sheet)
 // Accept either the new "yearly target" / "achieved" headers or the older
 // "yearly placement target" / "placement done" headers.
@@ -2390,11 +2422,14 @@ export async function importTeamPlacements(payload, actorId) {
   }
 
   const normalizedHeaders = headers.map(normalizeHeader);
-  const hasSummaryHeaderRow = normalizedHeaders.includes("team") && normalizedHeaders.includes("vb code");
-  const hasPlacementHeaderRow = normalizedHeaders.includes("candidate name") && normalizedHeaders.includes("plc id");
+  const hasSummaryHeaderRow = isTeamSummaryHeader(normalizedHeaders);
+  const hasPlacementHeaderRow = isTeamPlacementHeader(normalizedHeaders);
   if (teamId) {
     if (hasSummaryHeaderRow) {
-      const summaryCheck = validateRequiredHeaders(normalizedHeaders, REQUIRED_TEAM_SUMMARY_HEADERS);
+      const isLegacySummary = !normalizedHeaders.includes("team") || !normalizedHeaders.includes("vb code");
+      const summaryCheck = isLegacySummary
+        ? { valid: true, missing: [] }
+        : validateRequiredHeaders(normalizedHeaders, REQUIRED_TEAM_SUMMARY_HEADERS);
       if (!summaryCheck.valid) {
         throw new Error(
           `Invalid team sheet: missing summary headers: ${summaryCheck.missing.join(", ")}. ` +
@@ -2402,7 +2437,10 @@ export async function importTeamPlacements(payload, actorId) {
         );
       }
     } else if (hasPlacementHeaderRow) {
-      const placementCheck = validateRequiredHeaders(normalizedHeaders, REQUIRED_TEAM_PLACEMENT_HEADERS);
+      const isLegacyPlacement = !normalizedHeaders.includes("candidate name");
+      const placementCheck = isLegacyPlacement
+        ? { valid: true, missing: [] }
+        : validateRequiredHeaders(normalizedHeaders, REQUIRED_TEAM_PLACEMENT_HEADERS);
       if (!placementCheck.valid) {
         throw new Error(
           `Invalid team sheet: missing placement headers: ${placementCheck.missing.join(", ")}. ` +
@@ -2418,6 +2456,11 @@ export async function importTeamPlacements(payload, actorId) {
   }
 
   const { headerMap, hasLeadHeader: initialHasLeadHeader, hasSplitHeader: initialHasSplitHeader } = validateTeamHeaders(headers);
+  if (hasPlacementHeaderRow) {
+    const initialPlacementMap = buildTeamPlacementHeaderMap(normalizedHeaders);
+    for (const key in headerMap) delete headerMap[key];
+    Object.assign(headerMap, initialPlacementMap);
+  }
   let hasLeadHeader = initialHasLeadHeader;
   let hasSplitHeader = initialHasSplitHeader;
   console.log(`Headers validated. hasLeadHeader: ${hasLeadHeader}`);
@@ -2518,11 +2561,16 @@ export async function importTeamPlacements(payload, actorId) {
     const rowStrings = row.map(c => String(c || "").trim().toLowerCase()).map(normalizeHeader);
     const hasCandidateHeader = rowStrings.includes("candidate name");
     const hasPlcIdHeader = rowStrings.includes("plc id");
+    const hasTeamPlacementHeader = isTeamPlacementHeader(rowStrings);
+    const hasTeamSummaryHeaders = isTeamSummaryHeader(rowStrings);
 
-    if (hasCandidateHeader && hasPlcIdHeader) {
+    if (hasTeamPlacementHeader) {
       console.log(`Row ${rowIndex}: Detected placement header row. Updating header mapping.`);
       if (teamId) {
-        const placementCheck = validateRequiredHeaders(rowStrings, REQUIRED_TEAM_PLACEMENT_HEADERS);
+        const isLegacyPlacement = !hasCandidateHeader;
+        const placementCheck = isLegacyPlacement
+          ? { valid: true, missing: [] }
+          : validateRequiredHeaders(rowStrings, REQUIRED_TEAM_PLACEMENT_HEADERS);
         if (!placementCheck.valid) {
           throw new Error(
             `Invalid team sheet: placement block missing headers: ${placementCheck.missing.join(", ")}.`
@@ -2531,14 +2579,56 @@ export async function importTeamPlacements(payload, actorId) {
       }
       report.placementHeaderValid = true;
       currentSummaryHeaderRow = null;
-      const newMap = {};
-      rowStrings.forEach((h, idx) => {
-        if (h) newMap[h] = idx;
-      });
+      const newMap = buildTeamPlacementHeaderMap(rowStrings);
+      for (const key in headerMap) delete headerMap[key];
       Object.assign(headerMap, newMap);
       hasLeadHeader = newMap["lead name"] !== undefined || newMap["lead"] !== undefined;
       hasSplitHeader = newMap["split with"] !== undefined;
       continue;
+    }
+
+    // Repeated legacy/current summary header. Its next non-empty row identifies
+    // the lead and contains all summary snapshot values.
+    if (hasTeamSummaryHeaders) {
+      currentSummaryHeaderRow = row;
+      currentVbCode = null;
+      currentLeadName = null;
+      currentLeadUser = null;
+      currentSummaryRow = null;
+      localPlcIds.clear();
+      continue;
+    }
+
+    if (currentSummaryHeaderRow) {
+      const getValSummary = buildGetValFromHeaderRow(currentSummaryHeaderRow);
+      const leadNameFromSummary = firstVal(getValSummary(row, "lead name"), getValSummary(row, "lead"));
+      const vbCodeFromSummary = getValSummary(row, "vb code");
+      if (leadNameFromSummary || vbCodeFromSummary) {
+        report.summaryRowsChecked += 1;
+        const sheetTeamName = firstVal(getValSummary(row, "team"), expectedTeamName);
+        if (expectedTeamName && !isSheetTeamMatchingPanel(sheetTeamName)) {
+          report.summaryRowsRejectedWrongTeam += 1;
+          continue;
+        }
+        const summaryData = extractSummaryFields(row, getValSummary);
+        summaryData.leadName = leadNameFromSummary != null ? String(leadNameFromSummary).trim() : null;
+        summaryData.placementAchPercent = summaryData.placementAchPercent ?? summaryData.targetAchievedPercent ?? null;
+        const leadUser = findLeadCached(vbCodeFromSummary, summaryData.leadName, sheetTeamName);
+        if (leadUser) {
+          report.summaryRowsAccepted += 1;
+          currentVbCode = vbCodeFromSummary || null;
+          currentLeadName = summaryData.leadName;
+          currentLeadUser = leadUser;
+          currentTeamName = sheetTeamName || null;
+          currentSummaryRow = summaryData;
+          leadSummaryData.set(leadUser.id, summaryData);
+          inPersonBlock = true;
+          localPlcIds.clear();
+        } else {
+          batchErrors.push({ rowIndex, message: `Lead not found for summary row: ${summaryData.leadName || vbCodeFromSummary}` });
+        }
+        continue;
+      }
     }
 
     // Team sheet: first data row (rowIndex === 1) with summary header = summary row (don't rely on team name in DB)
@@ -2548,13 +2638,13 @@ export async function importTeamPlacements(payload, actorId) {
     const candidateVal = getVal(row, "candidate name");
     if (rowIndex === 1 && hasSummaryHeaderMap && (vbCodeVal || leadNameVal) && !candidateVal) {
       report.summaryRowsChecked += 1;
-      const teamNameFromRow = getVal(row, "team") ?? (row[teamColIdx] != null ? String(row[teamColIdx]).trim() : null);
+      const teamNameFromRow = getVal(row, "team") ?? expectedTeamName ?? null;
       if (expectedTeamName && !isSheetTeamMatchingPanel(teamNameFromRow)) {
         report.summaryRowsRejectedWrongTeam += 1;
         continue;
       }
       const summaryData = extractSummaryFields(row, getVal);
-      summaryData.leadName = summaryData.recruiterName || summaryData.teamLeadName || (row[2] != null ? String(row[2]).trim() : null) || leadNameVal;
+      summaryData.leadName = leadNameVal || summaryData.recruiterName || summaryData.teamLeadName || null;
       summaryData.placementAchPercent = summaryData.targetAchievedPercent ?? null; // team expects placementAchPercent
       let leadUser = findLeadCached(summaryData.vbCode || vbCodeVal, summaryData.leadName || leadNameVal, teamNameFromRow);
       if (!leadUser && (vbCodeVal || leadNameVal)) {
