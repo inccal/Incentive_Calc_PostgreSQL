@@ -117,7 +117,7 @@ async function ensureProfile(db, { userId, teamId, managerId, level, vbid }) {
                 where: { id: userId },
                 data: { ...data, vbid: data.vbid || null },
               });
-            } catch (_) {}
+            } catch (_) { }
           }
         } else {
           throw updateErr;
@@ -230,7 +230,7 @@ async function main() {
   console.log(`Seeding from hierarchy_data.json (${hierarchy.length} top-level entries)...`);
 
   const db = prisma;
-  const s1Email = "admin@vbeyond.com";
+  const s1Email = "inccal@vbeyond.com";
   if (!(await db.user.findUnique({ where: { email: s1Email } }))) {
     const s1 = await db.user.create({
       data: {
