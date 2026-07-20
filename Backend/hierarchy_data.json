@@ -427,6 +427,11 @@
                   "vbid": "VB2367"
                 }
               ]
+            },
+            {
+              "name": "Akbar Ibrahim",
+              "email": "akbari@vbeyond.com",
+              "level": "L2"
             }
           ]
         }
@@ -796,11 +801,6 @@
                   "vbid": "VB2067"
                 }
               ]
-            },
-            {
-              "name": "Akbar Ibrahim",
-              "email": "akbari@vbeyond.com",
-              "level": "L2"
             }
           ]
         },

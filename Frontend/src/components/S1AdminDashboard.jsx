@@ -434,9 +434,11 @@ const HierarchyTab = ({ user }) => {
                 const allTeams = teamsData.teams || [];
 
                 allTeams.forEach(team => {
-                    let assignedAdminId = null;
+                    let assignedAdminId = team.headId && adminTeamsMap[team.headId]
+                        ? team.headId
+                        : null;
                     
-                    if (team.teamLeads && team.teamLeads.length > 0) {
+                    if (!assignedAdminId && team.teamLeads && team.teamLeads.length > 0) {
                         for (const lead of team.teamLeads) {
                             const managerId = leadManagerMap[lead.id];
                             if (managerId && adminTeamsMap[managerId]) {

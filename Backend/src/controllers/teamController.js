@@ -1,5 +1,6 @@
 import { Role } from "../generated/client/index.js";
 import prisma from "../prisma.js";
+import { inferTeamHeadFromEmployees, resolveTeamHead } from "../services/teamHierarchyService.js";
 
 // const prisma = new PrismaClient();
 
@@ -118,6 +119,7 @@ export async function listTeamsWithMembers(currentUser) {
 
     const yearlyTarget = Number(team.yearlyTarget ?? 0);
     const achievedValue = Number(team.achievedValue ?? 0);
+    const head = inferTeamHeadFromEmployees(team.employees, team.name);
 
     return {
       id: team.id,
@@ -126,6 +128,8 @@ export async function listTeamsWithMembers(currentUser) {
       yearlyTarget,
       achievedValue,
       targetType,
+      headId: head?.id || null,
+      headName: head?.name || null,
       totalRevenue: targetType === "REVENUE" ? achievedValue : 0,
       totalPlacements: targetType === "PLACEMENTS" ? achievedValue : 0,
       leads: leads.map((p) => ({
@@ -260,6 +264,7 @@ export async function deleteTeam(id, actorId) {
 
 export async function bulkAssignEmployeesToTeam(teamId, userIds, actorId, options = {}) {
   const { managerId } = options;
+  const teamHead = await resolveTeamHead(teamId, { allowMissing: true });
 
   const employees = await prisma.user.findMany({
     where: {
@@ -270,25 +275,31 @@ export async function bulkAssignEmployeesToTeam(teamId, userIds, actorId, option
   });
 
   await prisma.$transaction(
-    employees.flatMap((user) => [
+    employees.flatMap((user) => {
+      const isL2 = String(user.employeeProfile?.level || "").trim().toUpperCase() === "L2";
+      const effectiveManagerId = isL2
+        ? (teamHead?.id || managerId || user.employeeProfile?.managerId || null)
+        : (managerId !== undefined ? managerId : user.employeeProfile?.managerId || null);
+      return [
       prisma.employeeProfile.upsert({
         where: { id: user.id },
         create: {
           id: user.id,
           teamId,
-          managerId: managerId || user.employeeProfile?.managerId || null,
+          managerId: effectiveManagerId,
           level: user.employeeProfile?.level || null,
           isActive: true,
         },
         update: {
           teamId,
-          ...(managerId !== undefined && { managerId }),
+          ...((managerId !== undefined || isL2) && { managerId: effectiveManagerId }),
         },
       }),
-      ...(managerId !== undefined
-        ? [prisma.user.update({ where: { id: user.id }, data: { managerId } })]
+      ...(managerId !== undefined || isL2
+        ? [prisma.user.update({ where: { id: user.id }, data: { managerId: effectiveManagerId } })]
         : []),
-    ])
+      ];
+    })
   );
 
   await prisma.auditLog.create({
@@ -442,6 +453,7 @@ export async function getTeamDetails(idOrSlug) {
   const targetType = resolveTeamTargetType(team);
   const yearlyTarget = Number(team.yearlyTarget ?? 0);
   const achievedValue = Number(team.achievedValue ?? 0);
+  const head = inferTeamHeadFromEmployees(team.employees, team.name);
 
   return {
     id: team.id,
@@ -450,6 +462,8 @@ export async function getTeamDetails(idOrSlug) {
     yearlyTarget,
     achievedValue,
     targetType,
+    headId: head?.id || null,
+    headName: head?.name || null,
     totalRevenue: targetType === "REVENUE" ? achievedValue : 0,
     totalPlacements: targetType === "PLACEMENTS" ? achievedValue : 0,
     // Team Leads tab: show only team-sheet data (placements under this lead from team import), not personal/recruiter data
@@ -664,11 +678,23 @@ export async function assignTeamLead(teamId, userId, actorId) {
     throw error;
   }
 
+  const teamHead = await resolveTeamHead(teamId, {
+    excludeUserId: user.id,
+    allowMissing: true,
+  });
+  const resolvedManagerId = teamHead?.id || user.employeeProfile?.managerId || user.managerId || null;
+  if (!resolvedManagerId) {
+    const error = new Error("A Head is required for the first L2 assigned to this team");
+    error.statusCode = 400;
+    throw error;
+  }
+
   if (!user.employeeProfile) {
     await prisma.employeeProfile.create({
       data: {
         id: user.id,
         teamId,
+        managerId: resolvedManagerId,
         level: "L2",
         isActive: true,
       },
@@ -678,6 +704,8 @@ export async function assignTeamLead(teamId, userId, actorId) {
       where: { id: user.id },
       data: {
         teamId,
+        managerId: resolvedManagerId,
+        level: "L2",
       },
     });
   }
@@ -686,6 +714,7 @@ export async function assignTeamLead(teamId, userId, actorId) {
     where: { id: user.id },
     data: {
       role: Role.TEAM_LEAD,
+      managerId: resolvedManagerId,
     },
   });
 

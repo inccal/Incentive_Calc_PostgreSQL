@@ -1,5 +1,6 @@
 import { Role } from "../generated/client/index.js";
 import prisma from "../prisma.js";
+import { inferTeamHeadFromEmployees } from "../services/teamHierarchyService.js";
 
 // const prisma = new PrismaClient();
 
@@ -398,6 +399,7 @@ export async function getSuperAdminOverview(currentUser, year) {
   });
 
   const responseTeams = teams.map((team) => {
+    const teamHead = inferTeamHeadFromEmployees(team.employees, team.name);
     // Build manager -> employees map for this team
     const employeesByManager = new Map();
     team.employees.forEach((emp) => {
@@ -579,6 +581,8 @@ export async function getSuperAdminOverview(currentUser, year) {
     return {
       id: team.id,
       name: team.name,
+      headId: teamHead?.id || null,
+      headName: teamHead?.name || null,
       color: team.color || "blue",
       teamTarget,
       targetAchieved: teamPercentage,

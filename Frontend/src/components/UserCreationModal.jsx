@@ -36,6 +36,9 @@ const UserCreationModal = ({ isOpen, onClose, editingUser, onSuccess, teams = []
     const assigneeLevel = (levelOverride || "L4").toUpperCase();
     const team = teams.find((t) => String(t.id) === String(teamId));
     if (team) {
+      if (assigneeLevel === "L2" && team.headId) {
+        add({ userId: team.headId, name: team.headName || "Team Head" });
+      }
       (team.leads || []).forEach((lead) => {
         const lvl = (lead.level || "L2").toUpperCase();
         if (assigneeLevel === "L3" && lvl === "L2") add(lead);
@@ -102,7 +105,7 @@ const UserCreationModal = ({ isOpen, onClose, editingUser, onSuccess, teams = []
         newLevel = "L2";
         break;
       case "SENIOR_RECRUITER":
-        newRole = "EMPLOYEE";
+        newRole = "TEAM_LEAD";
         newLevel = "L3";
         break;
       case "RECRUITER":
@@ -116,9 +119,9 @@ const UserCreationModal = ({ isOpen, onClose, editingUser, onSuccess, teams = []
       ...prev,
       role: newRole,
       level: newLevel,
-      // L2's Head assignment is valid across team changes and must not be
-      // silently erased when editing an existing Team Lead.
-      managerId: prev.managerId,
+      managerId: newLevel === "L2"
+        ? (teams.find((team) => String(team.id) === String(prev.teamId))?.headId || "")
+        : prev.managerId,
     }));
   };
 
@@ -254,10 +257,8 @@ const UserCreationModal = ({ isOpen, onClose, editingUser, onSuccess, teams = []
                   setFormData({ 
                     ...formData, 
                     teamId: newTeamId, 
-                    // Preserve an L2's Head. For L3/L4, automatically select
-                    // the manager when the destination team has one option.
                     managerId: level === "L2"
-                      ? formData.managerId
+                      ? (teams.find((team) => String(team.id) === String(newTeamId))?.headId || "")
                       : (managerOptions.length === 1 ? managerOptions[0].userId : ""),
                   });
                 }}
@@ -272,12 +273,15 @@ const UserCreationModal = ({ isOpen, onClose, editingUser, onSuccess, teams = []
               </select>
             </div>
             
-            {formData.teamId && (formData.level || "L4").toUpperCase() !== "L2" && (
+            {formData.teamId && (
               <div>
-                <label className="block text-xs font-semibold text-slate-700 mb-1 uppercase tracking-wide">Manager (Required)</label>
+                <label className="block text-xs font-semibold text-slate-700 mb-1 uppercase tracking-wide">
+                  {(formData.level || "L4").toUpperCase() === "L2" ? "Head (Automatic)" : "Manager (Required)"}
+                </label>
                 <select
                   value={formData.managerId}
                   onChange={(e) => setFormData({ ...formData, managerId: e.target.value })}
+                  disabled={(formData.level || "L4").toUpperCase() === "L2"}
                   className="w-full px-3 py-2 border border-slate-300 rounded-xl focus:ring-2 focus:ring-blue-500 focus:border-blue-500 outline-none transition-all bg-white"
                 >
                   <option value="">Select Manager</option>

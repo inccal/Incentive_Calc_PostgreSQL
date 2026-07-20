@@ -22,6 +22,7 @@
     "test:sheets": "node scripts/comprehensive_sheet_test.js",
     "export-hierarchy": "node scripts/export-hierarchy.js",
     "sync-target-types": "node scripts/sync-target-types-from-teams.js",
+    "sync-team-heads": "node scripts/sync-team-heads.js",
     "sync-hierarchy-assignments": "node scripts/sync-hierarchy-assignments.js"
   },
   "dependencies": {
