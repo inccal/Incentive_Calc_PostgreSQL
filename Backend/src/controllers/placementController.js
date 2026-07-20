@@ -423,6 +423,7 @@ async function findExistingPersonalPlacement(employeeId, candidateName, client, 
     const byPlcId = await prisma.personalPlacement.findFirst({
       where: {
         employeeId,
+        candidateName: { equals: String(candidateName || "").trim(), mode: 'insensitive' },
         plcId: { equals: String(plcId).trim(), mode: 'insensitive' }
       }
     });
@@ -452,6 +453,7 @@ async function findExistingTeamPlacement(leadId, candidateName, client, doj, lev
     const byPlcId = await prisma.teamPlacement.findFirst({
       where: {
         leadId,
+        candidateName: { equals: String(candidateName || "").trim(), mode: 'insensitive' },
         plcId: { equals: String(plcId).trim(), mode: 'insensitive' }
       }
     });
@@ -1954,11 +1956,7 @@ export async function importPersonalPlacements(payload, actorId) {
     }
 
     const plcIdRaw = getVal(row, "plc id") || getVal(row, "pls id");
-    const plcId = (plcIdRaw === 0 || plcIdRaw === "0") ? "0" : String(plcIdRaw || "").trim();
-    if (!plcId) {
-      batchErrors.push({ rowIndex, message: `Skipped candidate "${candidateNameRaw}": missing PLC ID` });
-      continue;
-    }
+    const plcId = (plcIdRaw === 0 || plcIdRaw === "0") ? "0" : (String(plcIdRaw || "").trim() || "0");
     
     // Check for duplicates within the current person's block to prevent local duplicates
     if (inPersonBlock && currentEmployee) {
@@ -1983,10 +1981,6 @@ export async function importPersonalPlacements(payload, actorId) {
     const placementYear = parseNum(getVal(row, "placement year"));
 
     const doj = parseDateCell(getVal(row, "doj"));
-    if (!doj) {
-      batchErrors.push({ rowIndex, message: "Invalid or missing DOJ; placement row was skipped" });
-      continue;
-    }
 
     // Candidate Deduplication: Find existing placement (Employee, Candidate, Client, DOJ, PLC ID)
     const client = String(getVal(row, "client") || "").trim();
@@ -2198,15 +2192,16 @@ export async function importPersonalPlacements(payload, actorId) {
   }
 
   // Duplicate PLC IDs within payload - allow them but use the last occurrence (skip "PLC-Passthrough" and "0")
-  // PLC ID is ALWAYS unique globally - so we deduplicate by plcId only
-  const seenPlcIds = new Map(); // plcId -> rowIndex
+  // A PLC ID may be reused for different candidates. Only collapse repeated
+  // rows for the same employee + candidate + non-generic PLC ID.
+  const seenPlcIds = new Map();
   const duplicatePlcIds = new Set();
   for (let i = 0; i < preparedRows.length; i++) {
     const row = preparedRows[i];
     const plcId = row.plcId;
     if (shouldSkipDuplicateCheck(plcId)) continue;
     
-    const normalizedPlcId = String(plcId).trim().toLowerCase();
+    const normalizedPlcId = `${row.employeeId}|${String(row.candidateName || "").trim().toLowerCase()}|${String(plcId).trim().toLowerCase()}`;
     
     if (seenPlcIds.has(normalizedPlcId)) {
       duplicatePlcIds.add(plcId);
@@ -2244,7 +2239,7 @@ export async function importPersonalPlacements(payload, actorId) {
         rowsToUpdate.push({ id, data });
       } else {
         // New placement, check if it has required placement data
-        if (row.candidateName && row.doj && row.client) {
+        if (row.candidateName && row.client) {
           const { id, ...data } = row; // id is undefined anyway
           rowsToInsert.push(data);
         }
@@ -2422,7 +2417,6 @@ export async function importTeamPlacements(payload, actorId) {
     placementsUpdated: 0,
     placementsRejectedWrongTeam: 0,
     placementsRejectedLeadNotFound: 0,
-    placementsRejectedInvalid: 0,
     placementHeaderValid: false,
   };
 
@@ -2928,12 +2922,7 @@ export async function importTeamPlacements(payload, actorId) {
 
   // PLC ID
     const plcIdRaw = getVal(row, "plc id") || getVal(row, "pls id");
-    const plcId = (plcIdRaw === 0 || plcIdRaw === "0") ? "0" : String(plcIdRaw || "").trim();
-    if (!plcId) {
-      report.placementsRejectedInvalid += 1;
-      batchErrors.push({ rowIndex, message: `Skipped candidate "${candidateNameRaw}": missing PLC ID` });
-      continue;
-    }
+    const plcId = (plcIdRaw === 0 || plcIdRaw === "0") ? "0" : (String(plcIdRaw || "").trim() || "0");
     
     // Check for duplicates within the current lead's block to prevent local duplicates
     if (inPersonBlock && currentLeadUser) {
@@ -2951,11 +2940,6 @@ export async function importTeamPlacements(payload, actorId) {
     const placementYear = parseNum(getVal(row, "placement year"));
 
     const doj = parseDateCell(getVal(row, "doj"));
-    if (!doj) {
-      report.placementsRejectedInvalid += 1;
-      batchErrors.push({ rowIndex, message: `Skipped candidate "${candidateNameRaw}": invalid or missing DOJ` });
-      continue;
-    }
 
     // Candidate Deduplication: Find existing placement (Lead, Candidate, Client, DOJ, Level, PLC ID)
     const client = String(getVal(row, "client") || "").trim();
@@ -3116,15 +3100,16 @@ export async function importTeamPlacements(payload, actorId) {
   }
 
   // Duplicate PLC IDs within payload - allow them but use the last occurrence (skip "PLC-Passthrough" and "0")
-  // PLC ID is ALWAYS unique globally - so we deduplicate by plcId only
-  const seenPlcIdsInSheet = new Map(); // plcId -> index
+  // A PLC ID may be reused for different candidates. Only collapse repeated
+  // rows for the same lead + candidate + non-generic PLC ID.
+  const seenPlcIdsInSheet = new Map();
   const duplicatePlcIdsInSheet = new Set();
   for (let i = 0; i < preparedRows.length; i++) {
     const row = preparedRows[i];
     const plcId = row.plcId;
     if (shouldSkipDuplicateCheck(plcId)) continue;
     
-    const normalizedPlcId = String(plcId).trim().toLowerCase();
+    const normalizedPlcId = `${row.leadId}|${String(row.candidateName || "").trim().toLowerCase()}|${String(plcId).trim().toLowerCase()}`;
     
     if (seenPlcIdsInSheet.has(normalizedPlcId)) {
       duplicatePlcIdsInSheet.add(plcId);
@@ -3161,7 +3146,7 @@ export async function importTeamPlacements(payload, actorId) {
         rowsToUpdate.push({ id, data });
       } else {
         // New placement, check if it has required placement data
-        if (row.candidateName && row.doj && row.client) {
+        if (row.candidateName && row.client) {
           const { id, ...data } = row; // id is undefined anyway
           rowsToInsert.push(data);
         }

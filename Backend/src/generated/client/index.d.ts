@@ -9573,7 +9573,7 @@ export namespace Prisma {
     level: string | null
     candidateName: string
     placementYear: number | null
-    doj: Date
+    doj: Date | null
     doq: Date | null
     client: string
     plcId: string
@@ -9743,7 +9743,7 @@ export namespace Prisma {
       level: string | null
       candidateName: string
       placementYear: number | null
-      doj: Date
+      doj: Date | null
       doq: Date | null
       client: string
       plcId: string
@@ -10948,7 +10948,7 @@ export namespace Prisma {
     leadName: string | null
     splitWith: string | null
     placementYear: number | null
-    doj: Date
+    doj: Date | null
     doq: Date | null
     client: string
     plcId: string
@@ -11134,7 +11134,7 @@ export namespace Prisma {
       leadName: string | null
       splitWith: string | null
       placementYear: number | null
-      doj: Date
+      doj: Date | null
       doq: Date | null
       client: string
       plcId: string
@@ -14744,7 +14744,7 @@ export namespace Prisma {
     level?: StringNullableFilter<"PersonalPlacement"> | string | null
     candidateName?: StringFilter<"PersonalPlacement"> | string
     placementYear?: IntNullableFilter<"PersonalPlacement"> | number | null
-    doj?: DateTimeFilter<"PersonalPlacement"> | Date | string
+    doj?: DateTimeNullableFilter<"PersonalPlacement"> | Date | string | null
     doq?: DateTimeNullableFilter<"PersonalPlacement"> | Date | string | null
     client?: StringFilter<"PersonalPlacement"> | string
     plcId?: StringFilter<"PersonalPlacement"> | string
@@ -14779,7 +14779,7 @@ export namespace Prisma {
     level?: SortOrderInput | SortOrder
     candidateName?: SortOrder
     placementYear?: SortOrderInput | SortOrder
-    doj?: SortOrder
+    doj?: SortOrderInput | SortOrder
     doq?: SortOrderInput | SortOrder
     client?: SortOrder
     plcId?: SortOrder
@@ -14817,7 +14817,7 @@ export namespace Prisma {
     level?: StringNullableFilter<"PersonalPlacement"> | string | null
     candidateName?: StringFilter<"PersonalPlacement"> | string
     placementYear?: IntNullableFilter<"PersonalPlacement"> | number | null
-    doj?: DateTimeFilter<"PersonalPlacement"> | Date | string
+    doj?: DateTimeNullableFilter<"PersonalPlacement"> | Date | string | null
     doq?: DateTimeNullableFilter<"PersonalPlacement"> | Date | string | null
     client?: StringFilter<"PersonalPlacement"> | string
     plcId?: StringFilter<"PersonalPlacement"> | string
@@ -14852,7 +14852,7 @@ export namespace Prisma {
     level?: SortOrderInput | SortOrder
     candidateName?: SortOrder
     placementYear?: SortOrderInput | SortOrder
-    doj?: SortOrder
+    doj?: SortOrderInput | SortOrder
     doq?: SortOrderInput | SortOrder
     client?: SortOrder
     plcId?: SortOrder
@@ -14893,7 +14893,7 @@ export namespace Prisma {
     level?: StringNullableWithAggregatesFilter<"PersonalPlacement"> | string | null
     candidateName?: StringWithAggregatesFilter<"PersonalPlacement"> | string
     placementYear?: IntNullableWithAggregatesFilter<"PersonalPlacement"> | number | null
-    doj?: DateTimeWithAggregatesFilter<"PersonalPlacement"> | Date | string
+    doj?: DateTimeNullableWithAggregatesFilter<"PersonalPlacement"> | Date | string | null
     doq?: DateTimeNullableWithAggregatesFilter<"PersonalPlacement"> | Date | string | null
     client?: StringWithAggregatesFilter<"PersonalPlacement"> | string
     plcId?: StringWithAggregatesFilter<"PersonalPlacement"> | string
@@ -14932,7 +14932,7 @@ export namespace Prisma {
     leadName?: StringNullableFilter<"TeamPlacement"> | string | null
     splitWith?: StringNullableFilter<"TeamPlacement"> | string | null
     placementYear?: IntNullableFilter<"TeamPlacement"> | number | null
-    doj?: DateTimeFilter<"TeamPlacement"> | Date | string
+    doj?: DateTimeNullableFilter<"TeamPlacement"> | Date | string | null
     doq?: DateTimeNullableFilter<"TeamPlacement"> | Date | string | null
     client?: StringFilter<"TeamPlacement"> | string
     plcId?: StringFilter<"TeamPlacement"> | string
@@ -14971,7 +14971,7 @@ export namespace Prisma {
     leadName?: SortOrderInput | SortOrder
     splitWith?: SortOrderInput | SortOrder
     placementYear?: SortOrderInput | SortOrder
-    doj?: SortOrder
+    doj?: SortOrderInput | SortOrder
     doq?: SortOrderInput | SortOrder
     client?: SortOrder
     plcId?: SortOrder
@@ -15013,7 +15013,7 @@ export namespace Prisma {
     leadName?: StringNullableFilter<"TeamPlacement"> | string | null
     splitWith?: StringNullableFilter<"TeamPlacement"> | string | null
     placementYear?: IntNullableFilter<"TeamPlacement"> | number | null
-    doj?: DateTimeFilter<"TeamPlacement"> | Date | string
+    doj?: DateTimeNullableFilter<"TeamPlacement"> | Date | string | null
     doq?: DateTimeNullableFilter<"TeamPlacement"> | Date | string | null
     client?: StringFilter<"TeamPlacement"> | string
     plcId?: StringFilter<"TeamPlacement"> | string
@@ -15052,7 +15052,7 @@ export namespace Prisma {
     leadName?: SortOrderInput | SortOrder
     splitWith?: SortOrderInput | SortOrder
     placementYear?: SortOrderInput | SortOrder
-    doj?: SortOrder
+    doj?: SortOrderInput | SortOrder
     doq?: SortOrderInput | SortOrder
     client?: SortOrder
     plcId?: SortOrder
@@ -15097,7 +15097,7 @@ export namespace Prisma {
     leadName?: StringNullableWithAggregatesFilter<"TeamPlacement"> | string | null
     splitWith?: StringNullableWithAggregatesFilter<"TeamPlacement"> | string | null
     placementYear?: IntNullableWithAggregatesFilter<"TeamPlacement"> | number | null
-    doj?: DateTimeWithAggregatesFilter<"TeamPlacement"> | Date | string
+    doj?: DateTimeNullableWithAggregatesFilter<"TeamPlacement"> | Date | string | null
     doq?: DateTimeNullableWithAggregatesFilter<"TeamPlacement"> | Date | string | null
     client?: StringWithAggregatesFilter<"TeamPlacement"> | string
     plcId?: StringWithAggregatesFilter<"TeamPlacement"> | string
@@ -15880,7 +15880,7 @@ export namespace Prisma {
     level?: string | null
     candidateName: string
     placementYear?: number | null
-    doj: Date | string
+    doj?: Date | string | null
     doq?: Date | string | null
     client: string
     plcId: string
@@ -15915,7 +15915,7 @@ export namespace Prisma {
     level?: string | null
     candidateName: string
     placementYear?: number | null
-    doj: Date | string
+    doj?: Date | string | null
     doq?: Date | string | null
     client: string
     plcId: string
@@ -15946,7 +15946,7 @@ export namespace Prisma {
     level?: NullableStringFieldUpdateOperationsInput | string | null
     candidateName?: StringFieldUpdateOperationsInput | string
     placementYear?: NullableIntFieldUpdateOperationsInput | number | null
-    doj?: DateTimeFieldUpdateOperationsInput | Date | string
+    doj?: NullableDateTimeFieldUpdateOperationsInput | Date | string | null
     doq?: NullableDateTimeFieldUpdateOperationsInput | Date | string | null
     client?: StringFieldUpdateOperationsInput | string
     plcId?: StringFieldUpdateOperationsInput | string
@@ -15981,7 +15981,7 @@ export namespace Prisma {
     level?: NullableStringFieldUpdateOperationsInput | string | null
     candidateName?: StringFieldUpdateOperationsInput | string
     placementYear?: NullableIntFieldUpdateOperationsInput | number | null
-    doj?: DateTimeFieldUpdateOperationsInput | Date | string
+    doj?: NullableDateTimeFieldUpdateOperationsInput | Date | string | null
     doq?: NullableDateTimeFieldUpdateOperationsInput | Date | string | null
     client?: StringFieldUpdateOperationsInput | string
     plcId?: StringFieldUpdateOperationsInput | string
@@ -16014,7 +16014,7 @@ export namespace Prisma {
     level?: string | null
     candidateName: string
     placementYear?: number | null
-    doj: Date | string
+    doj?: Date | string | null
     doq?: Date | string | null
     client: string
     plcId: string
@@ -16045,7 +16045,7 @@ export namespace Prisma {
     level?: NullableStringFieldUpdateOperationsInput | string | null
     candidateName?: StringFieldUpdateOperationsInput | string
     placementYear?: NullableIntFieldUpdateOperationsInput | number | null
-    doj?: DateTimeFieldUpdateOperationsInput | Date | string
+    doj?: NullableDateTimeFieldUpdateOperationsInput | Date | string | null
     doq?: NullableDateTimeFieldUpdateOperationsInput | Date | string | null
     client?: StringFieldUpdateOperationsInput | string
     plcId?: StringFieldUpdateOperationsInput | string
@@ -16078,7 +16078,7 @@ export namespace Prisma {
     level?: NullableStringFieldUpdateOperationsInput | string | null
     candidateName?: StringFieldUpdateOperationsInput | string
     placementYear?: NullableIntFieldUpdateOperationsInput | number | null
-    doj?: DateTimeFieldUpdateOperationsInput | Date | string
+    doj?: NullableDateTimeFieldUpdateOperationsInput | Date | string | null
     doq?: NullableDateTimeFieldUpdateOperationsInput | Date | string | null
     client?: StringFieldUpdateOperationsInput | string
     plcId?: StringFieldUpdateOperationsInput | string
@@ -16112,7 +16112,7 @@ export namespace Prisma {
     leadName?: string | null
     splitWith?: string | null
     placementYear?: number | null
-    doj: Date | string
+    doj?: Date | string | null
     doq?: Date | string | null
     client: string
     plcId: string
@@ -16151,7 +16151,7 @@ export namespace Prisma {
     leadName?: string | null
     splitWith?: string | null
     placementYear?: number | null
-    doj: Date | string
+    doj?: Date | string | null
     doq?: Date | string | null
     client: string
     plcId: string
@@ -16186,7 +16186,7 @@ export namespace Prisma {
     leadName?: NullableStringFieldUpdateOperationsInput | string | null
     splitWith?: NullableStringFieldUpdateOperationsInput | string | null
     placementYear?: NullableIntFieldUpdateOperationsInput | number | null
-    doj?: DateTimeFieldUpdateOperationsInput | Date | string
+    doj?: NullableDateTimeFieldUpdateOperationsInput | Date | string | null
     doq?: NullableDateTimeFieldUpdateOperationsInput | Date | string | null
     client?: StringFieldUpdateOperationsInput | string
     plcId?: StringFieldUpdateOperationsInput | string
@@ -16225,7 +16225,7 @@ export namespace Prisma {
     leadName?: NullableStringFieldUpdateOperationsInput | string | null
     splitWith?: NullableStringFieldUpdateOperationsInput | string | null
     placementYear?: NullableIntFieldUpdateOperationsInput | number | null
-    doj?: DateTimeFieldUpdateOperationsInput | Date | string
+    doj?: NullableDateTimeFieldUpdateOperationsInput | Date | string | null
     doq?: NullableDateTimeFieldUpdateOperationsInput | Date | string | null
     client?: StringFieldUpdateOperationsInput | string
     plcId?: StringFieldUpdateOperationsInput | string
@@ -16262,7 +16262,7 @@ export namespace Prisma {
     leadName?: string | null
     splitWith?: string | null
     placementYear?: number | null
-    doj: Date | string
+    doj?: Date | string | null
     doq?: Date | string | null
     client: string
     plcId: string
@@ -16297,7 +16297,7 @@ export namespace Prisma {
     leadName?: NullableStringFieldUpdateOperationsInput | string | null
     splitWith?: NullableStringFieldUpdateOperationsInput | string | null
     placementYear?: NullableIntFieldUpdateOperationsInput | number | null
-    doj?: DateTimeFieldUpdateOperationsInput | Date | string
+    doj?: NullableDateTimeFieldUpdateOperationsInput | Date | string | null
     doq?: NullableDateTimeFieldUpdateOperationsInput | Date | string | null
     client?: StringFieldUpdateOperationsInput | string
     plcId?: StringFieldUpdateOperationsInput | string
@@ -16334,7 +16334,7 @@ export namespace Prisma {
     leadName?: NullableStringFieldUpdateOperationsInput | string | null
     splitWith?: NullableStringFieldUpdateOperationsInput | string | null
     placementYear?: NullableIntFieldUpdateOperationsInput | number | null
-    doj?: DateTimeFieldUpdateOperationsInput | Date | string
+    doj?: NullableDateTimeFieldUpdateOperationsInput | Date | string | null
     doq?: NullableDateTimeFieldUpdateOperationsInput | Date | string | null
     client?: StringFieldUpdateOperationsInput | string
     plcId?: StringFieldUpdateOperationsInput | string
@@ -18988,7 +18988,7 @@ export namespace Prisma {
     level?: string | null
     candidateName: string
     placementYear?: number | null
-    doj: Date | string
+    doj?: Date | string | null
     doq?: Date | string | null
     client: string
     plcId: string
@@ -19021,7 +19021,7 @@ export namespace Prisma {
     level?: string | null
     candidateName: string
     placementYear?: number | null
-    doj: Date | string
+    doj?: Date | string | null
     doq?: Date | string | null
     client: string
     plcId: string
@@ -19065,7 +19065,7 @@ export namespace Prisma {
     leadName?: string | null
     splitWith?: string | null
     placementYear?: number | null
-    doj: Date | string
+    doj?: Date | string | null
     doq?: Date | string | null
     client: string
     plcId: string
@@ -19102,7 +19102,7 @@ export namespace Prisma {
     leadName?: string | null
     splitWith?: string | null
     placementYear?: number | null
-    doj: Date | string
+    doj?: Date | string | null
     doq?: Date | string | null
     client: string
     plcId: string
@@ -19452,7 +19452,7 @@ export namespace Prisma {
     level?: StringNullableFilter<"PersonalPlacement"> | string | null
     candidateName?: StringFilter<"PersonalPlacement"> | string
     placementYear?: IntNullableFilter<"PersonalPlacement"> | number | null
-    doj?: DateTimeFilter<"PersonalPlacement"> | Date | string
+    doj?: DateTimeNullableFilter<"PersonalPlacement"> | Date | string | null
     doq?: DateTimeNullableFilter<"PersonalPlacement"> | Date | string | null
     client?: StringFilter<"PersonalPlacement"> | string
     plcId?: StringFilter<"PersonalPlacement"> | string
@@ -19507,7 +19507,7 @@ export namespace Prisma {
     leadName?: StringNullableFilter<"TeamPlacement"> | string | null
     splitWith?: StringNullableFilter<"TeamPlacement"> | string | null
     placementYear?: IntNullableFilter<"TeamPlacement"> | number | null
-    doj?: DateTimeFilter<"TeamPlacement"> | Date | string
+    doj?: DateTimeNullableFilter<"TeamPlacement"> | Date | string | null
     doq?: DateTimeNullableFilter<"TeamPlacement"> | Date | string | null
     client?: StringFilter<"TeamPlacement"> | string
     plcId?: StringFilter<"TeamPlacement"> | string
@@ -20293,7 +20293,7 @@ export namespace Prisma {
     level?: string | null
     candidateName: string
     placementYear?: number | null
-    doj: Date | string
+    doj?: Date | string | null
     doq?: Date | string | null
     client: string
     plcId: string
@@ -20326,7 +20326,7 @@ export namespace Prisma {
     level?: string | null
     candidateName: string
     placementYear?: number | null
-    doj: Date | string
+    doj?: Date | string | null
     doq?: Date | string | null
     client: string
     plcId: string
@@ -20370,7 +20370,7 @@ export namespace Prisma {
     leadName?: string | null
     splitWith?: string | null
     placementYear?: number | null
-    doj: Date | string
+    doj?: Date | string | null
     doq?: Date | string | null
     client: string
     plcId: string
@@ -20407,7 +20407,7 @@ export namespace Prisma {
     leadName?: string | null
     splitWith?: string | null
     placementYear?: number | null
-    doj: Date | string
+    doj?: Date | string | null
     doq?: Date | string | null
     client: string
     plcId: string
@@ -21106,7 +21106,7 @@ export namespace Prisma {
     level?: string | null
     candidateName: string
     placementYear?: number | null
-    doj: Date | string
+    doj?: Date | string | null
     doq?: Date | string | null
     client: string
     plcId: string
@@ -21141,7 +21141,7 @@ export namespace Prisma {
     leadName?: string | null
     splitWith?: string | null
     placementYear?: number | null
-    doj: Date | string
+    doj?: Date | string | null
     doq?: Date | string | null
     client: string
     plcId: string
@@ -21382,7 +21382,7 @@ export namespace Prisma {
     level?: NullableStringFieldUpdateOperationsInput | string | null
     candidateName?: StringFieldUpdateOperationsInput | string
     placementYear?: NullableIntFieldUpdateOperationsInput | number | null
-    doj?: DateTimeFieldUpdateOperationsInput | Date | string
+    doj?: NullableDateTimeFieldUpdateOperationsInput | Date | string | null
     doq?: NullableDateTimeFieldUpdateOperationsInput | Date | string | null
     client?: StringFieldUpdateOperationsInput | string
     plcId?: StringFieldUpdateOperationsInput | string
@@ -21415,7 +21415,7 @@ export namespace Prisma {
     level?: NullableStringFieldUpdateOperationsInput | string | null
     candidateName?: StringFieldUpdateOperationsInput | string
     placementYear?: NullableIntFieldUpdateOperationsInput | number | null
-    doj?: DateTimeFieldUpdateOperationsInput | Date | string
+    doj?: NullableDateTimeFieldUpdateOperationsInput | Date | string | null
     doq?: NullableDateTimeFieldUpdateOperationsInput | Date | string | null
     client?: StringFieldUpdateOperationsInput | string
     plcId?: StringFieldUpdateOperationsInput | string
@@ -21447,7 +21447,7 @@ export namespace Prisma {
     level?: NullableStringFieldUpdateOperationsInput | string | null
     candidateName?: StringFieldUpdateOperationsInput | string
     placementYear?: NullableIntFieldUpdateOperationsInput | number | null
-    doj?: DateTimeFieldUpdateOperationsInput | Date | string
+    doj?: NullableDateTimeFieldUpdateOperationsInput | Date | string | null
     doq?: NullableDateTimeFieldUpdateOperationsInput | Date | string | null
     client?: StringFieldUpdateOperationsInput | string
     plcId?: StringFieldUpdateOperationsInput | string
@@ -21481,7 +21481,7 @@ export namespace Prisma {
     leadName?: NullableStringFieldUpdateOperationsInput | string | null
     splitWith?: NullableStringFieldUpdateOperationsInput | string | null
     placementYear?: NullableIntFieldUpdateOperationsInput | number | null
-    doj?: DateTimeFieldUpdateOperationsInput | Date | string
+    doj?: NullableDateTimeFieldUpdateOperationsInput | Date | string | null
     doq?: NullableDateTimeFieldUpdateOperationsInput | Date | string | null
     client?: StringFieldUpdateOperationsInput | string
     plcId?: StringFieldUpdateOperationsInput | string
@@ -21518,7 +21518,7 @@ export namespace Prisma {
     leadName?: NullableStringFieldUpdateOperationsInput | string | null
     splitWith?: NullableStringFieldUpdateOperationsInput | string | null
     placementYear?: NullableIntFieldUpdateOperationsInput | number | null
-    doj?: DateTimeFieldUpdateOperationsInput | Date | string
+    doj?: NullableDateTimeFieldUpdateOperationsInput | Date | string | null
     doq?: NullableDateTimeFieldUpdateOperationsInput | Date | string | null
     client?: StringFieldUpdateOperationsInput | string
     plcId?: StringFieldUpdateOperationsInput | string
@@ -21554,7 +21554,7 @@ export namespace Prisma {
     leadName?: NullableStringFieldUpdateOperationsInput | string | null
     splitWith?: NullableStringFieldUpdateOperationsInput | string | null
     placementYear?: NullableIntFieldUpdateOperationsInput | number | null
-    doj?: DateTimeFieldUpdateOperationsInput | Date | string
+    doj?: NullableDateTimeFieldUpdateOperationsInput | Date | string | null
     doq?: NullableDateTimeFieldUpdateOperationsInput | Date | string | null
     client?: StringFieldUpdateOperationsInput | string
     plcId?: StringFieldUpdateOperationsInput | string
@@ -21611,7 +21611,7 @@ export namespace Prisma {
     level?: string | null
     candidateName: string
     placementYear?: number | null
-    doj: Date | string
+    doj?: Date | string | null
     doq?: Date | string | null
     client: string
     plcId: string
@@ -21646,7 +21646,7 @@ export namespace Prisma {
     leadName?: string | null
     splitWith?: string | null
     placementYear?: number | null
-    doj: Date | string
+    doj?: Date | string | null
     doq?: Date | string | null
     client: string
     plcId: string
@@ -21678,7 +21678,7 @@ export namespace Prisma {
     level?: NullableStringFieldUpdateOperationsInput | string | null
     candidateName?: StringFieldUpdateOperationsInput | string
     placementYear?: NullableIntFieldUpdateOperationsInput | number | null
-    doj?: DateTimeFieldUpdateOperationsInput | Date | string
+    doj?: NullableDateTimeFieldUpdateOperationsInput | Date | string | null
     doq?: NullableDateTimeFieldUpdateOperationsInput | Date | string | null
     client?: StringFieldUpdateOperationsInput | string
     plcId?: StringFieldUpdateOperationsInput | string
@@ -21711,7 +21711,7 @@ export namespace Prisma {
     level?: NullableStringFieldUpdateOperationsInput | string | null
     candidateName?: StringFieldUpdateOperationsInput | string
     placementYear?: NullableIntFieldUpdateOperationsInput | number | null
-    doj?: DateTimeFieldUpdateOperationsInput | Date | string
+    doj?: NullableDateTimeFieldUpdateOperationsInput | Date | string | null
     doq?: NullableDateTimeFieldUpdateOperationsInput | Date | string | null
     client?: StringFieldUpdateOperationsInput | string
     plcId?: StringFieldUpdateOperationsInput | string
@@ -21743,7 +21743,7 @@ export namespace Prisma {
     level?: NullableStringFieldUpdateOperationsInput | string | null
     candidateName?: StringFieldUpdateOperationsInput | string
     placementYear?: NullableIntFieldUpdateOperationsInput | number | null
-    doj?: DateTimeFieldUpdateOperationsInput | Date | string
+    doj?: NullableDateTimeFieldUpdateOperationsInput | Date | string | null
     doq?: NullableDateTimeFieldUpdateOperationsInput | Date | string | null
     client?: StringFieldUpdateOperationsInput | string
     plcId?: StringFieldUpdateOperationsInput | string
@@ -21777,7 +21777,7 @@ export namespace Prisma {
     leadName?: NullableStringFieldUpdateOperationsInput | string | null
     splitWith?: NullableStringFieldUpdateOperationsInput | string | null
     placementYear?: NullableIntFieldUpdateOperationsInput | number | null
-    doj?: DateTimeFieldUpdateOperationsInput | Date | string
+    doj?: NullableDateTimeFieldUpdateOperationsInput | Date | string | null
     doq?: NullableDateTimeFieldUpdateOperationsInput | Date | string | null
     client?: StringFieldUpdateOperationsInput | string
     plcId?: StringFieldUpdateOperationsInput | string
@@ -21814,7 +21814,7 @@ export namespace Prisma {
     leadName?: NullableStringFieldUpdateOperationsInput | string | null
     splitWith?: NullableStringFieldUpdateOperationsInput | string | null
     placementYear?: NullableIntFieldUpdateOperationsInput | number | null
-    doj?: DateTimeFieldUpdateOperationsInput | Date | string
+    doj?: NullableDateTimeFieldUpdateOperationsInput | Date | string | null
     doq?: NullableDateTimeFieldUpdateOperationsInput | Date | string | null
     client?: StringFieldUpdateOperationsInput | string
     plcId?: StringFieldUpdateOperationsInput | string
@@ -21850,7 +21850,7 @@ export namespace Prisma {
     leadName?: NullableStringFieldUpdateOperationsInput | string | null
     splitWith?: NullableStringFieldUpdateOperationsInput | string | null
     placementYear?: NullableIntFieldUpdateOperationsInput | number | null
-    doj?: DateTimeFieldUpdateOperationsInput | Date | string
+    doj?: NullableDateTimeFieldUpdateOperationsInput | Date | string | null
     doq?: NullableDateTimeFieldUpdateOperationsInput | Date | string | null
     client?: StringFieldUpdateOperationsInput | string
     plcId?: StringFieldUpdateOperationsInput | string

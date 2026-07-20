@@ -203,7 +203,7 @@ model PersonalPlacement {
   level                           String? // L1, L2, L3, L4 - for data separation
   candidateName                   String
   placementYear                   Int?
-  doj                             DateTime
+  doj                             DateTime?
   doq                             DateTime?
   client                          String
   plcId                           String
@@ -254,7 +254,7 @@ model TeamPlacement {
   leadName                        String?
   splitWith                       String?
   placementYear                   Int?
-  doj                             DateTime
+  doj                             DateTime?
   doq                             DateTime?
   client                          String
   plcId                           String

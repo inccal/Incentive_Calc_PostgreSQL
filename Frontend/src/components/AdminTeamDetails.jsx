@@ -1008,7 +1008,6 @@ const AdminTeamDetails = () => {
                         <li className="flex justify-between py-0.5"><span>Checked</span><span>{importResult.report?.placementRowsChecked ?? 0}</span></li>
                         <li className="flex justify-between py-0.5"><span>Rejected (wrong team)</span><span className="text-amber-600">{importResult.report?.placementsRejectedWrongTeam ?? 0}</span></li>
                         <li className="flex justify-between py-0.5"><span>Rejected (lead not found)</span><span className="text-red-600">{importResult.report?.placementsRejectedLeadNotFound ?? 0}</span></li>
-                        <li className="flex justify-between py-0.5"><span>Rejected (invalid row)</span><span className="text-amber-600">{importResult.report?.placementsRejectedInvalid ?? 0}</span></li>
                       </ul>
                     </div>
                   </>
