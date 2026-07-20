@@ -68,7 +68,7 @@ async function main() {
   const [users, teams] = await Promise.all([
     prisma.user.findMany({
       select: {
-        id: true, name: true, email: true, vbid: true, managerId: true,
+        id: true, name: true, email: true, vbid: true, managerId: true, role: true,
         employeeProfile: { select: { id: true, vbid: true, teamId: true, managerId: true, level: true } },
       },
     }),
@@ -121,14 +121,17 @@ async function main() {
       managerId = managerResult.user.id;
     }
     const profile = item.user.employeeProfile;
+    const normalizedLevel = String(item.level || "").trim().toUpperCase();
+    const role = ["L2", "L3"].includes(normalizedLevel) ? "TEAM_LEAD" : "EMPLOYEE";
     const fields = {
       teamId: [profile.teamId, teamId],
       managerId: [profile.managerId, managerId],
       userManagerId: [item.user.managerId, managerId],
       level: [profile.level, item.level],
+      role: [item.user.role, role],
     };
     if (Object.values(fields).some(([before, after]) => before !== after)) {
-      changes.push({ ...item, teamId, managerId, fields });
+      changes.push({ ...item, teamId, managerId, role, fields });
     }
   }
 
@@ -158,7 +161,7 @@ async function main() {
     }),
     prisma.user.update({
       where: { id: change.user.id },
-      data: { managerId: change.managerId },
+      data: { managerId: change.managerId, role: change.role },
     }),
   ]));
   console.log(`Applied ${changes.length} hierarchy assignment updates.`);
