@@ -341,7 +341,7 @@ const AdminEmployeePlacements = () => {
       doq: placement.doq ? placement.doq.split('T')[0] : "",
       doj: placement.doj ? placement.doj.split('T')[0] : "",
       placementType: placement.placementType,
-      billedHours: placement.billedHours || "",
+      billedHours: placement.totalBilledHours ?? placement.billedHours ?? "",
       revenue: placement.revenue || "",
       recruiterName: placement.recruiterName || "",
       teamLead: placement.teamLead || "",
@@ -788,7 +788,7 @@ const AdminEmployeePlacements = () => {
                             </span>
                           </td>
                           <td className="py-3 px-2 text-slate-600">{p.collectionStatus || "-"}</td>
-                          <td className="py-3 px-2 text-slate-600">{p.billedHours || "-"}</td>
+                          <td className="py-3 px-2 text-slate-600">{p.totalBilledHours ?? p.billedHours ?? "-"}</td>
                           <td className="py-3 px-2 text-emerald-600 font-medium">{CalculationService.formatCurrency(p.revenue)}</td>
                           <td className="py-3 px-2 text-slate-600">{p.revenueAsLead || "-"}</td>
                           <td className="py-3 px-2 text-slate-600">{p.incentiveAmountInr != null ? CalculationService.formatCurrency(p.incentiveAmountInr, "INR") : "-"}</td>
@@ -884,7 +884,7 @@ const AdminEmployeePlacements = () => {
                               </span>
                             </td>
                             <td className="py-3 px-2 text-slate-600">{p.collectionStatus || "-"}</td>
-                            <td className="py-3 px-2 text-slate-600">{p.billedHours || "-"}</td>
+                            <td className="py-3 px-2 text-slate-600">{p.totalBilledHours ?? p.billedHours ?? "-"}</td>
                             <td className="py-3 px-2 text-emerald-600 font-medium">{CalculationService.formatCurrency(p.revenue)}</td>
                             <td className="py-3 px-2 text-slate-600">{p.revenueAsLead || "-"}</td>
                             <td className="py-3 px-2 text-slate-600">{p.incentiveAmountInr != null ? CalculationService.formatCurrency(p.incentiveAmountInr, "INR") : "-"}</td>
@@ -973,7 +973,7 @@ const AdminEmployeePlacements = () => {
                             </span>
                           </td>
                           <td className="py-3 px-2 text-slate-600">{p.collectionStatus || "-"}</td>
-                          <td className="py-3 px-2 text-slate-600">{p.billedHours || "-"}</td>
+                          <td className="py-3 px-2 text-slate-600">{p.totalBilledHours ?? p.billedHours ?? "-"}</td>
                           <td className="py-3 px-2 text-emerald-600 font-medium">{CalculationService.formatCurrency(p.revenue)}</td>
                           <td className="py-3 px-2 text-slate-600">{p.revenueAsLead || "-"}</td>
                           <td className="py-3 px-2 text-slate-600">{p.incentiveAmountInr != null ? CalculationService.formatCurrency(p.incentiveAmountInr, "INR") : "-"}</td>

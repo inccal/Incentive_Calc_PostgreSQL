@@ -83,7 +83,7 @@ export default function HeadPlacementsView({ allowEdit = false }) {
       placementType: row.placementType ?? '',
       billingStatus: row.billingStatus ?? '',
       collectionStatus: row.collectionStatus ?? '',
-      totalBilledHours: row.totalBilledHours != null ? String(row.totalBilledHours) : '',
+      totalBilledHours: (row.totalBilledHours ?? row.billedHours) != null ? String(row.totalBilledHours ?? row.billedHours) : '',
       revenueUsd: row.revenueUsd != null ? String(row.revenueUsd) : '',
       incentiveInr: row.incentiveInr != null ? String(row.incentiveInr) : '',
       incentivePaidInr: row.incentivePaidInr != null ? String(row.incentivePaidInr) : '',

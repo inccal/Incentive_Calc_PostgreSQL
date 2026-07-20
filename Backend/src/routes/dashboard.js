@@ -116,7 +116,8 @@ const processEmployeeData = async (employee) => {
     doq: p.doq,
     client: p.client,
     placementType: p.placementType, // Keep exact value from sheet
-    billedHours: p.totalBilledHours,
+    totalBilledHours: toNullableNumber(p.totalBilledHours),
+    billedHours: toNullableNumber(p.totalBilledHours),
     revenue: toNullableNumber(p.revenueUsd),
     billingStatus: p.billingStatus,
     collectionStatus: p.collectionStatus,
@@ -146,7 +147,8 @@ const processEmployeeData = async (employee) => {
     doq: p.doq,
     client: p.client,
     placementType: p.placementType, // Keep exact value from sheet
-    billedHours: p.totalBilledHours,
+    totalBilledHours: toNullableNumber(p.totalBilledHours),
+    billedHours: toNullableNumber(p.totalBilledHours),
     revenue: toNullableNumber(p.revenueLeadUsd),
     billingStatus: p.billingStatus,
     collectionStatus: p.collectionStatus,

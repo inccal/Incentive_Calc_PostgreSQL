@@ -31,6 +31,9 @@ const formatPlacementRevenue = (placement) => {
   return CalculationService.formatCurrency(getPlacementRevenueNumber(placement))
 }
 
+const getPlacementBilledHours = (placement) =>
+  placement?.totalBilledHours ?? placement?.billedHours ?? null
+
 const containerVariants = {
   hidden: { opacity: 0 },
   visible: (i = 1) => ({
@@ -1536,8 +1539,8 @@ export default function L4DashboardView({
                             )}
                           </td>
                           <td className="px-4 py-4 text-right text-sm text-slate-600">
-                            {placement.totalBilledHours != null && placement.totalBilledHours !== ''
-                              ? String(placement.totalBilledHours ?? placement.billedHours ?? '–')
+                            {getPlacementBilledHours(placement) != null && getPlacementBilledHours(placement) !== ''
+                              ? String(getPlacementBilledHours(placement))
                               : '–'}
                           </td>
                           <td className="px-4 py-4 text-right text-sm font-medium text-slate-700">

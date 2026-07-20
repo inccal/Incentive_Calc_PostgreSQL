@@ -111,7 +111,8 @@ const EmployeeDetails = () => {
       revenue: p.revenue ? CalculationService.formatCurrency(p.revenue) : '-',
       revenueAsLead: p.revenueAsLead ? CalculationService.formatCurrency(p.revenueAsLead) : '-',
       placementType: p.placementType || '-', // Keep exact value from sheet
-      billedHours: p.billedHours ? String(p.billedHours) : '',
+      totalBilledHours: p.totalBilledHours ?? p.billedHours ?? null,
+      billedHours: p.totalBilledHours ?? p.billedHours ?? null,
       billingStatus: p.billingStatus === 'BILLED' ? 'Done' : p.billingStatus === 'PENDING' ? 'Pending' : p.billingStatus,
       incentivePayoutETA: p.incentivePayoutEta ? p.incentivePayoutEta.slice(0, 10) : '',
       incentiveAmountINR: CalculationService.formatCurrency(p.incentiveAmountInr, 'INR'),
@@ -1502,7 +1503,7 @@ const EmployeeDetails = () => {
                           <td className="px-4 py-4 text-sm text-slate-600">{placement.placementType}</td>
                           <td className="px-4 py-4 text-sm text-slate-600">{placement.billingStatus}</td>
                           <td className="px-4 py-4 text-sm text-slate-600">{placement.collectionStatus ?? '-'}</td>
-                          <td className="px-4 py-4 text-sm text-slate-600">{placement.totalBilledHours ?? '-'}</td>
+                          <td className="px-4 py-4 text-sm text-slate-600">{placement.totalBilledHours ?? placement.billedHours ?? '-'}</td>
                           <td className="px-4 py-4 text-sm text-slate-600 font-medium">
                             {CalculationService.formatCurrency(placement.revenueLeadUsd)}
                           </td>

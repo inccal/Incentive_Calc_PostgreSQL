@@ -673,7 +673,7 @@ const TeamLeadPage = () => {
                           <td className="px-4 py-2 text-slate-600">{p.placementType}</td>
                           <td className="px-4 py-2 text-slate-600">{p.billingStatus}</td>
                           <td className="px-4 py-2 text-slate-600">{p.collectionStatus ?? '-'}</td>
-                          <td className="px-4 py-2 text-slate-600">{p.totalBilledHours ?? '-'}</td>
+                          <td className="px-4 py-2 text-slate-600">{p.totalBilledHours ?? p.billedHours ?? '-'}</td>
                           <td className="px-4 py-2 text-slate-600">{CalculationService.formatCurrency(p.revenueUsd)}</td>
                           <td className="px-4 py-2 text-slate-600">{CalculationService.formatCurrency(p.incentiveInr, 'INR')}</td>
                           <td className="px-4 py-2 text-slate-600">{CalculationService.formatCurrency(p.incentivePaidInr, 'INR')}</td>
@@ -693,7 +693,7 @@ const TeamLeadPage = () => {
                           <td className="px-4 py-2 text-slate-600">{p.placementType}</td>
                           <td className="px-4 py-2 text-slate-600">{p.billingStatus}</td>
                           <td className="px-4 py-2 text-slate-600">{p.collectionStatus ?? '-'}</td>
-                          <td className="px-4 py-2 text-slate-600">{p.totalBilledHours ?? '-'}</td>
+                          <td className="px-4 py-2 text-slate-600">{p.totalBilledHours ?? p.billedHours ?? '-'}</td>
                           <td className="px-4 py-2 text-slate-600">{CalculationService.formatCurrency(p.revenueLeadUsd)}</td>
                           <td className="px-4 py-2 text-slate-600">{CalculationService.formatCurrency(p.incentiveInr, 'INR')}</td>
                           <td className="px-4 py-2 text-slate-600">{CalculationService.formatCurrency(p.incentivePaidInr, 'INR')}</td>
