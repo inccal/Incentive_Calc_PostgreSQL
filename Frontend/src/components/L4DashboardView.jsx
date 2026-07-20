@@ -9,6 +9,28 @@ import { useEffect } from 'react'
 const TAB_IDS = ['overview', 'placements', 'profile']
 const TAB_LABELS = { overview: 'Overview', placements: 'Placements', profile: 'Profile' }
 
+// Placement rows also carry summary snapshot fields such as
+// totalRevenueGenerated. Never use those summary totals as row revenue.
+const getPlacementRevenue = (placement) =>
+  placement?.revenueUsd ??
+  placement?.revenueLeadUsd ??
+  placement?.revenue ??
+  placement?.totalRevenue ??
+  null
+
+const getPlacementRevenueNumber = (placement) => {
+  const value = getPlacementRevenue(placement)
+  if (value == null || value === '' || value === '-') return 0
+  const parsed = Number(String(value).replace(/[^0-9.-]+/g, ''))
+  return Number.isFinite(parsed) ? parsed : 0
+}
+
+const formatPlacementRevenue = (placement) => {
+  const value = getPlacementRevenue(placement)
+  if (value == null || value === '' || value === '-') return '–'
+  return CalculationService.formatCurrency(getPlacementRevenueNumber(placement))
+}
+
 const containerVariants = {
   hidden: { opacity: 0 },
   visible: (i = 1) => ({
@@ -458,8 +480,8 @@ export default function L4DashboardView({
         return dir * (na < nb ? -1 : na > nb ? 1 : 0)
       }
       if (placementSortBy === 'revenue') {
-        const ra = Number(a.totalRevenueGenerated ?? a.revenueUsd ?? a.revenue ?? 0)
-        const rb = Number(b.totalRevenueGenerated ?? b.revenueUsd ?? b.revenue ?? 0)
+        const ra = getPlacementRevenueNumber(a)
+        const rb = getPlacementRevenueNumber(b)
         return dir * (ra - rb)
       }
       if (placementSortBy === 'incentive') {
@@ -1228,9 +1250,7 @@ export default function L4DashboardView({
                             <td className="px-4 py-3 text-sm text-slate-600">{p.client ?? '–'}</td>
                             <td className="px-4 py-3 text-sm text-slate-600">{formatPlacementDate(p.doj)}</td>
                             <td className="px-4 py-3 text-right text-sm text-slate-700">
-                              {typeof (p.totalRevenue ?? p.revenue) === 'string'
-                                ? (p.totalRevenue ?? p.revenue)
-                                : CalculationService.formatCurrency(p.totalRevenueGenerated ?? p.revenueUsd ?? p.revenue ?? 0)}
+                              {formatPlacementRevenue(p)}
                             </td>
                             <td className="px-4 py-3 text-right text-sm font-semibold text-emerald-700">
                               {typeof p.incentiveAmountINR === 'string'
@@ -1514,11 +1534,7 @@ export default function L4DashboardView({
                               : '–'}
                           </td>
                           <td className="px-4 py-4 text-right text-sm font-medium text-slate-700">
-                            {typeof (placement.totalRevenue ?? placement.revenue) === 'string'
-                              ? (placement.totalRevenue ?? placement.revenue)
-                              : CalculationService.formatCurrency(
-                                  placement.totalRevenueGenerated ?? placement.revenueUsd ?? placement.revenue ?? 0
-                                )}
+                            {formatPlacementRevenue(placement)}
                           </td>
                           <td className="px-4 py-4 text-right text-sm font-semibold text-emerald-700">
                             {typeof placement.incentiveAmountINR === 'string'
