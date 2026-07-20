@@ -77,7 +77,6 @@ const UserCreationModal = ({ isOpen, onClose, editingUser, onSuccess, teams = []
 
   useEffect(() => {
     if (editingUser) {
-      const initialTeamId = teams.length === 1 ? teams[0].id : "";
       setFormData({
         name: editingUser.name,
         email: editingUser.email,
@@ -91,6 +90,7 @@ const UserCreationModal = ({ isOpen, onClose, editingUser, onSuccess, teams = []
     } else {
       // Determine default level based on defaultRole
       const defaultLevel = defaultRole === "TEAM_LEAD" ? "L2" : "L4";
+      const initialTeamId = teams.length === 1 ? teams[0].id : "";
       
       setFormData({
         name: "",
