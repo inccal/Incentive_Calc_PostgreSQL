@@ -420,17 +420,27 @@ async function findExistingPersonalPlacement(employeeId, candidateName, client, 
   const isGenericPlcId = normalizedPlcId === "plc-passthrough" || normalizedPlcId === "0" || normalizedPlcId === "";
 
   if (plcId && !isGenericPlcId) {
-    const byPlcId = await prisma.personalPlacement.findFirst({
+    return await prisma.personalPlacement.findFirst({
       where: {
         employeeId,
         candidateName: { equals: String(candidateName || "").trim(), mode: 'insensitive' },
         plcId: { equals: String(plcId).trim(), mode: 'insensitive' }
       }
     });
-    if (byPlcId) return byPlcId;
   }
 
-  // Fallback to candidate details (for generic PLC IDs or if PLC ID match fails)
+  // PLC 0 represents a missing ID: within one recruiter, candidate name is its identity.
+  if (normalizedPlcId === "0" || normalizedPlcId === "") {
+    return await prisma.personalPlacement.findFirst({
+      where: {
+        employeeId,
+        candidateName: { equals: String(candidateName || "").trim(), mode: 'insensitive' },
+      },
+      orderBy: { createdAt: "desc" },
+    });
+  }
+
+  // Manual passthrough rows retain the more specific legacy match.
   return await prisma.personalPlacement.findFirst({
     where: {
       employeeId,
@@ -442,28 +452,46 @@ async function findExistingPersonalPlacement(employeeId, candidateName, client, 
   });
 }
 
-async function findExistingTeamPlacement(leadId, candidateName, client, doj, level, plcId) {
+async function findExistingTeamPlacement(leadId, candidateName, client, doj, level, plcId, recruiterName = null) {
   if (!candidateName && !plcId) return null;
 
   // Try to find by PLC ID first (most reliable)
   const normalizedPlcId = String(plcId || "").trim().toLowerCase();
   const isGenericPlcId = normalizedPlcId === "plc-passthrough" || normalizedPlcId === "0" || normalizedPlcId === "";
 
+  const normalizedRecruiterName = String(recruiterName || "").trim();
+  const recruiterFilter = normalizedRecruiterName
+    ? { recruiterName: { equals: normalizedRecruiterName, mode: "insensitive" } }
+    : { recruiterName: null };
+
   if (plcId && !isGenericPlcId) {
-    const byPlcId = await prisma.teamPlacement.findFirst({
+    return await prisma.teamPlacement.findFirst({
       where: {
         leadId,
+        ...recruiterFilter,
         candidateName: { equals: String(candidateName || "").trim(), mode: 'insensitive' },
         plcId: { equals: String(plcId).trim(), mode: 'insensitive' }
       }
     });
-    if (byPlcId) return byPlcId;
   }
 
-  // Fallback to candidate details
+  // PLC 0 represents a missing ID: match by lead + recruiter + candidate name.
+  if (normalizedPlcId === "0" || normalizedPlcId === "") {
+    return await prisma.teamPlacement.findFirst({
+      where: {
+        leadId,
+        ...recruiterFilter,
+        candidateName: { equals: String(candidateName || "").trim(), mode: 'insensitive' },
+      },
+      orderBy: { createdAt: "desc" },
+    });
+  }
+
+  // Manual passthrough rows retain the more specific legacy match.
   return await prisma.teamPlacement.findFirst({
     where: {
       leadId,
+      ...recruiterFilter,
       candidateName: { equals: String(candidateName).trim(), mode: 'insensitive' },
       client: { equals: String(client).trim(), mode: 'insensitive' },
       doj: doj,
@@ -707,7 +735,8 @@ export async function createTeamPlacement(leadId, data, actorId) {
     base.client,
     base.doj,
     data.level || lead.employeeProfile?.level,
-    base.plcId
+    base.plcId,
+    normalizeOptionalString(data.recruiterName) || lead.name
   );
   if (existing) {
     throw placementHttpError(409, "Team placement already exists for this lead", existing.id);
@@ -2192,14 +2221,14 @@ export async function importPersonalPlacements(payload, actorId) {
   }
 
   // Duplicate PLC IDs within payload - allow them but use the last occurrence (skip "PLC-Passthrough" and "0")
-  // A PLC ID may be reused for different candidates. Only collapse repeated
-  // rows for the same employee + candidate + non-generic PLC ID.
+  // A PLC ID may be reused for different candidates. Collapse repeated rows
+  // only for the same employee + candidate + PLC (including generic PLC 0).
   const seenPlcIds = new Map();
   const duplicatePlcIds = new Set();
   for (let i = 0; i < preparedRows.length; i++) {
     const row = preparedRows[i];
     const plcId = row.plcId;
-    if (shouldSkipDuplicateCheck(plcId)) continue;
+    if (String(plcId || "").trim().toLowerCase() === "plc-passthrough") continue;
     
     const normalizedPlcId = `${row.employeeId}|${String(row.candidateName || "").trim().toLowerCase()}|${String(plcId).trim().toLowerCase()}`;
     
@@ -2944,7 +2973,18 @@ export async function importTeamPlacements(payload, actorId) {
     // Candidate Deduplication: Find existing placement (Lead, Candidate, Client, DOJ, Level, PLC ID)
     const client = String(getVal(row, "client") || "").trim();
     const candidateName = String(getVal(row, "candidate name") || "").trim();
-    const existingPlacement = await findExistingTeamPlacement(leadUser.id, candidateName, client, doj, leadUser.level || "L2", plcId);
+    const recruiterName = getVal(row, "recruiter name")
+      ? String(getVal(row, "recruiter name")).trim()
+      : null;
+    const existingPlacement = await findExistingTeamPlacement(
+      leadUser.id,
+      candidateName,
+      client,
+      doj,
+      leadUser.level || "L2",
+      plcId,
+      recruiterName
+    );
     
     if (existingPlacement) {
       console.log(`Row ${rowIndex}: Found existing team placement for candidate ${candidateName} (ID: ${existingPlacement.id}). Will update.`);
@@ -2986,9 +3026,7 @@ export async function importTeamPlacements(payload, actorId) {
       leadId: leadUser.id,
       level: leadUser.level || "L2", // Use lead level (usually L2) for team placements
       candidateName: String(getVal(row, "candidate name") || "").trim(),
-      recruiterName: getVal(row, "recruiter name")
-        ? String(getVal(row, "recruiter name")).trim()
-        : null,
+      recruiterName,
       leadName: (hasLeadHeader && currentLeadName) ? String(currentLeadName).trim() : null,
       splitWith: (hasSplitHeader && getVal(row, "split with"))
         ? String(getVal(row, "split with")).trim()
@@ -3100,16 +3138,16 @@ export async function importTeamPlacements(payload, actorId) {
   }
 
   // Duplicate PLC IDs within payload - allow them but use the last occurrence (skip "PLC-Passthrough" and "0")
-  // A PLC ID may be reused for different candidates. Only collapse repeated
-  // rows for the same lead + candidate + non-generic PLC ID.
+  // A PLC ID may be reused for different candidates/recruiters. Collapse
+  // repeated rows only for the same lead + recruiter + candidate + PLC.
   const seenPlcIdsInSheet = new Map();
   const duplicatePlcIdsInSheet = new Set();
   for (let i = 0; i < preparedRows.length; i++) {
     const row = preparedRows[i];
     const plcId = row.plcId;
-    if (shouldSkipDuplicateCheck(plcId)) continue;
+    if (String(plcId || "").trim().toLowerCase() === "plc-passthrough") continue;
     
-    const normalizedPlcId = `${row.leadId}|${String(row.candidateName || "").trim().toLowerCase()}|${String(plcId).trim().toLowerCase()}`;
+    const normalizedPlcId = `${row.leadId}|${String(row.recruiterName || "").trim().toLowerCase()}|${String(row.candidateName || "").trim().toLowerCase()}|${String(plcId).trim().toLowerCase()}`;
     
     if (seenPlcIdsInSheet.has(normalizedPlcId)) {
       duplicatePlcIdsInSheet.add(plcId);
