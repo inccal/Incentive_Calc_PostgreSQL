@@ -1,6 +1,6 @@
 import { Role } from "../generated/client/index.js";
 import prisma from "../prisma.js";
-import { inferTeamHeadFromEmployees } from "../services/teamHierarchyService.js";
+import { teamHeadFromRecord } from "../services/teamHierarchyService.js";
 
 // const prisma = new PrismaClient();
 
@@ -53,11 +53,17 @@ export async function resolveEmployeeId(idOrSlug) {
  */
 export async function getSuperAdminSubordinateEmployeeIds(currentUser) {
   if (currentUser.role !== Role.SUPER_ADMIN) return new Set();
-  const subordinates = await prisma.user.findMany({
-    where: { managerId: currentUser.id, employeeProfile: { is: { deletedAt: null } } },
-    select: { employeeProfile: { select: { teamId: true } } },
+  const ownedTeams = await prisma.team.findMany({
+    where: {
+      isActive: true,
+      OR: [
+        { headId: currentUser.id },
+        { employees: { some: { deletedAt: null, user: { managerId: currentUser.id } } } },
+      ],
+    },
+    select: { id: true },
   });
-  const teamIds = subordinates.map((s) => s.employeeProfile?.teamId).filter(Boolean);
+  const teamIds = ownedTeams.map((team) => team.id);
   if (teamIds.length === 0) return new Set([currentUser.id]);
   const profiles = await prisma.employeeProfile.findMany({
     where: { teamId: { in: teamIds }, deletedAt: null },
@@ -141,18 +147,14 @@ export async function getSuperAdminOverview(currentUser, year) {
         .map(s => s.employeeProfile?.teamId)
         .filter(id => id); // Remove nulls/undefined
       
-      if (teamIds.length > 0) {
-        whereClause = {
-          isActive: true,
-          id: { in: teamIds }
-        };
-      } else {
-        // If no teams found for this L1, ensure we don't show other L1's teams.
-        whereClause = {
-          isActive: true,
-          id: { in: [] } // Return nothing
-        };
-      }
+      whereClause = {
+        isActive: true,
+        OR: [
+          { headId: currentUser.id },
+          // Legacy fallback until every installation has run the migration.
+          { id: { in: teamIds } },
+        ],
+      };
     } else if (currentUser.role === Role.S1_ADMIN) {
         // S1 Admin sees all teams
         whereClause = { isActive: true };
@@ -170,8 +172,9 @@ export async function getSuperAdminOverview(currentUser, year) {
   const teams = await prisma.team.findMany({
     where: whereClause,
     include: {
+      head: { select: { id: true, name: true, role: true } },
       employees: {
-        where: { isActive: true },
+        where: { isActive: true, deletedAt: null },
         include: {
           user: true,
           manager: true,
@@ -399,7 +402,7 @@ export async function getSuperAdminOverview(currentUser, year) {
   });
 
   const responseTeams = teams.map((team) => {
-    const teamHead = inferTeamHeadFromEmployees(team.employees, team.name);
+    const teamHead = teamHeadFromRecord(team);
     // Build manager -> employees map for this team
     const employeesByManager = new Map();
     team.employees.forEach((emp) => {
@@ -1193,11 +1196,17 @@ export async function getL1Placements(currentUser, filters = {}) {
     });
     teamIds = allTeams.map((t) => t.id);
   } else {
-    const subordinates = await prisma.user.findMany({
-      where: { managerId: currentUser.id },
-      select: { employeeProfile: { select: { teamId: true } } },
+    const ownedTeams = await prisma.team.findMany({
+      where: {
+        isActive: true,
+        OR: [
+          { headId: currentUser.id },
+          { employees: { some: { deletedAt: null, user: { managerId: currentUser.id } } } },
+        ],
+      },
+      select: { id: true },
     });
-    teamIds = subordinates.map((s) => s.employeeProfile?.teamId).filter(Boolean);
+    teamIds = ownedTeams.map((team) => team.id);
   }
 
   if (teamIds.length === 0) {

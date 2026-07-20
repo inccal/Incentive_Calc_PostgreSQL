@@ -1,6 +1,10 @@
 import { Role } from "../generated/client/index.js";
 import prisma from "../prisma.js";
-import { resolveTeamHead } from "../services/teamHierarchyService.js";
+import {
+  assertDirectReportsRemainValid,
+  resolveHierarchyManager,
+  roleForHierarchyLevel,
+} from "../services/teamHierarchyService.js";
 
 const COMMENT_MAX_LENGTH = 1000;
 const ENTRA_ONLY_PASSWORD_HASH = "MICROSOFT_ENTRA_ID_ONLY";
@@ -50,8 +54,8 @@ async function assertValidManagerAssignment({ managerId, level, role }) {
     throw err;
   }
   if (lvl === "L4" || (role === Role.EMPLOYEE && !lvl)) {
-    if (manager.role === Role.EMPLOYEE && mgrLvl === "L4") {
-      const err = new Error("Recruiter (L4) cannot report to another Recruiter.");
+    if (mgrLvl !== "L2" && mgrLvl !== "L3") {
+      const err = new Error("Recruiter (L4) must report to an L2 or L3 manager.");
       err.statusCode = 400;
       throw err;
     }
@@ -82,26 +86,22 @@ export async function listUsersWithRelations({ page = 1, pageSize = 25, actor, r
   };
 
   if (actor && actor.role === Role.SUPER_ADMIN) {
-    // 1. Fetch full actor details to get teamId
-    const fullActor = await prisma.user.findUnique({
-      where: { id: actor.id },
-      include: { employeeProfile: true }
+    const ownedTeams = await prisma.team.findMany({
+      where: {
+        isActive: true,
+        OR: [
+          { headId: actor.id },
+          // Legacy fallback until every installation has run the migration.
+          { employees: { some: { deletedAt: null, user: { managerId: actor.id } } } },
+        ],
+      },
+      select: { id: true },
     });
-
-    const teamId = fullActor?.employeeProfile?.teamId;
-
-    if (teamId) {
-       // Scope to users in the same team (exclude soft-deleted)
-       where.employeeProfile = { teamId, isActive: true, deletedAt: null };
-    } else {
-       // Fallback: Restrict to hierarchy if no team found
-       where.OR = [
-        { managerId: actor.id },
-        { manager: { managerId: actor.id } },
-        { manager: { manager: { managerId: actor.id } } }
-      ];
-       where.employeeProfile = { deletedAt: null };
-    }
+    where.employeeProfile = {
+      teamId: { in: ownedTeams.map((team) => team.id) },
+      isActive: true,
+      deletedAt: null,
+    };
   }
 
   const [total, users] = await Promise.all([
@@ -245,20 +245,20 @@ export async function createUserWithProfile(payload, actorId) {
     throw error;
   }
 
-  const normalizedLevel = String(level || "").trim().toUpperCase();
-  const isL2 = normalizedLevel === "L2" || (!normalizedLevel && role === Role.TEAM_LEAD);
-  let resolvedManagerId = managerId || null;
-  if (isL2 && teamId) {
-    const teamHead = await resolveTeamHead(teamId, { allowMissing: true });
-    if (teamHead) resolvedManagerId = teamHead.id;
-    if (!resolvedManagerId) {
-      const error = new Error("A Head is required for the first L2 assigned to this team");
-      error.statusCode = 400;
-      throw error;
-    }
-  }
+  const fallbackLevel = role === Role.TEAM_LEAD ? "L2" : role === Role.EMPLOYEE ? "L4" : "";
+  const normalizedLevel = String(level || fallbackLevel).trim().toUpperCase();
+  const resolvedRole = [Role.S1_ADMIN, Role.SUPER_ADMIN].includes(role)
+    ? role
+    : roleForHierarchyLevel(normalizedLevel, role);
+  const resolvedManagerId = [Role.S1_ADMIN, Role.SUPER_ADMIN].includes(resolvedRole)
+    ? null
+    : await resolveHierarchyManager({
+        teamId: teamId || null,
+        level: normalizedLevel,
+        requestedManagerId: managerId || null,
+      });
 
-  await assertValidManagerAssignment({ managerId: resolvedManagerId, level, role });
+  await assertValidManagerAssignment({ managerId: resolvedManagerId, level, role: resolvedRole });
 
   try {
     const user = await prisma.user.create({
@@ -266,17 +266,17 @@ export async function createUserWithProfile(payload, actorId) {
         email: email.toLowerCase(),
         passwordHash: ENTRA_ONLY_PASSWORD_HASH,
         name,
-        role,
+        role: resolvedRole,
         managerId: resolvedManagerId,
         vbid: trimmedVbid, // vbid stored on User for all roles (including SUPER_ADMIN and S1_ADMIN)
         employeeProfile:
-          role === Role.S1_ADMIN || role === Role.SUPER_ADMIN
+          resolvedRole === Role.S1_ADMIN || resolvedRole === Role.SUPER_ADMIN
             ? undefined
             : {
                 create: {
                   teamId: teamId || null,
                   managerId: resolvedManagerId,
-                  level: level || null,
+                  level: normalizedLevel || null,
                   targetType: targetType || "REVENUE",
                   vbid: trimmedVbid, // Canonical vbid on EmployeeProfile for non-admin roles
                 },
@@ -448,62 +448,44 @@ export async function updateUserWithProfile(id, body, actor) {
       finalVbid = trimmedVbid;
     }
 
-    const targetRole = role ?? user.role;
-    const targetLevel =
+    const requestedTargetRole = role ?? user.role;
+    const storedOrRequestedLevel =
       level !== undefined ? level : (user.employeeProfile?.level ?? null);
+    const targetLevel = storedOrRequestedLevel || (
+      requestedTargetRole === Role.TEAM_LEAD
+        ? "L2"
+        : requestedTargetRole === Role.EMPLOYEE
+          ? "L4"
+          : null
+    );
     const targetTeamId =
       teamId !== undefined ? teamId : (user.employeeProfile?.teamId ?? null);
-    let resolvedManagerId =
-      managerId !== undefined ? managerId : (user.employeeProfile?.managerId ?? null);
-
-    // An L2's Head is determined by the destination team. Never preserve a
-    // Head from the previous team or trust a stale managerId from the browser.
     const normalizedTargetLevel = String(targetLevel || "").trim().toUpperCase();
-    const isL2Target =
-      normalizedTargetLevel === "L2" ||
-      (!normalizedTargetLevel && targetRole === Role.TEAM_LEAD);
-    if (isL2Target && targetTeamId) {
-      const teamHead = await resolveTeamHead(targetTeamId, {
-        excludeUserId: user.id,
-        allowMissing: true,
-      });
-      if (teamHead) resolvedManagerId = teamHead.id;
-      if (!resolvedManagerId) {
-        const error = new Error("A Head is required for the first L2 assigned to this team");
-        error.statusCode = 400;
-        throw error;
-      }
-    } else if (isL2Target && !targetTeamId) {
-      resolvedManagerId = null;
-    }
-    if (isL2Target && resolvedManagerId) {
-      const mgr = await prisma.user.findUnique({
-        where: { id: resolvedManagerId },
-        select: { role: true },
-      });
-      if (mgr && mgr.role !== Role.SUPER_ADMIN) {
-        resolvedManagerId = null;
-      }
-    }
+    const targetRole = [Role.S1_ADMIN, Role.SUPER_ADMIN].includes(requestedTargetRole)
+      ? requestedTargetRole
+      : roleForHierarchyLevel(normalizedTargetLevel, requestedTargetRole);
+    const requestedManagerId =
+      managerId !== undefined ? managerId : (user.employeeProfile?.managerId ?? user.managerId ?? null);
+    const resolvedManagerId = [Role.S1_ADMIN, Role.SUPER_ADMIN].includes(targetRole)
+      ? null
+      : await resolveHierarchyManager({
+          teamId: targetTeamId,
+          level: normalizedTargetLevel,
+          requestedManagerId,
+          excludeUserId: user.id,
+        });
 
-    // A team-assigned L3/L4 must never be saved without a manager. This keeps
-    // list, preview, authorization and login hierarchy views consistent.
-    if (targetTeamId && !isL2Target && !resolvedManagerId) {
-      const error = new Error("Manager is required when assigning this member to a team");
-      error.statusCode = 400;
-      throw error;
-    }
-
-    if (targetTeamId && resolvedManagerId && !isL2Target) {
-      const managerProfile = await prisma.employeeProfile.findUnique({
-        where: { id: resolvedManagerId },
-        select: { teamId: true },
+    if (
+      user.employeeProfile &&
+      (targetTeamId !== user.employeeProfile.teamId ||
+        normalizedTargetLevel !== String(user.employeeProfile.level || "").trim().toUpperCase())
+    ) {
+      await assertDirectReportsRemainValid({
+        userId: user.id,
+        currentTeamId: user.employeeProfile.teamId,
+        targetTeamId,
+        targetLevel: normalizedTargetLevel,
       });
-      if (managerProfile?.teamId && managerProfile.teamId !== targetTeamId) {
-        const error = new Error("Selected manager must belong to the same team");
-        error.statusCode = 400;
-        throw error;
-      }
     }
 
     await assertValidManagerAssignment({
@@ -511,6 +493,9 @@ export async function updateUserWithProfile(id, body, actor) {
       level: targetLevel,
       role: targetRole,
     });
+
+    // Level is canonical: L2/L3 are Team Leads and L4 is an Employee.
+    data.role = targetRole;
 
     employeeProfileUpdate =
       targetRole === Role.SUPER_ADMIN || targetRole === Role.S1_ADMIN
@@ -531,9 +516,9 @@ export async function updateUserWithProfile(id, body, actor) {
         : {
             upsert: {
               create: {
-                teamId: teamId || null,
+                teamId: targetTeamId,
                 managerId: resolvedManagerId || null,
-                level: level || null,
+                level: normalizedTargetLevel || null,
                 vbid: finalVbid,
                 targetType: targetType || "REVENUE",
                 comment: user.employeeProfile?.comment ?? null,
@@ -547,9 +532,9 @@ export async function updateUserWithProfile(id, body, actor) {
                     : user.employeeProfile?.deletedAt || null,
               },
               update: {
-                teamId: teamId !== undefined ? teamId : (user.employeeProfile?.teamId ?? null),
+                teamId: targetTeamId,
                 managerId: resolvedManagerId,
-                level: level !== undefined ? level : (user.employeeProfile?.level ?? null),
+                level: normalizedTargetLevel || null,
                 vbid: finalVbid,
                 targetType: targetType !== undefined ? targetType : (user.employeeProfile?.targetType ?? "REVENUE"),
                 comment: user.employeeProfile?.comment ?? null,
@@ -571,14 +556,7 @@ export async function updateUserWithProfile(id, body, actor) {
     }
 
     // Keep User.managerId in sync with profile (used by hierarchy queries)
-    const effectiveRole = role ?? user.role;
-    if (
-      (managerId !== undefined || isL2Target) &&
-      effectiveRole !== Role.SUPER_ADMIN &&
-      effectiveRole !== Role.S1_ADMIN
-    ) {
-      data.managerId = resolvedManagerId;
-    }
+    data.managerId = resolvedManagerId;
   }
 
   if (actor.role === Role.S1_ADMIN && user.employeeProfile && comment !== undefined) {

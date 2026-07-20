@@ -1,7 +1,7 @@
 import express from "express";
 import { Role } from "../generated/client/index.js";
 import { authenticate, requireRole } from "../middleware/auth.js";
-import { cacheMiddleware } from "../middleware/cache.js";
+import { cacheMiddleware, clearCacheMiddleware } from "../middleware/cache.js";
 import {
   listTeamsWithMembers,
   createTeam,
@@ -19,6 +19,7 @@ import {
 const router = express.Router();
 
 router.use(authenticate);
+router.use(clearCacheMiddleware);
 
 router.get("/", requireRole(Role.SUPER_ADMIN, Role.S1_ADMIN), cacheMiddleware(60), async (req, res, next) => {
   try {
@@ -176,4 +177,3 @@ router.post(
 );
 
 export default router;
-

@@ -130,6 +130,7 @@ exports.Prisma.TeamScalarFieldEnum = {
   achievedValue: 'achievedValue',
   targetType: 'targetType',
   isActive: 'isActive',
+  headId: 'headId',
   createdAt: 'createdAt',
   updatedAt: 'updatedAt'
 };

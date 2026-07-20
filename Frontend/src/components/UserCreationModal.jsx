@@ -40,7 +40,7 @@ const UserCreationModal = ({ isOpen, onClose, editingUser, onSuccess, teams = []
         add({ userId: team.headId, name: team.headName || "Team Head" });
       }
       (team.leads || []).forEach((lead) => {
-        const lvl = (lead.level || "L2").toUpperCase();
+        const lvl = (lead.level || "").toUpperCase();
         if (assigneeLevel === "L3" && lvl === "L2") add(lead);
         else if (assigneeLevel === "L4" && (lvl === "L2" || lvl === "L3")) add(lead);
       });
@@ -54,19 +54,30 @@ const UserCreationModal = ({ isOpen, onClose, editingUser, onSuccess, teams = []
       if (String(m.team?.id) !== String(teamId) && String(m.teamId) !== String(teamId)) return;
       const lvl = (m.level || "").toUpperCase();
       if (assigneeLevel === "L4") {
-        if (lvl === "L3" || lvl === "L2" || m.role === "TEAM_LEAD") {
+        if (lvl === "L3" || lvl === "L2") {
           add({ userId: m.id, name: m.name });
         }
       } else if (assigneeLevel === "L3") {
-        if (m.role === "TEAM_LEAD" || lvl === "L2") add({ userId: m.id, name: m.name });
+        if (lvl === "L2") add({ userId: m.id, name: m.name });
       }
     });
 
     return Array.from(byId.values()).sort((a, b) => a.name.localeCompare(b.name));
   };
 
+  const selectManagerFor = (teamId, level, currentManagerId = "") => {
+    const options = getManagerOptions(teamId, level);
+    if (currentManagerId && options.some(
+      (manager) => String(manager.userId) === String(currentManagerId),
+    )) {
+      return currentManagerId;
+    }
+    return options.length === 1 ? options[0].userId : "";
+  };
+
   useEffect(() => {
     if (editingUser) {
+      const initialTeamId = teams.length === 1 ? teams[0].id : "";
       setFormData({
         name: editingUser.name,
         email: editingUser.email,
@@ -85,8 +96,8 @@ const UserCreationModal = ({ isOpen, onClose, editingUser, onSuccess, teams = []
         name: "",
         email: "",
         role: defaultRole,
-        teamId: teams.length === 1 ? teams[0].id : "",
-        managerId: "",
+        teamId: initialTeamId,
+        managerId: selectManagerFor(initialTeamId, defaultLevel),
         level: defaultLevel,
         vbid: "",
         isActive: true,
@@ -119,9 +130,7 @@ const UserCreationModal = ({ isOpen, onClose, editingUser, onSuccess, teams = []
       ...prev,
       role: newRole,
       level: newLevel,
-      managerId: newLevel === "L2"
-        ? (teams.find((team) => String(team.id) === String(prev.teamId))?.headId || "")
-        : prev.managerId,
+      managerId: selectManagerFor(prev.teamId, newLevel, prev.managerId),
     }));
   };
 
@@ -132,7 +141,7 @@ const UserCreationModal = ({ isOpen, onClose, editingUser, onSuccess, teams = []
     try {
       const payload = { ...formData };
       const lvl = (payload.level || "").toUpperCase();
-      if (payload.teamId && lvl !== "L2" && !payload.managerId) {
+      if (payload.teamId && !payload.managerId) {
         throw new Error("Select a manager for this team before saving.");
       }
       const url = editingUser ? `/users/${editingUser.id}` : "/users";
@@ -253,13 +262,10 @@ const UserCreationModal = ({ isOpen, onClose, editingUser, onSuccess, teams = []
                 onChange={(e) => {
                   const newTeamId = e.target.value;
                   const level = (formData.level || "L4").toUpperCase();
-                  const managerOptions = getManagerOptions(newTeamId, level);
                   setFormData({ 
                     ...formData, 
                     teamId: newTeamId, 
-                    managerId: level === "L2"
-                      ? (teams.find((team) => String(team.id) === String(newTeamId))?.headId || "")
-                      : (managerOptions.length === 1 ? managerOptions[0].userId : ""),
+                    managerId: selectManagerFor(newTeamId, level, formData.managerId),
                   });
                 }}
                 className="w-full px-3 py-2 border border-slate-300 rounded-xl focus:ring-2 focus:ring-blue-500 focus:border-blue-500 outline-none transition-all bg-white"

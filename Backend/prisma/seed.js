@@ -139,12 +139,14 @@ async function ensureProfile(db, { userId, teamId, managerId, level, vbid }) {
   }
 }
 
-async function ensureTeam(db, name, color) {
+async function ensureTeam(db, name, color, headId) {
   let team = await db.team.findUnique({ where: { name } });
   if (!team) {
     team = await db.team.create({
-      data: { name, color: color || null, yearlyTarget: 0 },
+      data: { name, color: color || null, yearlyTarget: 0, headId },
     });
+  } else if (team.headId !== headId) {
+    team = await db.team.update({ where: { id: team.id }, data: { headId } });
   }
   return team;
 }
@@ -266,7 +268,7 @@ async function main() {
 
     if (l1.teams && Array.isArray(l1.teams)) {
       for (const t of l1.teams) {
-        const team = await ensureTeam(db, t.name, t.color);
+        const team = await ensureTeam(db, t.name, t.color, l1User.id);
         if (t.leads) {
           await processLeads(db, t.leads, team.id, l1User.id, passwordHash);
         }

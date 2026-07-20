@@ -1782,6 +1782,7 @@ export namespace Prisma {
   export type UserCountOutputType = {
     refreshTokens: number
     leadEmployees: number
+    headedTeams: number
     subordinates: number
     auditLogs: number
     placementImportBatches: number
@@ -1793,6 +1794,7 @@ export namespace Prisma {
   export type UserCountOutputTypeSelect<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
     refreshTokens?: boolean | UserCountOutputTypeCountRefreshTokensArgs
     leadEmployees?: boolean | UserCountOutputTypeCountLeadEmployeesArgs
+    headedTeams?: boolean | UserCountOutputTypeCountHeadedTeamsArgs
     subordinates?: boolean | UserCountOutputTypeCountSubordinatesArgs
     auditLogs?: boolean | UserCountOutputTypeCountAuditLogsArgs
     placementImportBatches?: boolean | UserCountOutputTypeCountPlacementImportBatchesArgs
@@ -1824,6 +1826,13 @@ export namespace Prisma {
    */
   export type UserCountOutputTypeCountLeadEmployeesArgs<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
     where?: EmployeeProfileWhereInput
+  }
+
+  /**
+   * UserCountOutputType without action
+   */
+  export type UserCountOutputTypeCountHeadedTeamsArgs<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
+    where?: TeamWhereInput
   }
 
   /**
@@ -1943,6 +1952,7 @@ export namespace Prisma {
     achievedValue: Decimal | null
     targetType: $Enums.TargetType | null
     isActive: boolean | null
+    headId: string | null
     createdAt: Date | null
     updatedAt: Date | null
   }
@@ -1955,6 +1965,7 @@ export namespace Prisma {
     achievedValue: Decimal | null
     targetType: $Enums.TargetType | null
     isActive: boolean | null
+    headId: string | null
     createdAt: Date | null
     updatedAt: Date | null
   }
@@ -1967,6 +1978,7 @@ export namespace Prisma {
     achievedValue: number
     targetType: number
     isActive: number
+    headId: number
     createdAt: number
     updatedAt: number
     _all: number
@@ -1991,6 +2003,7 @@ export namespace Prisma {
     achievedValue?: true
     targetType?: true
     isActive?: true
+    headId?: true
     createdAt?: true
     updatedAt?: true
   }
@@ -2003,6 +2016,7 @@ export namespace Prisma {
     achievedValue?: true
     targetType?: true
     isActive?: true
+    headId?: true
     createdAt?: true
     updatedAt?: true
   }
@@ -2015,6 +2029,7 @@ export namespace Prisma {
     achievedValue?: true
     targetType?: true
     isActive?: true
+    headId?: true
     createdAt?: true
     updatedAt?: true
     _all?: true
@@ -2114,6 +2129,7 @@ export namespace Prisma {
     achievedValue: Decimal
     targetType: $Enums.TargetType
     isActive: boolean
+    headId: string | null
     createdAt: Date
     updatedAt: Date
     _count: TeamCountAggregateOutputType | null
@@ -2145,8 +2161,10 @@ export namespace Prisma {
     achievedValue?: boolean
     targetType?: boolean
     isActive?: boolean
+    headId?: boolean
     createdAt?: boolean
     updatedAt?: boolean
+    head?: boolean | Team$headArgs<ExtArgs>
     employees?: boolean | Team$employeesArgs<ExtArgs>
     _count?: boolean | TeamCountOutputTypeDefaultArgs<ExtArgs>
   }, ExtArgs["result"]["team"]>
@@ -2159,8 +2177,10 @@ export namespace Prisma {
     achievedValue?: boolean
     targetType?: boolean
     isActive?: boolean
+    headId?: boolean
     createdAt?: boolean
     updatedAt?: boolean
+    head?: boolean | Team$headArgs<ExtArgs>
   }, ExtArgs["result"]["team"]>
 
   export type TeamSelectScalar = {
@@ -2171,19 +2191,24 @@ export namespace Prisma {
     achievedValue?: boolean
     targetType?: boolean
     isActive?: boolean
+    headId?: boolean
     createdAt?: boolean
     updatedAt?: boolean
   }
 
   export type TeamInclude<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
+    head?: boolean | Team$headArgs<ExtArgs>
     employees?: boolean | Team$employeesArgs<ExtArgs>
     _count?: boolean | TeamCountOutputTypeDefaultArgs<ExtArgs>
   }
-  export type TeamIncludeCreateManyAndReturn<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {}
+  export type TeamIncludeCreateManyAndReturn<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
+    head?: boolean | Team$headArgs<ExtArgs>
+  }
 
   export type $TeamPayload<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
     name: "Team"
     objects: {
+      head: Prisma.$UserPayload<ExtArgs> | null
       employees: Prisma.$EmployeeProfilePayload<ExtArgs>[]
     }
     scalars: $Extensions.GetPayloadResult<{
@@ -2194,6 +2219,7 @@ export namespace Prisma {
       achievedValue: Prisma.Decimal
       targetType: $Enums.TargetType
       isActive: boolean
+      headId: string | null
       createdAt: Date
       updatedAt: Date
     }, ExtArgs["result"]["team"]>
@@ -2560,6 +2586,7 @@ export namespace Prisma {
    */
   export interface Prisma__TeamClient<T, Null = never, ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> extends Prisma.PrismaPromise<T> {
     readonly [Symbol.toStringTag]: "PrismaPromise"
+    head<T extends Team$headArgs<ExtArgs> = {}>(args?: Subset<T, Team$headArgs<ExtArgs>>): Prisma__UserClient<$Result.GetResult<Prisma.$UserPayload<ExtArgs>, T, "findUniqueOrThrow"> | null, null, ExtArgs>
     employees<T extends Team$employeesArgs<ExtArgs> = {}>(args?: Subset<T, Team$employeesArgs<ExtArgs>>): Prisma.PrismaPromise<$Result.GetResult<Prisma.$EmployeeProfilePayload<ExtArgs>, T, "findMany"> | Null>
     /**
      * Attaches callbacks for the resolution and/or rejection of the Promise.
@@ -2597,6 +2624,7 @@ export namespace Prisma {
     readonly achievedValue: FieldRef<"Team", 'Decimal'>
     readonly targetType: FieldRef<"Team", 'TargetType'>
     readonly isActive: FieldRef<"Team", 'Boolean'>
+    readonly headId: FieldRef<"Team", 'String'>
     readonly createdAt: FieldRef<"Team", 'DateTime'>
     readonly updatedAt: FieldRef<"Team", 'DateTime'>
   }
@@ -2820,6 +2848,10 @@ export namespace Prisma {
      */
     data: TeamCreateManyInput | TeamCreateManyInput[]
     skipDuplicates?: boolean
+    /**
+     * Choose, which related nodes to fetch as well
+     */
+    include?: TeamIncludeCreateManyAndReturn<ExtArgs> | null
   }
 
   /**
@@ -2910,6 +2942,21 @@ export namespace Prisma {
      * Filter which Teams to delete
      */
     where?: TeamWhereInput
+  }
+
+  /**
+   * Team.head
+   */
+  export type Team$headArgs<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
+    /**
+     * Select specific fields to fetch from the User
+     */
+    select?: UserSelect<ExtArgs> | null
+    /**
+     * Choose, which related nodes to fetch as well
+     */
+    include?: UserInclude<ExtArgs> | null
+    where?: UserWhereInput
   }
 
   /**
@@ -3178,6 +3225,7 @@ export namespace Prisma {
     employeeProfile?: boolean | User$employeeProfileArgs<ExtArgs>
     refreshTokens?: boolean | User$refreshTokensArgs<ExtArgs>
     leadEmployees?: boolean | User$leadEmployeesArgs<ExtArgs>
+    headedTeams?: boolean | User$headedTeamsArgs<ExtArgs>
     manager?: boolean | User$managerArgs<ExtArgs>
     subordinates?: boolean | User$subordinatesArgs<ExtArgs>
     auditLogs?: boolean | User$auditLogsArgs<ExtArgs>
@@ -3226,6 +3274,7 @@ export namespace Prisma {
     employeeProfile?: boolean | User$employeeProfileArgs<ExtArgs>
     refreshTokens?: boolean | User$refreshTokensArgs<ExtArgs>
     leadEmployees?: boolean | User$leadEmployeesArgs<ExtArgs>
+    headedTeams?: boolean | User$headedTeamsArgs<ExtArgs>
     manager?: boolean | User$managerArgs<ExtArgs>
     subordinates?: boolean | User$subordinatesArgs<ExtArgs>
     auditLogs?: boolean | User$auditLogsArgs<ExtArgs>
@@ -3246,6 +3295,7 @@ export namespace Prisma {
       employeeProfile: Prisma.$EmployeeProfilePayload<ExtArgs> | null
       refreshTokens: Prisma.$RefreshTokenPayload<ExtArgs>[]
       leadEmployees: Prisma.$EmployeeProfilePayload<ExtArgs>[]
+      headedTeams: Prisma.$TeamPayload<ExtArgs>[]
       manager: Prisma.$UserPayload<ExtArgs> | null
       subordinates: Prisma.$UserPayload<ExtArgs>[]
       auditLogs: Prisma.$AuditLogPayload<ExtArgs>[]
@@ -3639,6 +3689,7 @@ export namespace Prisma {
     employeeProfile<T extends User$employeeProfileArgs<ExtArgs> = {}>(args?: Subset<T, User$employeeProfileArgs<ExtArgs>>): Prisma__EmployeeProfileClient<$Result.GetResult<Prisma.$EmployeeProfilePayload<ExtArgs>, T, "findUniqueOrThrow"> | null, null, ExtArgs>
     refreshTokens<T extends User$refreshTokensArgs<ExtArgs> = {}>(args?: Subset<T, User$refreshTokensArgs<ExtArgs>>): Prisma.PrismaPromise<$Result.GetResult<Prisma.$RefreshTokenPayload<ExtArgs>, T, "findMany"> | Null>
     leadEmployees<T extends User$leadEmployeesArgs<ExtArgs> = {}>(args?: Subset<T, User$leadEmployeesArgs<ExtArgs>>): Prisma.PrismaPromise<$Result.GetResult<Prisma.$EmployeeProfilePayload<ExtArgs>, T, "findMany"> | Null>
+    headedTeams<T extends User$headedTeamsArgs<ExtArgs> = {}>(args?: Subset<T, User$headedTeamsArgs<ExtArgs>>): Prisma.PrismaPromise<$Result.GetResult<Prisma.$TeamPayload<ExtArgs>, T, "findMany"> | Null>
     manager<T extends User$managerArgs<ExtArgs> = {}>(args?: Subset<T, User$managerArgs<ExtArgs>>): Prisma__UserClient<$Result.GetResult<Prisma.$UserPayload<ExtArgs>, T, "findUniqueOrThrow"> | null, null, ExtArgs>
     subordinates<T extends User$subordinatesArgs<ExtArgs> = {}>(args?: Subset<T, User$subordinatesArgs<ExtArgs>>): Prisma.PrismaPromise<$Result.GetResult<Prisma.$UserPayload<ExtArgs>, T, "findMany"> | Null>
     auditLogs<T extends User$auditLogsArgs<ExtArgs> = {}>(args?: Subset<T, User$auditLogsArgs<ExtArgs>>): Prisma.PrismaPromise<$Result.GetResult<Prisma.$AuditLogPayload<ExtArgs>, T, "findMany"> | Null>
@@ -4059,6 +4110,26 @@ export namespace Prisma {
     take?: number
     skip?: number
     distinct?: EmployeeProfileScalarFieldEnum | EmployeeProfileScalarFieldEnum[]
+  }
+
+  /**
+   * User.headedTeams
+   */
+  export type User$headedTeamsArgs<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
+    /**
+     * Select specific fields to fetch from the Team
+     */
+    select?: TeamSelect<ExtArgs> | null
+    /**
+     * Choose, which related nodes to fetch as well
+     */
+    include?: TeamInclude<ExtArgs> | null
+    where?: TeamWhereInput
+    orderBy?: TeamOrderByWithRelationInput | TeamOrderByWithRelationInput[]
+    cursor?: TeamWhereUniqueInput
+    take?: number
+    skip?: number
+    distinct?: TeamScalarFieldEnum | TeamScalarFieldEnum[]
   }
 
   /**
@@ -13781,6 +13852,7 @@ export namespace Prisma {
     achievedValue: 'achievedValue',
     targetType: 'targetType',
     isActive: 'isActive',
+    headId: 'headId',
     createdAt: 'createdAt',
     updatedAt: 'updatedAt'
   };
@@ -14171,8 +14243,10 @@ export namespace Prisma {
     achievedValue?: DecimalFilter<"Team"> | Decimal | DecimalJsLike | number | string
     targetType?: EnumTargetTypeFilter<"Team"> | $Enums.TargetType
     isActive?: BoolFilter<"Team"> | boolean
+    headId?: StringNullableFilter<"Team"> | string | null
     createdAt?: DateTimeFilter<"Team"> | Date | string
     updatedAt?: DateTimeFilter<"Team"> | Date | string
+    head?: XOR<UserNullableRelationFilter, UserWhereInput> | null
     employees?: EmployeeProfileListRelationFilter
   }
 
@@ -14184,8 +14258,10 @@ export namespace Prisma {
     achievedValue?: SortOrder
     targetType?: SortOrder
     isActive?: SortOrder
+    headId?: SortOrderInput | SortOrder
     createdAt?: SortOrder
     updatedAt?: SortOrder
+    head?: UserOrderByWithRelationInput
     employees?: EmployeeProfileOrderByRelationAggregateInput
   }
 
@@ -14200,8 +14276,10 @@ export namespace Prisma {
     achievedValue?: DecimalFilter<"Team"> | Decimal | DecimalJsLike | number | string
     targetType?: EnumTargetTypeFilter<"Team"> | $Enums.TargetType
     isActive?: BoolFilter<"Team"> | boolean
+    headId?: StringNullableFilter<"Team"> | string | null
     createdAt?: DateTimeFilter<"Team"> | Date | string
     updatedAt?: DateTimeFilter<"Team"> | Date | string
+    head?: XOR<UserNullableRelationFilter, UserWhereInput> | null
     employees?: EmployeeProfileListRelationFilter
   }, "id" | "name">
 
@@ -14213,6 +14291,7 @@ export namespace Prisma {
     achievedValue?: SortOrder
     targetType?: SortOrder
     isActive?: SortOrder
+    headId?: SortOrderInput | SortOrder
     createdAt?: SortOrder
     updatedAt?: SortOrder
     _count?: TeamCountOrderByAggregateInput
@@ -14233,6 +14312,7 @@ export namespace Prisma {
     achievedValue?: DecimalWithAggregatesFilter<"Team"> | Decimal | DecimalJsLike | number | string
     targetType?: EnumTargetTypeWithAggregatesFilter<"Team"> | $Enums.TargetType
     isActive?: BoolWithAggregatesFilter<"Team"> | boolean
+    headId?: StringNullableWithAggregatesFilter<"Team"> | string | null
     createdAt?: DateTimeWithAggregatesFilter<"Team"> | Date | string
     updatedAt?: DateTimeWithAggregatesFilter<"Team"> | Date | string
   }
@@ -14257,6 +14337,7 @@ export namespace Prisma {
     employeeProfile?: XOR<EmployeeProfileNullableRelationFilter, EmployeeProfileWhereInput> | null
     refreshTokens?: RefreshTokenListRelationFilter
     leadEmployees?: EmployeeProfileListRelationFilter
+    headedTeams?: TeamListRelationFilter
     manager?: XOR<UserNullableRelationFilter, UserWhereInput> | null
     subordinates?: UserListRelationFilter
     auditLogs?: AuditLogListRelationFilter
@@ -14284,6 +14365,7 @@ export namespace Prisma {
     employeeProfile?: EmployeeProfileOrderByWithRelationInput
     refreshTokens?: RefreshTokenOrderByRelationAggregateInput
     leadEmployees?: EmployeeProfileOrderByRelationAggregateInput
+    headedTeams?: TeamOrderByRelationAggregateInput
     manager?: UserOrderByWithRelationInput
     subordinates?: UserOrderByRelationAggregateInput
     auditLogs?: AuditLogOrderByRelationAggregateInput
@@ -14314,6 +14396,7 @@ export namespace Prisma {
     employeeProfile?: XOR<EmployeeProfileNullableRelationFilter, EmployeeProfileWhereInput> | null
     refreshTokens?: RefreshTokenListRelationFilter
     leadEmployees?: EmployeeProfileListRelationFilter
+    headedTeams?: TeamListRelationFilter
     manager?: XOR<UserNullableRelationFilter, UserWhereInput> | null
     subordinates?: UserListRelationFilter
     auditLogs?: AuditLogListRelationFilter
@@ -15246,6 +15329,7 @@ export namespace Prisma {
     isActive?: boolean
     createdAt?: Date | string
     updatedAt?: Date | string
+    head?: UserCreateNestedOneWithoutHeadedTeamsInput
     employees?: EmployeeProfileCreateNestedManyWithoutTeamInput
   }
 
@@ -15257,6 +15341,7 @@ export namespace Prisma {
     achievedValue?: Decimal | DecimalJsLike | number | string
     targetType?: $Enums.TargetType
     isActive?: boolean
+    headId?: string | null
     createdAt?: Date | string
     updatedAt?: Date | string
     employees?: EmployeeProfileUncheckedCreateNestedManyWithoutTeamInput
@@ -15272,6 +15357,7 @@ export namespace Prisma {
     isActive?: BoolFieldUpdateOperationsInput | boolean
     createdAt?: DateTimeFieldUpdateOperationsInput | Date | string
     updatedAt?: DateTimeFieldUpdateOperationsInput | Date | string
+    head?: UserUpdateOneWithoutHeadedTeamsNestedInput
     employees?: EmployeeProfileUpdateManyWithoutTeamNestedInput
   }
 
@@ -15283,6 +15369,7 @@ export namespace Prisma {
     achievedValue?: DecimalFieldUpdateOperationsInput | Decimal | DecimalJsLike | number | string
     targetType?: EnumTargetTypeFieldUpdateOperationsInput | $Enums.TargetType
     isActive?: BoolFieldUpdateOperationsInput | boolean
+    headId?: NullableStringFieldUpdateOperationsInput | string | null
     createdAt?: DateTimeFieldUpdateOperationsInput | Date | string
     updatedAt?: DateTimeFieldUpdateOperationsInput | Date | string
     employees?: EmployeeProfileUncheckedUpdateManyWithoutTeamNestedInput
@@ -15296,6 +15383,7 @@ export namespace Prisma {
     achievedValue?: Decimal | DecimalJsLike | number | string
     targetType?: $Enums.TargetType
     isActive?: boolean
+    headId?: string | null
     createdAt?: Date | string
     updatedAt?: Date | string
   }
@@ -15320,6 +15408,7 @@ export namespace Prisma {
     achievedValue?: DecimalFieldUpdateOperationsInput | Decimal | DecimalJsLike | number | string
     targetType?: EnumTargetTypeFieldUpdateOperationsInput | $Enums.TargetType
     isActive?: BoolFieldUpdateOperationsInput | boolean
+    headId?: NullableStringFieldUpdateOperationsInput | string | null
     createdAt?: DateTimeFieldUpdateOperationsInput | Date | string
     updatedAt?: DateTimeFieldUpdateOperationsInput | Date | string
   }
@@ -15340,6 +15429,7 @@ export namespace Prisma {
     employeeProfile?: EmployeeProfileCreateNestedOneWithoutUserInput
     refreshTokens?: RefreshTokenCreateNestedManyWithoutUserInput
     leadEmployees?: EmployeeProfileCreateNestedManyWithoutManagerInput
+    headedTeams?: TeamCreateNestedManyWithoutHeadInput
     manager?: UserCreateNestedOneWithoutSubordinatesInput
     subordinates?: UserCreateNestedManyWithoutManagerInput
     auditLogs?: AuditLogCreateNestedManyWithoutActorInput
@@ -15367,6 +15457,7 @@ export namespace Prisma {
     employeeProfile?: EmployeeProfileUncheckedCreateNestedOneWithoutUserInput
     refreshTokens?: RefreshTokenUncheckedCreateNestedManyWithoutUserInput
     leadEmployees?: EmployeeProfileUncheckedCreateNestedManyWithoutManagerInput
+    headedTeams?: TeamUncheckedCreateNestedManyWithoutHeadInput
     subordinates?: UserUncheckedCreateNestedManyWithoutManagerInput
     auditLogs?: AuditLogUncheckedCreateNestedManyWithoutActorInput
     placementImportBatches?: PlacementImportBatchUncheckedCreateNestedManyWithoutUploaderInput
@@ -15392,6 +15483,7 @@ export namespace Prisma {
     employeeProfile?: EmployeeProfileUpdateOneWithoutUserNestedInput
     refreshTokens?: RefreshTokenUpdateManyWithoutUserNestedInput
     leadEmployees?: EmployeeProfileUpdateManyWithoutManagerNestedInput
+    headedTeams?: TeamUpdateManyWithoutHeadNestedInput
     manager?: UserUpdateOneWithoutSubordinatesNestedInput
     subordinates?: UserUpdateManyWithoutManagerNestedInput
     auditLogs?: AuditLogUpdateManyWithoutActorNestedInput
@@ -15419,6 +15511,7 @@ export namespace Prisma {
     employeeProfile?: EmployeeProfileUncheckedUpdateOneWithoutUserNestedInput
     refreshTokens?: RefreshTokenUncheckedUpdateManyWithoutUserNestedInput
     leadEmployees?: EmployeeProfileUncheckedUpdateManyWithoutManagerNestedInput
+    headedTeams?: TeamUncheckedUpdateManyWithoutHeadNestedInput
     subordinates?: UserUncheckedUpdateManyWithoutManagerNestedInput
     auditLogs?: AuditLogUncheckedUpdateManyWithoutActorNestedInput
     placementImportBatches?: PlacementImportBatchUncheckedUpdateManyWithoutUploaderNestedInput
@@ -16543,6 +16636,11 @@ export namespace Prisma {
     not?: NestedDateTimeFilter<$PrismaModel> | Date | string
   }
 
+  export type UserNullableRelationFilter = {
+    is?: UserWhereInput | null
+    isNot?: UserWhereInput | null
+  }
+
   export type EmployeeProfileListRelationFilter = {
     every?: EmployeeProfileWhereInput
     some?: EmployeeProfileWhereInput
@@ -16566,6 +16664,7 @@ export namespace Prisma {
     achievedValue?: SortOrder
     targetType?: SortOrder
     isActive?: SortOrder
+    headId?: SortOrder
     createdAt?: SortOrder
     updatedAt?: SortOrder
   }
@@ -16583,6 +16682,7 @@ export namespace Prisma {
     achievedValue?: SortOrder
     targetType?: SortOrder
     isActive?: SortOrder
+    headId?: SortOrder
     createdAt?: SortOrder
     updatedAt?: SortOrder
   }
@@ -16595,6 +16695,7 @@ export namespace Prisma {
     achievedValue?: SortOrder
     targetType?: SortOrder
     isActive?: SortOrder
+    headId?: SortOrder
     createdAt?: SortOrder
     updatedAt?: SortOrder
   }
@@ -16706,9 +16807,10 @@ export namespace Prisma {
     none?: RefreshTokenWhereInput
   }
 
-  export type UserNullableRelationFilter = {
-    is?: UserWhereInput | null
-    isNot?: UserWhereInput | null
+  export type TeamListRelationFilter = {
+    every?: TeamWhereInput
+    some?: TeamWhereInput
+    none?: TeamWhereInput
   }
 
   export type UserListRelationFilter = {
@@ -16753,6 +16855,10 @@ export namespace Prisma {
   }
 
   export type RefreshTokenOrderByRelationAggregateInput = {
+    _count?: SortOrder
+  }
+
+  export type TeamOrderByRelationAggregateInput = {
     _count?: SortOrder
   }
 
@@ -17537,6 +17643,12 @@ export namespace Prisma {
     updatedAt?: SortOrder
   }
 
+  export type UserCreateNestedOneWithoutHeadedTeamsInput = {
+    create?: XOR<UserCreateWithoutHeadedTeamsInput, UserUncheckedCreateWithoutHeadedTeamsInput>
+    connectOrCreate?: UserCreateOrConnectWithoutHeadedTeamsInput
+    connect?: UserWhereUniqueInput
+  }
+
   export type EmployeeProfileCreateNestedManyWithoutTeamInput = {
     create?: XOR<EmployeeProfileCreateWithoutTeamInput, EmployeeProfileUncheckedCreateWithoutTeamInput> | EmployeeProfileCreateWithoutTeamInput[] | EmployeeProfileUncheckedCreateWithoutTeamInput[]
     connectOrCreate?: EmployeeProfileCreateOrConnectWithoutTeamInput | EmployeeProfileCreateOrConnectWithoutTeamInput[]
@@ -17577,6 +17689,16 @@ export namespace Prisma {
 
   export type DateTimeFieldUpdateOperationsInput = {
     set?: Date | string
+  }
+
+  export type UserUpdateOneWithoutHeadedTeamsNestedInput = {
+    create?: XOR<UserCreateWithoutHeadedTeamsInput, UserUncheckedCreateWithoutHeadedTeamsInput>
+    connectOrCreate?: UserCreateOrConnectWithoutHeadedTeamsInput
+    upsert?: UserUpsertWithoutHeadedTeamsInput
+    disconnect?: UserWhereInput | boolean
+    delete?: UserWhereInput | boolean
+    connect?: UserWhereUniqueInput
+    update?: XOR<XOR<UserUpdateToOneWithWhereWithoutHeadedTeamsInput, UserUpdateWithoutHeadedTeamsInput>, UserUncheckedUpdateWithoutHeadedTeamsInput>
   }
 
   export type EmployeeProfileUpdateManyWithoutTeamNestedInput = {
@@ -17625,6 +17747,13 @@ export namespace Prisma {
     connectOrCreate?: EmployeeProfileCreateOrConnectWithoutManagerInput | EmployeeProfileCreateOrConnectWithoutManagerInput[]
     createMany?: EmployeeProfileCreateManyManagerInputEnvelope
     connect?: EmployeeProfileWhereUniqueInput | EmployeeProfileWhereUniqueInput[]
+  }
+
+  export type TeamCreateNestedManyWithoutHeadInput = {
+    create?: XOR<TeamCreateWithoutHeadInput, TeamUncheckedCreateWithoutHeadInput> | TeamCreateWithoutHeadInput[] | TeamUncheckedCreateWithoutHeadInput[]
+    connectOrCreate?: TeamCreateOrConnectWithoutHeadInput | TeamCreateOrConnectWithoutHeadInput[]
+    createMany?: TeamCreateManyHeadInputEnvelope
+    connect?: TeamWhereUniqueInput | TeamWhereUniqueInput[]
   }
 
   export type UserCreateNestedOneWithoutSubordinatesInput = {
@@ -17699,6 +17828,13 @@ export namespace Prisma {
     connectOrCreate?: EmployeeProfileCreateOrConnectWithoutManagerInput | EmployeeProfileCreateOrConnectWithoutManagerInput[]
     createMany?: EmployeeProfileCreateManyManagerInputEnvelope
     connect?: EmployeeProfileWhereUniqueInput | EmployeeProfileWhereUniqueInput[]
+  }
+
+  export type TeamUncheckedCreateNestedManyWithoutHeadInput = {
+    create?: XOR<TeamCreateWithoutHeadInput, TeamUncheckedCreateWithoutHeadInput> | TeamCreateWithoutHeadInput[] | TeamUncheckedCreateWithoutHeadInput[]
+    connectOrCreate?: TeamCreateOrConnectWithoutHeadInput | TeamCreateOrConnectWithoutHeadInput[]
+    createMany?: TeamCreateManyHeadInputEnvelope
+    connect?: TeamWhereUniqueInput | TeamWhereUniqueInput[]
   }
 
   export type UserUncheckedCreateNestedManyWithoutManagerInput = {
@@ -17789,6 +17925,20 @@ export namespace Prisma {
     update?: EmployeeProfileUpdateWithWhereUniqueWithoutManagerInput | EmployeeProfileUpdateWithWhereUniqueWithoutManagerInput[]
     updateMany?: EmployeeProfileUpdateManyWithWhereWithoutManagerInput | EmployeeProfileUpdateManyWithWhereWithoutManagerInput[]
     deleteMany?: EmployeeProfileScalarWhereInput | EmployeeProfileScalarWhereInput[]
+  }
+
+  export type TeamUpdateManyWithoutHeadNestedInput = {
+    create?: XOR<TeamCreateWithoutHeadInput, TeamUncheckedCreateWithoutHeadInput> | TeamCreateWithoutHeadInput[] | TeamUncheckedCreateWithoutHeadInput[]
+    connectOrCreate?: TeamCreateOrConnectWithoutHeadInput | TeamCreateOrConnectWithoutHeadInput[]
+    upsert?: TeamUpsertWithWhereUniqueWithoutHeadInput | TeamUpsertWithWhereUniqueWithoutHeadInput[]
+    createMany?: TeamCreateManyHeadInputEnvelope
+    set?: TeamWhereUniqueInput | TeamWhereUniqueInput[]
+    disconnect?: TeamWhereUniqueInput | TeamWhereUniqueInput[]
+    delete?: TeamWhereUniqueInput | TeamWhereUniqueInput[]
+    connect?: TeamWhereUniqueInput | TeamWhereUniqueInput[]
+    update?: TeamUpdateWithWhereUniqueWithoutHeadInput | TeamUpdateWithWhereUniqueWithoutHeadInput[]
+    updateMany?: TeamUpdateManyWithWhereWithoutHeadInput | TeamUpdateManyWithWhereWithoutHeadInput[]
+    deleteMany?: TeamScalarWhereInput | TeamScalarWhereInput[]
   }
 
   export type UserUpdateOneWithoutSubordinatesNestedInput = {
@@ -17931,6 +18081,20 @@ export namespace Prisma {
     update?: EmployeeProfileUpdateWithWhereUniqueWithoutManagerInput | EmployeeProfileUpdateWithWhereUniqueWithoutManagerInput[]
     updateMany?: EmployeeProfileUpdateManyWithWhereWithoutManagerInput | EmployeeProfileUpdateManyWithWhereWithoutManagerInput[]
     deleteMany?: EmployeeProfileScalarWhereInput | EmployeeProfileScalarWhereInput[]
+  }
+
+  export type TeamUncheckedUpdateManyWithoutHeadNestedInput = {
+    create?: XOR<TeamCreateWithoutHeadInput, TeamUncheckedCreateWithoutHeadInput> | TeamCreateWithoutHeadInput[] | TeamUncheckedCreateWithoutHeadInput[]
+    connectOrCreate?: TeamCreateOrConnectWithoutHeadInput | TeamCreateOrConnectWithoutHeadInput[]
+    upsert?: TeamUpsertWithWhereUniqueWithoutHeadInput | TeamUpsertWithWhereUniqueWithoutHeadInput[]
+    createMany?: TeamCreateManyHeadInputEnvelope
+    set?: TeamWhereUniqueInput | TeamWhereUniqueInput[]
+    disconnect?: TeamWhereUniqueInput | TeamWhereUniqueInput[]
+    delete?: TeamWhereUniqueInput | TeamWhereUniqueInput[]
+    connect?: TeamWhereUniqueInput | TeamWhereUniqueInput[]
+    update?: TeamUpdateWithWhereUniqueWithoutHeadInput | TeamUpdateWithWhereUniqueWithoutHeadInput[]
+    updateMany?: TeamUpdateManyWithWhereWithoutHeadInput | TeamUpdateManyWithWhereWithoutHeadInput[]
+    deleteMany?: TeamScalarWhereInput | TeamScalarWhereInput[]
   }
 
   export type UserUncheckedUpdateManyWithoutManagerNestedInput = {
@@ -18636,6 +18800,63 @@ export namespace Prisma {
     not?: InputJsonValue | JsonFieldRefInput<$PrismaModel> | JsonNullValueFilter
   }
 
+  export type UserCreateWithoutHeadedTeamsInput = {
+    id?: string
+    email: string
+    entraObjectId?: string | null
+    passwordHash: string
+    name: string
+    vbid?: string | null
+    role: $Enums.Role
+    isActive?: boolean
+    createdAt?: Date | string
+    updatedAt?: Date | string
+    mfaSecret?: string | null
+    mfaEnabled?: boolean
+    employeeProfile?: EmployeeProfileCreateNestedOneWithoutUserInput
+    refreshTokens?: RefreshTokenCreateNestedManyWithoutUserInput
+    leadEmployees?: EmployeeProfileCreateNestedManyWithoutManagerInput
+    manager?: UserCreateNestedOneWithoutSubordinatesInput
+    subordinates?: UserCreateNestedManyWithoutManagerInput
+    auditLogs?: AuditLogCreateNestedManyWithoutActorInput
+    placementImportBatches?: PlacementImportBatchCreateNestedManyWithoutUploaderInput
+    personalPlacements?: PersonalPlacementCreateNestedManyWithoutEmployeeInput
+    teamPlacements?: TeamPlacementCreateNestedManyWithoutLeadInput
+    passwordResetTokens?: PasswordResetTokenCreateNestedManyWithoutUserInput
+    incentiveSlab?: IncentiveSlabCreateNestedOneWithoutUserInput
+  }
+
+  export type UserUncheckedCreateWithoutHeadedTeamsInput = {
+    id?: string
+    email: string
+    entraObjectId?: string | null
+    passwordHash: string
+    name: string
+    vbid?: string | null
+    role: $Enums.Role
+    isActive?: boolean
+    createdAt?: Date | string
+    updatedAt?: Date | string
+    mfaSecret?: string | null
+    mfaEnabled?: boolean
+    managerId?: string | null
+    employeeProfile?: EmployeeProfileUncheckedCreateNestedOneWithoutUserInput
+    refreshTokens?: RefreshTokenUncheckedCreateNestedManyWithoutUserInput
+    leadEmployees?: EmployeeProfileUncheckedCreateNestedManyWithoutManagerInput
+    subordinates?: UserUncheckedCreateNestedManyWithoutManagerInput
+    auditLogs?: AuditLogUncheckedCreateNestedManyWithoutActorInput
+    placementImportBatches?: PlacementImportBatchUncheckedCreateNestedManyWithoutUploaderInput
+    personalPlacements?: PersonalPlacementUncheckedCreateNestedManyWithoutEmployeeInput
+    teamPlacements?: TeamPlacementUncheckedCreateNestedManyWithoutLeadInput
+    passwordResetTokens?: PasswordResetTokenUncheckedCreateNestedManyWithoutUserInput
+    incentiveSlab?: IncentiveSlabUncheckedCreateNestedOneWithoutUserInput
+  }
+
+  export type UserCreateOrConnectWithoutHeadedTeamsInput = {
+    where: UserWhereUniqueInput
+    create: XOR<UserCreateWithoutHeadedTeamsInput, UserUncheckedCreateWithoutHeadedTeamsInput>
+  }
+
   export type EmployeeProfileCreateWithoutTeamInput = {
     level?: string | null
     vbid?: string | null
@@ -18670,6 +18891,69 @@ export namespace Prisma {
   export type EmployeeProfileCreateManyTeamInputEnvelope = {
     data: EmployeeProfileCreateManyTeamInput | EmployeeProfileCreateManyTeamInput[]
     skipDuplicates?: boolean
+  }
+
+  export type UserUpsertWithoutHeadedTeamsInput = {
+    update: XOR<UserUpdateWithoutHeadedTeamsInput, UserUncheckedUpdateWithoutHeadedTeamsInput>
+    create: XOR<UserCreateWithoutHeadedTeamsInput, UserUncheckedCreateWithoutHeadedTeamsInput>
+    where?: UserWhereInput
+  }
+
+  export type UserUpdateToOneWithWhereWithoutHeadedTeamsInput = {
+    where?: UserWhereInput
+    data: XOR<UserUpdateWithoutHeadedTeamsInput, UserUncheckedUpdateWithoutHeadedTeamsInput>
+  }
+
+  export type UserUpdateWithoutHeadedTeamsInput = {
+    id?: StringFieldUpdateOperationsInput | string
+    email?: StringFieldUpdateOperationsInput | string
+    entraObjectId?: NullableStringFieldUpdateOperationsInput | string | null
+    passwordHash?: StringFieldUpdateOperationsInput | string
+    name?: StringFieldUpdateOperationsInput | string
+    vbid?: NullableStringFieldUpdateOperationsInput | string | null
+    role?: EnumRoleFieldUpdateOperationsInput | $Enums.Role
+    isActive?: BoolFieldUpdateOperationsInput | boolean
+    createdAt?: DateTimeFieldUpdateOperationsInput | Date | string
+    updatedAt?: DateTimeFieldUpdateOperationsInput | Date | string
+    mfaSecret?: NullableStringFieldUpdateOperationsInput | string | null
+    mfaEnabled?: BoolFieldUpdateOperationsInput | boolean
+    employeeProfile?: EmployeeProfileUpdateOneWithoutUserNestedInput
+    refreshTokens?: RefreshTokenUpdateManyWithoutUserNestedInput
+    leadEmployees?: EmployeeProfileUpdateManyWithoutManagerNestedInput
+    manager?: UserUpdateOneWithoutSubordinatesNestedInput
+    subordinates?: UserUpdateManyWithoutManagerNestedInput
+    auditLogs?: AuditLogUpdateManyWithoutActorNestedInput
+    placementImportBatches?: PlacementImportBatchUpdateManyWithoutUploaderNestedInput
+    personalPlacements?: PersonalPlacementUpdateManyWithoutEmployeeNestedInput
+    teamPlacements?: TeamPlacementUpdateManyWithoutLeadNestedInput
+    passwordResetTokens?: PasswordResetTokenUpdateManyWithoutUserNestedInput
+    incentiveSlab?: IncentiveSlabUpdateOneWithoutUserNestedInput
+  }
+
+  export type UserUncheckedUpdateWithoutHeadedTeamsInput = {
+    id?: StringFieldUpdateOperationsInput | string
+    email?: StringFieldUpdateOperationsInput | string
+    entraObjectId?: NullableStringFieldUpdateOperationsInput | string | null
+    passwordHash?: StringFieldUpdateOperationsInput | string
+    name?: StringFieldUpdateOperationsInput | string
+    vbid?: NullableStringFieldUpdateOperationsInput | string | null
+    role?: EnumRoleFieldUpdateOperationsInput | $Enums.Role
+    isActive?: BoolFieldUpdateOperationsInput | boolean
+    createdAt?: DateTimeFieldUpdateOperationsInput | Date | string
+    updatedAt?: DateTimeFieldUpdateOperationsInput | Date | string
+    mfaSecret?: NullableStringFieldUpdateOperationsInput | string | null
+    mfaEnabled?: BoolFieldUpdateOperationsInput | boolean
+    managerId?: NullableStringFieldUpdateOperationsInput | string | null
+    employeeProfile?: EmployeeProfileUncheckedUpdateOneWithoutUserNestedInput
+    refreshTokens?: RefreshTokenUncheckedUpdateManyWithoutUserNestedInput
+    leadEmployees?: EmployeeProfileUncheckedUpdateManyWithoutManagerNestedInput
+    subordinates?: UserUncheckedUpdateManyWithoutManagerNestedInput
+    auditLogs?: AuditLogUncheckedUpdateManyWithoutActorNestedInput
+    placementImportBatches?: PlacementImportBatchUncheckedUpdateManyWithoutUploaderNestedInput
+    personalPlacements?: PersonalPlacementUncheckedUpdateManyWithoutEmployeeNestedInput
+    teamPlacements?: TeamPlacementUncheckedUpdateManyWithoutLeadNestedInput
+    passwordResetTokens?: PasswordResetTokenUncheckedUpdateManyWithoutUserNestedInput
+    incentiveSlab?: IncentiveSlabUncheckedUpdateOneWithoutUserNestedInput
   }
 
   export type EmployeeProfileUpsertWithWhereUniqueWithoutTeamInput = {
@@ -18798,6 +19082,42 @@ export namespace Prisma {
     skipDuplicates?: boolean
   }
 
+  export type TeamCreateWithoutHeadInput = {
+    id?: string
+    name: string
+    color?: string | null
+    yearlyTarget: Decimal | DecimalJsLike | number | string
+    achievedValue?: Decimal | DecimalJsLike | number | string
+    targetType?: $Enums.TargetType
+    isActive?: boolean
+    createdAt?: Date | string
+    updatedAt?: Date | string
+    employees?: EmployeeProfileCreateNestedManyWithoutTeamInput
+  }
+
+  export type TeamUncheckedCreateWithoutHeadInput = {
+    id?: string
+    name: string
+    color?: string | null
+    yearlyTarget: Decimal | DecimalJsLike | number | string
+    achievedValue?: Decimal | DecimalJsLike | number | string
+    targetType?: $Enums.TargetType
+    isActive?: boolean
+    createdAt?: Date | string
+    updatedAt?: Date | string
+    employees?: EmployeeProfileUncheckedCreateNestedManyWithoutTeamInput
+  }
+
+  export type TeamCreateOrConnectWithoutHeadInput = {
+    where: TeamWhereUniqueInput
+    create: XOR<TeamCreateWithoutHeadInput, TeamUncheckedCreateWithoutHeadInput>
+  }
+
+  export type TeamCreateManyHeadInputEnvelope = {
+    data: TeamCreateManyHeadInput | TeamCreateManyHeadInput[]
+    skipDuplicates?: boolean
+  }
+
   export type UserCreateWithoutSubordinatesInput = {
     id?: string
     email: string
@@ -18814,6 +19134,7 @@ export namespace Prisma {
     employeeProfile?: EmployeeProfileCreateNestedOneWithoutUserInput
     refreshTokens?: RefreshTokenCreateNestedManyWithoutUserInput
     leadEmployees?: EmployeeProfileCreateNestedManyWithoutManagerInput
+    headedTeams?: TeamCreateNestedManyWithoutHeadInput
     manager?: UserCreateNestedOneWithoutSubordinatesInput
     auditLogs?: AuditLogCreateNestedManyWithoutActorInput
     placementImportBatches?: PlacementImportBatchCreateNestedManyWithoutUploaderInput
@@ -18840,6 +19161,7 @@ export namespace Prisma {
     employeeProfile?: EmployeeProfileUncheckedCreateNestedOneWithoutUserInput
     refreshTokens?: RefreshTokenUncheckedCreateNestedManyWithoutUserInput
     leadEmployees?: EmployeeProfileUncheckedCreateNestedManyWithoutManagerInput
+    headedTeams?: TeamUncheckedCreateNestedManyWithoutHeadInput
     auditLogs?: AuditLogUncheckedCreateNestedManyWithoutActorInput
     placementImportBatches?: PlacementImportBatchUncheckedCreateNestedManyWithoutUploaderInput
     personalPlacements?: PersonalPlacementUncheckedCreateNestedManyWithoutEmployeeInput
@@ -18869,6 +19191,7 @@ export namespace Prisma {
     employeeProfile?: EmployeeProfileCreateNestedOneWithoutUserInput
     refreshTokens?: RefreshTokenCreateNestedManyWithoutUserInput
     leadEmployees?: EmployeeProfileCreateNestedManyWithoutManagerInput
+    headedTeams?: TeamCreateNestedManyWithoutHeadInput
     subordinates?: UserCreateNestedManyWithoutManagerInput
     auditLogs?: AuditLogCreateNestedManyWithoutActorInput
     placementImportBatches?: PlacementImportBatchCreateNestedManyWithoutUploaderInput
@@ -18894,6 +19217,7 @@ export namespace Prisma {
     employeeProfile?: EmployeeProfileUncheckedCreateNestedOneWithoutUserInput
     refreshTokens?: RefreshTokenUncheckedCreateNestedManyWithoutUserInput
     leadEmployees?: EmployeeProfileUncheckedCreateNestedManyWithoutManagerInput
+    headedTeams?: TeamUncheckedCreateNestedManyWithoutHeadInput
     subordinates?: UserUncheckedCreateNestedManyWithoutManagerInput
     auditLogs?: AuditLogUncheckedCreateNestedManyWithoutActorInput
     placementImportBatches?: PlacementImportBatchUncheckedCreateNestedManyWithoutUploaderInput
@@ -19267,6 +19591,38 @@ export namespace Prisma {
     data: XOR<EmployeeProfileUpdateManyMutationInput, EmployeeProfileUncheckedUpdateManyWithoutManagerInput>
   }
 
+  export type TeamUpsertWithWhereUniqueWithoutHeadInput = {
+    where: TeamWhereUniqueInput
+    update: XOR<TeamUpdateWithoutHeadInput, TeamUncheckedUpdateWithoutHeadInput>
+    create: XOR<TeamCreateWithoutHeadInput, TeamUncheckedCreateWithoutHeadInput>
+  }
+
+  export type TeamUpdateWithWhereUniqueWithoutHeadInput = {
+    where: TeamWhereUniqueInput
+    data: XOR<TeamUpdateWithoutHeadInput, TeamUncheckedUpdateWithoutHeadInput>
+  }
+
+  export type TeamUpdateManyWithWhereWithoutHeadInput = {
+    where: TeamScalarWhereInput
+    data: XOR<TeamUpdateManyMutationInput, TeamUncheckedUpdateManyWithoutHeadInput>
+  }
+
+  export type TeamScalarWhereInput = {
+    AND?: TeamScalarWhereInput | TeamScalarWhereInput[]
+    OR?: TeamScalarWhereInput[]
+    NOT?: TeamScalarWhereInput | TeamScalarWhereInput[]
+    id?: StringFilter<"Team"> | string
+    name?: StringFilter<"Team"> | string
+    color?: StringNullableFilter<"Team"> | string | null
+    yearlyTarget?: DecimalFilter<"Team"> | Decimal | DecimalJsLike | number | string
+    achievedValue?: DecimalFilter<"Team"> | Decimal | DecimalJsLike | number | string
+    targetType?: EnumTargetTypeFilter<"Team"> | $Enums.TargetType
+    isActive?: BoolFilter<"Team"> | boolean
+    headId?: StringNullableFilter<"Team"> | string | null
+    createdAt?: DateTimeFilter<"Team"> | Date | string
+    updatedAt?: DateTimeFilter<"Team"> | Date | string
+  }
+
   export type UserUpsertWithoutSubordinatesInput = {
     update: XOR<UserUpdateWithoutSubordinatesInput, UserUncheckedUpdateWithoutSubordinatesInput>
     create: XOR<UserCreateWithoutSubordinatesInput, UserUncheckedCreateWithoutSubordinatesInput>
@@ -19294,6 +19650,7 @@ export namespace Prisma {
     employeeProfile?: EmployeeProfileUpdateOneWithoutUserNestedInput
     refreshTokens?: RefreshTokenUpdateManyWithoutUserNestedInput
     leadEmployees?: EmployeeProfileUpdateManyWithoutManagerNestedInput
+    headedTeams?: TeamUpdateManyWithoutHeadNestedInput
     manager?: UserUpdateOneWithoutSubordinatesNestedInput
     auditLogs?: AuditLogUpdateManyWithoutActorNestedInput
     placementImportBatches?: PlacementImportBatchUpdateManyWithoutUploaderNestedInput
@@ -19320,6 +19677,7 @@ export namespace Prisma {
     employeeProfile?: EmployeeProfileUncheckedUpdateOneWithoutUserNestedInput
     refreshTokens?: RefreshTokenUncheckedUpdateManyWithoutUserNestedInput
     leadEmployees?: EmployeeProfileUncheckedUpdateManyWithoutManagerNestedInput
+    headedTeams?: TeamUncheckedUpdateManyWithoutHeadNestedInput
     auditLogs?: AuditLogUncheckedUpdateManyWithoutActorNestedInput
     placementImportBatches?: PlacementImportBatchUncheckedUpdateManyWithoutUploaderNestedInput
     personalPlacements?: PersonalPlacementUncheckedUpdateManyWithoutEmployeeNestedInput
@@ -19605,6 +19963,7 @@ export namespace Prisma {
     employeeProfile?: EmployeeProfileCreateNestedOneWithoutUserInput
     refreshTokens?: RefreshTokenCreateNestedManyWithoutUserInput
     leadEmployees?: EmployeeProfileCreateNestedManyWithoutManagerInput
+    headedTeams?: TeamCreateNestedManyWithoutHeadInput
     manager?: UserCreateNestedOneWithoutSubordinatesInput
     subordinates?: UserCreateNestedManyWithoutManagerInput
     auditLogs?: AuditLogCreateNestedManyWithoutActorInput
@@ -19631,6 +19990,7 @@ export namespace Prisma {
     employeeProfile?: EmployeeProfileUncheckedCreateNestedOneWithoutUserInput
     refreshTokens?: RefreshTokenUncheckedCreateNestedManyWithoutUserInput
     leadEmployees?: EmployeeProfileUncheckedCreateNestedManyWithoutManagerInput
+    headedTeams?: TeamUncheckedCreateNestedManyWithoutHeadInput
     subordinates?: UserUncheckedCreateNestedManyWithoutManagerInput
     auditLogs?: AuditLogUncheckedCreateNestedManyWithoutActorInput
     placementImportBatches?: PlacementImportBatchUncheckedCreateNestedManyWithoutUploaderInput
@@ -19671,6 +20031,7 @@ export namespace Prisma {
     employeeProfile?: EmployeeProfileUpdateOneWithoutUserNestedInput
     refreshTokens?: RefreshTokenUpdateManyWithoutUserNestedInput
     leadEmployees?: EmployeeProfileUpdateManyWithoutManagerNestedInput
+    headedTeams?: TeamUpdateManyWithoutHeadNestedInput
     manager?: UserUpdateOneWithoutSubordinatesNestedInput
     subordinates?: UserUpdateManyWithoutManagerNestedInput
     auditLogs?: AuditLogUpdateManyWithoutActorNestedInput
@@ -19697,6 +20058,7 @@ export namespace Prisma {
     employeeProfile?: EmployeeProfileUncheckedUpdateOneWithoutUserNestedInput
     refreshTokens?: RefreshTokenUncheckedUpdateManyWithoutUserNestedInput
     leadEmployees?: EmployeeProfileUncheckedUpdateManyWithoutManagerNestedInput
+    headedTeams?: TeamUncheckedUpdateManyWithoutHeadNestedInput
     subordinates?: UserUncheckedUpdateManyWithoutManagerNestedInput
     auditLogs?: AuditLogUncheckedUpdateManyWithoutActorNestedInput
     placementImportBatches?: PlacementImportBatchUncheckedUpdateManyWithoutUploaderNestedInput
@@ -19720,6 +20082,7 @@ export namespace Prisma {
     mfaEnabled?: boolean
     refreshTokens?: RefreshTokenCreateNestedManyWithoutUserInput
     leadEmployees?: EmployeeProfileCreateNestedManyWithoutManagerInput
+    headedTeams?: TeamCreateNestedManyWithoutHeadInput
     manager?: UserCreateNestedOneWithoutSubordinatesInput
     subordinates?: UserCreateNestedManyWithoutManagerInput
     auditLogs?: AuditLogCreateNestedManyWithoutActorInput
@@ -19746,6 +20109,7 @@ export namespace Prisma {
     managerId?: string | null
     refreshTokens?: RefreshTokenUncheckedCreateNestedManyWithoutUserInput
     leadEmployees?: EmployeeProfileUncheckedCreateNestedManyWithoutManagerInput
+    headedTeams?: TeamUncheckedCreateNestedManyWithoutHeadInput
     subordinates?: UserUncheckedCreateNestedManyWithoutManagerInput
     auditLogs?: AuditLogUncheckedCreateNestedManyWithoutActorInput
     placementImportBatches?: PlacementImportBatchUncheckedCreateNestedManyWithoutUploaderInput
@@ -19770,6 +20134,7 @@ export namespace Prisma {
     isActive?: boolean
     createdAt?: Date | string
     updatedAt?: Date | string
+    head?: UserCreateNestedOneWithoutHeadedTeamsInput
   }
 
   export type TeamUncheckedCreateWithoutEmployeesInput = {
@@ -19780,6 +20145,7 @@ export namespace Prisma {
     achievedValue?: Decimal | DecimalJsLike | number | string
     targetType?: $Enums.TargetType
     isActive?: boolean
+    headId?: string | null
     createdAt?: Date | string
     updatedAt?: Date | string
   }
@@ -19804,6 +20170,7 @@ export namespace Prisma {
     mfaEnabled?: boolean
     employeeProfile?: EmployeeProfileCreateNestedOneWithoutUserInput
     refreshTokens?: RefreshTokenCreateNestedManyWithoutUserInput
+    headedTeams?: TeamCreateNestedManyWithoutHeadInput
     manager?: UserCreateNestedOneWithoutSubordinatesInput
     subordinates?: UserCreateNestedManyWithoutManagerInput
     auditLogs?: AuditLogCreateNestedManyWithoutActorInput
@@ -19830,6 +20197,7 @@ export namespace Prisma {
     managerId?: string | null
     employeeProfile?: EmployeeProfileUncheckedCreateNestedOneWithoutUserInput
     refreshTokens?: RefreshTokenUncheckedCreateNestedManyWithoutUserInput
+    headedTeams?: TeamUncheckedCreateNestedManyWithoutHeadInput
     subordinates?: UserUncheckedCreateNestedManyWithoutManagerInput
     auditLogs?: AuditLogUncheckedCreateNestedManyWithoutActorInput
     placementImportBatches?: PlacementImportBatchUncheckedCreateNestedManyWithoutUploaderInput
@@ -19870,6 +20238,7 @@ export namespace Prisma {
     mfaEnabled?: BoolFieldUpdateOperationsInput | boolean
     refreshTokens?: RefreshTokenUpdateManyWithoutUserNestedInput
     leadEmployees?: EmployeeProfileUpdateManyWithoutManagerNestedInput
+    headedTeams?: TeamUpdateManyWithoutHeadNestedInput
     manager?: UserUpdateOneWithoutSubordinatesNestedInput
     subordinates?: UserUpdateManyWithoutManagerNestedInput
     auditLogs?: AuditLogUpdateManyWithoutActorNestedInput
@@ -19896,6 +20265,7 @@ export namespace Prisma {
     managerId?: NullableStringFieldUpdateOperationsInput | string | null
     refreshTokens?: RefreshTokenUncheckedUpdateManyWithoutUserNestedInput
     leadEmployees?: EmployeeProfileUncheckedUpdateManyWithoutManagerNestedInput
+    headedTeams?: TeamUncheckedUpdateManyWithoutHeadNestedInput
     subordinates?: UserUncheckedUpdateManyWithoutManagerNestedInput
     auditLogs?: AuditLogUncheckedUpdateManyWithoutActorNestedInput
     placementImportBatches?: PlacementImportBatchUncheckedUpdateManyWithoutUploaderNestedInput
@@ -19926,6 +20296,7 @@ export namespace Prisma {
     isActive?: BoolFieldUpdateOperationsInput | boolean
     createdAt?: DateTimeFieldUpdateOperationsInput | Date | string
     updatedAt?: DateTimeFieldUpdateOperationsInput | Date | string
+    head?: UserUpdateOneWithoutHeadedTeamsNestedInput
   }
 
   export type TeamUncheckedUpdateWithoutEmployeesInput = {
@@ -19936,6 +20307,7 @@ export namespace Prisma {
     achievedValue?: DecimalFieldUpdateOperationsInput | Decimal | DecimalJsLike | number | string
     targetType?: EnumTargetTypeFieldUpdateOperationsInput | $Enums.TargetType
     isActive?: BoolFieldUpdateOperationsInput | boolean
+    headId?: NullableStringFieldUpdateOperationsInput | string | null
     createdAt?: DateTimeFieldUpdateOperationsInput | Date | string
     updatedAt?: DateTimeFieldUpdateOperationsInput | Date | string
   }
@@ -19966,6 +20338,7 @@ export namespace Prisma {
     mfaEnabled?: BoolFieldUpdateOperationsInput | boolean
     employeeProfile?: EmployeeProfileUpdateOneWithoutUserNestedInput
     refreshTokens?: RefreshTokenUpdateManyWithoutUserNestedInput
+    headedTeams?: TeamUpdateManyWithoutHeadNestedInput
     manager?: UserUpdateOneWithoutSubordinatesNestedInput
     subordinates?: UserUpdateManyWithoutManagerNestedInput
     auditLogs?: AuditLogUpdateManyWithoutActorNestedInput
@@ -19992,6 +20365,7 @@ export namespace Prisma {
     managerId?: NullableStringFieldUpdateOperationsInput | string | null
     employeeProfile?: EmployeeProfileUncheckedUpdateOneWithoutUserNestedInput
     refreshTokens?: RefreshTokenUncheckedUpdateManyWithoutUserNestedInput
+    headedTeams?: TeamUncheckedUpdateManyWithoutHeadNestedInput
     subordinates?: UserUncheckedUpdateManyWithoutManagerNestedInput
     auditLogs?: AuditLogUncheckedUpdateManyWithoutActorNestedInput
     placementImportBatches?: PlacementImportBatchUncheckedUpdateManyWithoutUploaderNestedInput
@@ -20016,6 +20390,7 @@ export namespace Prisma {
     mfaEnabled?: boolean
     employeeProfile?: EmployeeProfileCreateNestedOneWithoutUserInput
     leadEmployees?: EmployeeProfileCreateNestedManyWithoutManagerInput
+    headedTeams?: TeamCreateNestedManyWithoutHeadInput
     manager?: UserCreateNestedOneWithoutSubordinatesInput
     subordinates?: UserCreateNestedManyWithoutManagerInput
     auditLogs?: AuditLogCreateNestedManyWithoutActorInput
@@ -20042,6 +20417,7 @@ export namespace Prisma {
     managerId?: string | null
     employeeProfile?: EmployeeProfileUncheckedCreateNestedOneWithoutUserInput
     leadEmployees?: EmployeeProfileUncheckedCreateNestedManyWithoutManagerInput
+    headedTeams?: TeamUncheckedCreateNestedManyWithoutHeadInput
     subordinates?: UserUncheckedCreateNestedManyWithoutManagerInput
     auditLogs?: AuditLogUncheckedCreateNestedManyWithoutActorInput
     placementImportBatches?: PlacementImportBatchUncheckedCreateNestedManyWithoutUploaderInput
@@ -20082,6 +20458,7 @@ export namespace Prisma {
     mfaEnabled?: BoolFieldUpdateOperationsInput | boolean
     employeeProfile?: EmployeeProfileUpdateOneWithoutUserNestedInput
     leadEmployees?: EmployeeProfileUpdateManyWithoutManagerNestedInput
+    headedTeams?: TeamUpdateManyWithoutHeadNestedInput
     manager?: UserUpdateOneWithoutSubordinatesNestedInput
     subordinates?: UserUpdateManyWithoutManagerNestedInput
     auditLogs?: AuditLogUpdateManyWithoutActorNestedInput
@@ -20108,6 +20485,7 @@ export namespace Prisma {
     managerId?: NullableStringFieldUpdateOperationsInput | string | null
     employeeProfile?: EmployeeProfileUncheckedUpdateOneWithoutUserNestedInput
     leadEmployees?: EmployeeProfileUncheckedUpdateManyWithoutManagerNestedInput
+    headedTeams?: TeamUncheckedUpdateManyWithoutHeadNestedInput
     subordinates?: UserUncheckedUpdateManyWithoutManagerNestedInput
     auditLogs?: AuditLogUncheckedUpdateManyWithoutActorNestedInput
     placementImportBatches?: PlacementImportBatchUncheckedUpdateManyWithoutUploaderNestedInput
@@ -20133,6 +20511,7 @@ export namespace Prisma {
     employeeProfile?: EmployeeProfileCreateNestedOneWithoutUserInput
     refreshTokens?: RefreshTokenCreateNestedManyWithoutUserInput
     leadEmployees?: EmployeeProfileCreateNestedManyWithoutManagerInput
+    headedTeams?: TeamCreateNestedManyWithoutHeadInput
     manager?: UserCreateNestedOneWithoutSubordinatesInput
     subordinates?: UserCreateNestedManyWithoutManagerInput
     placementImportBatches?: PlacementImportBatchCreateNestedManyWithoutUploaderInput
@@ -20159,6 +20538,7 @@ export namespace Prisma {
     employeeProfile?: EmployeeProfileUncheckedCreateNestedOneWithoutUserInput
     refreshTokens?: RefreshTokenUncheckedCreateNestedManyWithoutUserInput
     leadEmployees?: EmployeeProfileUncheckedCreateNestedManyWithoutManagerInput
+    headedTeams?: TeamUncheckedCreateNestedManyWithoutHeadInput
     subordinates?: UserUncheckedCreateNestedManyWithoutManagerInput
     placementImportBatches?: PlacementImportBatchUncheckedCreateNestedManyWithoutUploaderInput
     personalPlacements?: PersonalPlacementUncheckedCreateNestedManyWithoutEmployeeInput
@@ -20199,6 +20579,7 @@ export namespace Prisma {
     employeeProfile?: EmployeeProfileUpdateOneWithoutUserNestedInput
     refreshTokens?: RefreshTokenUpdateManyWithoutUserNestedInput
     leadEmployees?: EmployeeProfileUpdateManyWithoutManagerNestedInput
+    headedTeams?: TeamUpdateManyWithoutHeadNestedInput
     manager?: UserUpdateOneWithoutSubordinatesNestedInput
     subordinates?: UserUpdateManyWithoutManagerNestedInput
     placementImportBatches?: PlacementImportBatchUpdateManyWithoutUploaderNestedInput
@@ -20225,6 +20606,7 @@ export namespace Prisma {
     employeeProfile?: EmployeeProfileUncheckedUpdateOneWithoutUserNestedInput
     refreshTokens?: RefreshTokenUncheckedUpdateManyWithoutUserNestedInput
     leadEmployees?: EmployeeProfileUncheckedUpdateManyWithoutManagerNestedInput
+    headedTeams?: TeamUncheckedUpdateManyWithoutHeadNestedInput
     subordinates?: UserUncheckedUpdateManyWithoutManagerNestedInput
     placementImportBatches?: PlacementImportBatchUncheckedUpdateManyWithoutUploaderNestedInput
     personalPlacements?: PersonalPlacementUncheckedUpdateManyWithoutEmployeeNestedInput
@@ -20249,6 +20631,7 @@ export namespace Prisma {
     employeeProfile?: EmployeeProfileCreateNestedOneWithoutUserInput
     refreshTokens?: RefreshTokenCreateNestedManyWithoutUserInput
     leadEmployees?: EmployeeProfileCreateNestedManyWithoutManagerInput
+    headedTeams?: TeamCreateNestedManyWithoutHeadInput
     manager?: UserCreateNestedOneWithoutSubordinatesInput
     subordinates?: UserCreateNestedManyWithoutManagerInput
     auditLogs?: AuditLogCreateNestedManyWithoutActorInput
@@ -20275,6 +20658,7 @@ export namespace Prisma {
     employeeProfile?: EmployeeProfileUncheckedCreateNestedOneWithoutUserInput
     refreshTokens?: RefreshTokenUncheckedCreateNestedManyWithoutUserInput
     leadEmployees?: EmployeeProfileUncheckedCreateNestedManyWithoutManagerInput
+    headedTeams?: TeamUncheckedCreateNestedManyWithoutHeadInput
     subordinates?: UserUncheckedCreateNestedManyWithoutManagerInput
     auditLogs?: AuditLogUncheckedCreateNestedManyWithoutActorInput
     personalPlacements?: PersonalPlacementUncheckedCreateNestedManyWithoutEmployeeInput
@@ -20471,6 +20855,7 @@ export namespace Prisma {
     employeeProfile?: EmployeeProfileUpdateOneWithoutUserNestedInput
     refreshTokens?: RefreshTokenUpdateManyWithoutUserNestedInput
     leadEmployees?: EmployeeProfileUpdateManyWithoutManagerNestedInput
+    headedTeams?: TeamUpdateManyWithoutHeadNestedInput
     manager?: UserUpdateOneWithoutSubordinatesNestedInput
     subordinates?: UserUpdateManyWithoutManagerNestedInput
     auditLogs?: AuditLogUpdateManyWithoutActorNestedInput
@@ -20497,6 +20882,7 @@ export namespace Prisma {
     employeeProfile?: EmployeeProfileUncheckedUpdateOneWithoutUserNestedInput
     refreshTokens?: RefreshTokenUncheckedUpdateManyWithoutUserNestedInput
     leadEmployees?: EmployeeProfileUncheckedUpdateManyWithoutManagerNestedInput
+    headedTeams?: TeamUncheckedUpdateManyWithoutHeadNestedInput
     subordinates?: UserUncheckedUpdateManyWithoutManagerNestedInput
     auditLogs?: AuditLogUncheckedUpdateManyWithoutActorNestedInput
     personalPlacements?: PersonalPlacementUncheckedUpdateManyWithoutEmployeeNestedInput
@@ -20553,6 +20939,7 @@ export namespace Prisma {
     employeeProfile?: EmployeeProfileCreateNestedOneWithoutUserInput
     refreshTokens?: RefreshTokenCreateNestedManyWithoutUserInput
     leadEmployees?: EmployeeProfileCreateNestedManyWithoutManagerInput
+    headedTeams?: TeamCreateNestedManyWithoutHeadInput
     manager?: UserCreateNestedOneWithoutSubordinatesInput
     subordinates?: UserCreateNestedManyWithoutManagerInput
     auditLogs?: AuditLogCreateNestedManyWithoutActorInput
@@ -20579,6 +20966,7 @@ export namespace Prisma {
     employeeProfile?: EmployeeProfileUncheckedCreateNestedOneWithoutUserInput
     refreshTokens?: RefreshTokenUncheckedCreateNestedManyWithoutUserInput
     leadEmployees?: EmployeeProfileUncheckedCreateNestedManyWithoutManagerInput
+    headedTeams?: TeamUncheckedCreateNestedManyWithoutHeadInput
     subordinates?: UserUncheckedCreateNestedManyWithoutManagerInput
     auditLogs?: AuditLogUncheckedCreateNestedManyWithoutActorInput
     placementImportBatches?: PlacementImportBatchUncheckedCreateNestedManyWithoutUploaderInput
@@ -20642,6 +21030,7 @@ export namespace Prisma {
     employeeProfile?: EmployeeProfileUpdateOneWithoutUserNestedInput
     refreshTokens?: RefreshTokenUpdateManyWithoutUserNestedInput
     leadEmployees?: EmployeeProfileUpdateManyWithoutManagerNestedInput
+    headedTeams?: TeamUpdateManyWithoutHeadNestedInput
     manager?: UserUpdateOneWithoutSubordinatesNestedInput
     subordinates?: UserUpdateManyWithoutManagerNestedInput
     auditLogs?: AuditLogUpdateManyWithoutActorNestedInput
@@ -20668,6 +21057,7 @@ export namespace Prisma {
     employeeProfile?: EmployeeProfileUncheckedUpdateOneWithoutUserNestedInput
     refreshTokens?: RefreshTokenUncheckedUpdateManyWithoutUserNestedInput
     leadEmployees?: EmployeeProfileUncheckedUpdateManyWithoutManagerNestedInput
+    headedTeams?: TeamUncheckedUpdateManyWithoutHeadNestedInput
     subordinates?: UserUncheckedUpdateManyWithoutManagerNestedInput
     auditLogs?: AuditLogUncheckedUpdateManyWithoutActorNestedInput
     placementImportBatches?: PlacementImportBatchUncheckedUpdateManyWithoutUploaderNestedInput
@@ -20721,6 +21111,7 @@ export namespace Prisma {
     employeeProfile?: EmployeeProfileCreateNestedOneWithoutUserInput
     refreshTokens?: RefreshTokenCreateNestedManyWithoutUserInput
     leadEmployees?: EmployeeProfileCreateNestedManyWithoutManagerInput
+    headedTeams?: TeamCreateNestedManyWithoutHeadInput
     manager?: UserCreateNestedOneWithoutSubordinatesInput
     subordinates?: UserCreateNestedManyWithoutManagerInput
     auditLogs?: AuditLogCreateNestedManyWithoutActorInput
@@ -20747,6 +21138,7 @@ export namespace Prisma {
     employeeProfile?: EmployeeProfileUncheckedCreateNestedOneWithoutUserInput
     refreshTokens?: RefreshTokenUncheckedCreateNestedManyWithoutUserInput
     leadEmployees?: EmployeeProfileUncheckedCreateNestedManyWithoutManagerInput
+    headedTeams?: TeamUncheckedCreateNestedManyWithoutHeadInput
     subordinates?: UserUncheckedCreateNestedManyWithoutManagerInput
     auditLogs?: AuditLogUncheckedCreateNestedManyWithoutActorInput
     placementImportBatches?: PlacementImportBatchUncheckedCreateNestedManyWithoutUploaderInput
@@ -20810,6 +21202,7 @@ export namespace Prisma {
     employeeProfile?: EmployeeProfileUpdateOneWithoutUserNestedInput
     refreshTokens?: RefreshTokenUpdateManyWithoutUserNestedInput
     leadEmployees?: EmployeeProfileUpdateManyWithoutManagerNestedInput
+    headedTeams?: TeamUpdateManyWithoutHeadNestedInput
     manager?: UserUpdateOneWithoutSubordinatesNestedInput
     subordinates?: UserUpdateManyWithoutManagerNestedInput
     auditLogs?: AuditLogUpdateManyWithoutActorNestedInput
@@ -20836,6 +21229,7 @@ export namespace Prisma {
     employeeProfile?: EmployeeProfileUncheckedUpdateOneWithoutUserNestedInput
     refreshTokens?: RefreshTokenUncheckedUpdateManyWithoutUserNestedInput
     leadEmployees?: EmployeeProfileUncheckedUpdateManyWithoutManagerNestedInput
+    headedTeams?: TeamUncheckedUpdateManyWithoutHeadNestedInput
     subordinates?: UserUncheckedUpdateManyWithoutManagerNestedInput
     auditLogs?: AuditLogUncheckedUpdateManyWithoutActorNestedInput
     placementImportBatches?: PlacementImportBatchUncheckedUpdateManyWithoutUploaderNestedInput
@@ -20889,6 +21283,7 @@ export namespace Prisma {
     employeeProfile?: EmployeeProfileCreateNestedOneWithoutUserInput
     refreshTokens?: RefreshTokenCreateNestedManyWithoutUserInput
     leadEmployees?: EmployeeProfileCreateNestedManyWithoutManagerInput
+    headedTeams?: TeamCreateNestedManyWithoutHeadInput
     manager?: UserCreateNestedOneWithoutSubordinatesInput
     subordinates?: UserCreateNestedManyWithoutManagerInput
     auditLogs?: AuditLogCreateNestedManyWithoutActorInput
@@ -20915,6 +21310,7 @@ export namespace Prisma {
     employeeProfile?: EmployeeProfileUncheckedCreateNestedOneWithoutUserInput
     refreshTokens?: RefreshTokenUncheckedCreateNestedManyWithoutUserInput
     leadEmployees?: EmployeeProfileUncheckedCreateNestedManyWithoutManagerInput
+    headedTeams?: TeamUncheckedCreateNestedManyWithoutHeadInput
     subordinates?: UserUncheckedCreateNestedManyWithoutManagerInput
     auditLogs?: AuditLogUncheckedCreateNestedManyWithoutActorInput
     placementImportBatches?: PlacementImportBatchUncheckedCreateNestedManyWithoutUploaderInput
@@ -20955,6 +21351,7 @@ export namespace Prisma {
     employeeProfile?: EmployeeProfileUpdateOneWithoutUserNestedInput
     refreshTokens?: RefreshTokenUpdateManyWithoutUserNestedInput
     leadEmployees?: EmployeeProfileUpdateManyWithoutManagerNestedInput
+    headedTeams?: TeamUpdateManyWithoutHeadNestedInput
     manager?: UserUpdateOneWithoutSubordinatesNestedInput
     subordinates?: UserUpdateManyWithoutManagerNestedInput
     auditLogs?: AuditLogUpdateManyWithoutActorNestedInput
@@ -20981,6 +21378,7 @@ export namespace Prisma {
     employeeProfile?: EmployeeProfileUncheckedUpdateOneWithoutUserNestedInput
     refreshTokens?: RefreshTokenUncheckedUpdateManyWithoutUserNestedInput
     leadEmployees?: EmployeeProfileUncheckedUpdateManyWithoutManagerNestedInput
+    headedTeams?: TeamUncheckedUpdateManyWithoutHeadNestedInput
     subordinates?: UserUncheckedUpdateManyWithoutManagerNestedInput
     auditLogs?: AuditLogUncheckedUpdateManyWithoutActorNestedInput
     placementImportBatches?: PlacementImportBatchUncheckedUpdateManyWithoutUploaderNestedInput
@@ -21058,6 +21456,18 @@ export namespace Prisma {
     targetType?: $Enums.TargetType
     isActive?: boolean
     deletedAt?: Date | string | null
+    createdAt?: Date | string
+    updatedAt?: Date | string
+  }
+
+  export type TeamCreateManyHeadInput = {
+    id?: string
+    name: string
+    color?: string | null
+    yearlyTarget: Decimal | DecimalJsLike | number | string
+    achievedValue?: Decimal | DecimalJsLike | number | string
+    targetType?: $Enums.TargetType
+    isActive?: boolean
     createdAt?: Date | string
     updatedAt?: Date | string
   }
@@ -21239,6 +21649,44 @@ export namespace Prisma {
     updatedAt?: DateTimeFieldUpdateOperationsInput | Date | string
   }
 
+  export type TeamUpdateWithoutHeadInput = {
+    id?: StringFieldUpdateOperationsInput | string
+    name?: StringFieldUpdateOperationsInput | string
+    color?: NullableStringFieldUpdateOperationsInput | string | null
+    yearlyTarget?: DecimalFieldUpdateOperationsInput | Decimal | DecimalJsLike | number | string
+    achievedValue?: DecimalFieldUpdateOperationsInput | Decimal | DecimalJsLike | number | string
+    targetType?: EnumTargetTypeFieldUpdateOperationsInput | $Enums.TargetType
+    isActive?: BoolFieldUpdateOperationsInput | boolean
+    createdAt?: DateTimeFieldUpdateOperationsInput | Date | string
+    updatedAt?: DateTimeFieldUpdateOperationsInput | Date | string
+    employees?: EmployeeProfileUpdateManyWithoutTeamNestedInput
+  }
+
+  export type TeamUncheckedUpdateWithoutHeadInput = {
+    id?: StringFieldUpdateOperationsInput | string
+    name?: StringFieldUpdateOperationsInput | string
+    color?: NullableStringFieldUpdateOperationsInput | string | null
+    yearlyTarget?: DecimalFieldUpdateOperationsInput | Decimal | DecimalJsLike | number | string
+    achievedValue?: DecimalFieldUpdateOperationsInput | Decimal | DecimalJsLike | number | string
+    targetType?: EnumTargetTypeFieldUpdateOperationsInput | $Enums.TargetType
+    isActive?: BoolFieldUpdateOperationsInput | boolean
+    createdAt?: DateTimeFieldUpdateOperationsInput | Date | string
+    updatedAt?: DateTimeFieldUpdateOperationsInput | Date | string
+    employees?: EmployeeProfileUncheckedUpdateManyWithoutTeamNestedInput
+  }
+
+  export type TeamUncheckedUpdateManyWithoutHeadInput = {
+    id?: StringFieldUpdateOperationsInput | string
+    name?: StringFieldUpdateOperationsInput | string
+    color?: NullableStringFieldUpdateOperationsInput | string | null
+    yearlyTarget?: DecimalFieldUpdateOperationsInput | Decimal | DecimalJsLike | number | string
+    achievedValue?: DecimalFieldUpdateOperationsInput | Decimal | DecimalJsLike | number | string
+    targetType?: EnumTargetTypeFieldUpdateOperationsInput | $Enums.TargetType
+    isActive?: BoolFieldUpdateOperationsInput | boolean
+    createdAt?: DateTimeFieldUpdateOperationsInput | Date | string
+    updatedAt?: DateTimeFieldUpdateOperationsInput | Date | string
+  }
+
   export type UserUpdateWithoutManagerInput = {
     id?: StringFieldUpdateOperationsInput | string
     email?: StringFieldUpdateOperationsInput | string
@@ -21255,6 +21703,7 @@ export namespace Prisma {
     employeeProfile?: EmployeeProfileUpdateOneWithoutUserNestedInput
     refreshTokens?: RefreshTokenUpdateManyWithoutUserNestedInput
     leadEmployees?: EmployeeProfileUpdateManyWithoutManagerNestedInput
+    headedTeams?: TeamUpdateManyWithoutHeadNestedInput
     subordinates?: UserUpdateManyWithoutManagerNestedInput
     auditLogs?: AuditLogUpdateManyWithoutActorNestedInput
     placementImportBatches?: PlacementImportBatchUpdateManyWithoutUploaderNestedInput
@@ -21280,6 +21729,7 @@ export namespace Prisma {
     employeeProfile?: EmployeeProfileUncheckedUpdateOneWithoutUserNestedInput
     refreshTokens?: RefreshTokenUncheckedUpdateManyWithoutUserNestedInput
     leadEmployees?: EmployeeProfileUncheckedUpdateManyWithoutManagerNestedInput
+    headedTeams?: TeamUncheckedUpdateManyWithoutHeadNestedInput
     subordinates?: UserUncheckedUpdateManyWithoutManagerNestedInput
     auditLogs?: AuditLogUncheckedUpdateManyWithoutActorNestedInput
     placementImportBatches?: PlacementImportBatchUncheckedUpdateManyWithoutUploaderNestedInput

@@ -2,7 +2,7 @@ import express from "express";
 import { Role } from "../generated/client/index.js";
 import prisma from "../prisma.js";
 import { authenticate, requireRole } from "../middleware/auth.js";
-import { cacheMiddleware } from "../middleware/cache.js";
+import { cacheMiddleware, clearCacheMiddleware } from "../middleware/cache.js";
 import {
   listUsersWithRelations,
   createUserWithProfile,
@@ -16,6 +16,7 @@ const router = express.Router();
 // const prisma = new PrismaClient();
 
 router.use(authenticate);
+router.use(clearCacheMiddleware);
 
 router.get("/", requireRole(Role.SUPER_ADMIN, Role.S1_ADMIN), cacheMiddleware(60), async (req, res, next) => {
   try {
@@ -186,4 +187,3 @@ router.delete(
 );
 
 export default router;
-

@@ -94,21 +94,29 @@ export function buildHierarchy(profiles, teams) {
 
   for (const team of teams) {
     const teamProfiles = profiles.filter((profile) => profile.teamId === team.id);
-    if (teamProfiles.length === 0) continue;
     const teamProfileIds = new Set(teamProfiles.map((profile) => profile.id));
     const resolvedRoots = new Map();
+    const storedRoot = team.headId ? profileById.get(team.headId) : null;
+
+    if (team.headId && (!storedRoot || !rootIds.has(storedRoot.id))) {
+      errors.push(`${team.name}: configured Head is not an active L1/SUPER_ADMIN profile`);
+    }
 
     for (const profile of teamProfiles) {
       const root = resolveRoot(profile, team.id);
       if (root) resolvedRoots.set(root.id, root);
     }
-    if (resolvedRoots.size !== 1) {
+    if (storedRoot && resolvedRoots.size > 0 && !resolvedRoots.has(storedRoot.id)) {
+      errors.push(`${team.name}: reporting chain does not match configured Head ${storedRoot.user.name}`);
+    }
+    if (!storedRoot && resolvedRoots.size !== 1) {
       errors.push(
         `${team.name}: expected exactly one L1 owner, found ${resolvedRoots.size}`,
       );
       continue;
     }
-    const root = [...resolvedRoots.values()][0];
+    const root = storedRoot || [...resolvedRoots.values()][0];
+    if (!root) continue;
     const childrenByManager = new Map();
     for (const profile of teamProfiles) {
       const children = childrenByManager.get(profile.managerId) || [];
@@ -157,7 +165,7 @@ export function buildHierarchy(profiles, teams) {
       return node;
     }
 
-    if (topLevel.length === 0) {
+    if (topLevel.length === 0 && teamProfiles.length > 0) {
       errors.push(`${team.name}: no lead reports directly to ${root.user.name}`);
       continue;
     }
@@ -236,7 +244,7 @@ async function main() {
       },
     }),
     prisma.team.findMany({
-      select: { id: true, name: true, color: true },
+      select: { id: true, name: true, color: true, headId: true },
       orderBy: { name: "asc" },
     }),
   ]);

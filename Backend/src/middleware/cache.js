@@ -7,7 +7,11 @@ export const cacheMiddleware = (duration = 300) => (req, res, next) => {
     return next();
   }
 
-  const key = `__express__${req.originalUrl || req.url}`;
+  // Authenticated list endpoints can return different data for the same URL.
+  // Include identity and role so one Head can never receive another Head's cache.
+  const identity = req.user?.id || "anonymous";
+  const role = req.user?.role || "anonymous";
+  const key = `__express__${identity}:${role}:${req.originalUrl || req.url}`;
   const cachedResponse = cache.get(key);
 
   if (cachedResponse) {
