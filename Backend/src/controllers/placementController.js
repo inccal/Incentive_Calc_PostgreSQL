@@ -1894,7 +1894,12 @@ export async function importPersonalPlacements(payload, actorId) {
         if (currentVbCode || currentRecruiterName) {
           currentEmployee = findEmployeeCached(currentVbCode, currentRecruiterName);
           if (!currentEmployee) {
-            // Skip if we can't find the employee - don't fail entire import
+            if (candidateNameRaw) {
+              batchErrors.push({
+                rowIndex,
+                message: `Skipped candidate "${String(candidateNameRaw).trim() || "(unnamed)"}": recruiter "${currentRecruiterName || currentVbCode || "unknown"}" is not present in the database`,
+              });
+            }
             continue;
           }
         }
@@ -1937,7 +1942,7 @@ export async function importPersonalPlacements(payload, actorId) {
       if (!employee) {
         batchErrors.push({
           rowIndex,
-          message: `Employee not found for VB Code "${vbCode || ""}" / Recruiter Name "${recruiterName || ""}"`,
+          message: `Skipped candidate "${String(candidateNameRaw || "").trim() || "(unnamed)"}": recruiter "${recruiterName || vbCode || currentRecruiterName || currentVbCode || "unknown"}" is not present in the database`,
         });
         continue;
       }
@@ -1951,7 +1956,8 @@ export async function importPersonalPlacements(payload, actorId) {
     const plcIdRaw = getVal(row, "plc id") || getVal(row, "pls id");
     const plcId = (plcIdRaw === 0 || plcIdRaw === "0") ? "0" : String(plcIdRaw || "").trim();
     if (!plcId) {
-      throw new Error(`Row ${rowIndex}: missing PLC ID`);
+      batchErrors.push({ rowIndex, message: `Skipped candidate "${candidateNameRaw}": missing PLC ID` });
+      continue;
     }
     
     // Check for duplicates within the current person's block to prevent local duplicates
@@ -2416,6 +2422,7 @@ export async function importTeamPlacements(payload, actorId) {
     placementsUpdated: 0,
     placementsRejectedWrongTeam: 0,
     placementsRejectedLeadNotFound: 0,
+    placementsRejectedInvalid: 0,
     placementHeaderValid: false,
   };
 
@@ -2849,9 +2856,15 @@ export async function importTeamPlacements(payload, actorId) {
         if (currentVbCode || currentLeadName) {
           currentLeadUser = findLeadCached(currentVbCode, currentLeadName, currentTeamName);
           if (!currentLeadUser) {
-            throw new Error(
-              `Row ${rowIndex}: could not resolve lead for VB Code "${currentVbCode}" / Lead Name "${currentLeadName}"`
-            );
+            // An unknown directory user must not abort the rest of the workbook.
+            // The candidate row is reported below and valid lead blocks continue importing.
+            report.placementRowsChecked += 1;
+            report.placementsRejectedLeadNotFound += 1;
+            batchErrors.push({
+              rowIndex,
+              message: `Skipped candidate "${String(candidateNameRaw || "").trim() || "(unnamed)"}": lead "${currentLeadName || currentVbCode || "unknown"}" is not present in the database`,
+            });
+            continue;
           }
         }
       }
@@ -2900,7 +2913,7 @@ export async function importTeamPlacements(payload, actorId) {
           report.placementsRejectedLeadNotFound += 1;
           batchErrors.push({
             rowIndex,
-            message: `Lead not found for VB Code "${vbCode || ""}" / Lead Name "${leadName || ""}"`,
+            message: `Skipped candidate "${String(candidateNameRaw || "").trim() || "(unnamed)"}": lead "${leadName || vbCode || currentLeadName || currentVbCode || "unknown"}" is not present in the database`,
           });
         }
         continue;
@@ -2917,7 +2930,9 @@ export async function importTeamPlacements(payload, actorId) {
     const plcIdRaw = getVal(row, "plc id") || getVal(row, "pls id");
     const plcId = (plcIdRaw === 0 || plcIdRaw === "0") ? "0" : String(plcIdRaw || "").trim();
     if (!plcId) {
-      throw new Error(`Row ${rowIndex}: missing PLC ID`);
+      report.placementsRejectedInvalid += 1;
+      batchErrors.push({ rowIndex, message: `Skipped candidate "${candidateNameRaw}": missing PLC ID` });
+      continue;
     }
     
     // Check for duplicates within the current lead's block to prevent local duplicates
@@ -2937,7 +2952,9 @@ export async function importTeamPlacements(payload, actorId) {
 
     const doj = parseDateCell(getVal(row, "doj"));
     if (!doj) {
-      throw new Error(`Row ${rowIndex}: invalid DOJ`);
+      report.placementsRejectedInvalid += 1;
+      batchErrors.push({ rowIndex, message: `Skipped candidate "${candidateNameRaw}": invalid or missing DOJ` });
+      continue;
     }
 
     // Candidate Deduplication: Find existing placement (Lead, Candidate, Client, DOJ, Level, PLC ID)

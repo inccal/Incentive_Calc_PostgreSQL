@@ -871,6 +871,7 @@ const AdminTeamDetails = () => {
                   <li>Upload an Excel file containing individual recruiter placements.</li>
                   <li>The sheet must have headers like "Candidate Name" and "Recruiter Name".</li>
                   <li>Personal summary rows can use either "Yearly Target" / "Achieved" or "Yearly Placement Target" / "Placement Done".</li>
+                  <li>Rows whose recruiter is not present in the database are skipped and listed after the import; valid rows still import.</li>
                   <li>Data will be saved as personal placements (PersonalPlacement).</li>
                 </ul>
               </div>
@@ -919,6 +920,7 @@ const AdminTeamDetails = () => {
                 <ul className="list-disc list-inside space-y-1">
                   <li>Upload an Excel file with summary and placement headers for this team only.</li>
                   <li>Only rows for team &quot;{team?.name}&quot; will be imported; other teams in the sheet are skipped.</li>
+                  <li>Rows whose recruiter or lead is not present in the database are skipped and listed after the import; valid rows still import.</li>
                   <li>Summary headers: Team, VB Code, Lead Name, Yearly Placement Target, … Placement headers: Lead Name, Candidate Name, PLC ID, …</li>
                 </ul>
               </div>
@@ -1006,6 +1008,7 @@ const AdminTeamDetails = () => {
                         <li className="flex justify-between py-0.5"><span>Checked</span><span>{importResult.report?.placementRowsChecked ?? 0}</span></li>
                         <li className="flex justify-between py-0.5"><span>Rejected (wrong team)</span><span className="text-amber-600">{importResult.report?.placementsRejectedWrongTeam ?? 0}</span></li>
                         <li className="flex justify-between py-0.5"><span>Rejected (lead not found)</span><span className="text-red-600">{importResult.report?.placementsRejectedLeadNotFound ?? 0}</span></li>
+                        <li className="flex justify-between py-0.5"><span>Rejected (invalid row)</span><span className="text-amber-600">{importResult.report?.placementsRejectedInvalid ?? 0}</span></li>
                       </ul>
                     </div>
                   </>
@@ -1014,7 +1017,7 @@ const AdminTeamDetails = () => {
                   <div className="pt-2 border-t border-slate-200">
                     <p className="text-slate-500 font-medium text-xs uppercase tracking-wider mb-2 flex items-center gap-2">
                       <span className="w-2 h-2 rounded-full bg-amber-500" />
-                      Row errors ({importResult.errors.length})
+                      Skipped rows ({importResult.errors.length})
                     </p>
                     <ul className="list-none pl-0 space-y-1 max-h-40 overflow-y-auto pr-1">
                       {importResult.errors.map((err, i) => (
