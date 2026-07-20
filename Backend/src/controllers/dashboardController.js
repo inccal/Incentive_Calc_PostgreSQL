@@ -1025,7 +1025,10 @@ export async function getPersonalPlacementOverview(currentUser, userId) {
       where: {
         employeeId: targetId,
       },
-      orderBy: { doj: "desc" },
+      orderBy: [
+        { doj: { sort: "desc", nulls: "last" } },
+        { createdAt: "desc" },
+      ],
     });
 
     // Prefer the summary-only row for summary; fill any nulls from other rows so frontend shows correct values
@@ -1067,12 +1070,15 @@ export async function getPersonalPlacementOverview(currentUser, userId) {
     return {
       placements: placementList.map(p => ({
         ...p,
+        revenueUsd: toNum(p.revenueUsd),
         revenue: toNum(p.revenueUsd),
         revenueAsLead: toNum(p.revenueUsd),
+        incentiveInr: toNum(p.incentiveInr),
         incentiveAmountINR: toNum(p.incentiveInr),
         incentivePaidInr: toNum(p.incentivePaidInr),
         placementBalanceIncentiveAmount: toNum(p.placementBalanceIncentiveAmount),
-        billedHours: p.totalBilledHours,
+        totalBilledHours: toNum(p.totalBilledHours),
+        billedHours: toNum(p.totalBilledHours),
         recruiter: p.recruiterName,
       })),
       summary,
@@ -1110,7 +1116,10 @@ export async function getTeamPlacementOverview(currentUser, leadId) {
       where: {
         leadId: targetId,
       },
-      orderBy: { doj: "desc" },
+      orderBy: [
+        { doj: { sort: "desc", nulls: "last" } },
+        { createdAt: "desc" },
+      ],
     });
 
     const isSummaryOnlyRow = (p) => p.candidateName === "(Summary only)" || (p.plcId && String(p.plcId).startsWith("SUMMARY-"));
@@ -1149,8 +1158,8 @@ export async function getTeamPlacementOverview(currentUser, leadId) {
         incentiveAmountINR: toNum(p.incentiveInr),
         incentivePaidInr: toNum(p.incentivePaidInr),
         placementBalanceIncentiveAmount: toNum(p.placementBalanceIncentiveAmount),
-        totalBilledHours: p.totalBilledHours,
-        billedHours: p.totalBilledHours,
+        totalBilledHours: toNum(p.totalBilledHours),
+        billedHours: toNum(p.totalBilledHours),
         recruiter: p.recruiterName,
         teamLead: p.leadName,
         leadName: p.leadName,

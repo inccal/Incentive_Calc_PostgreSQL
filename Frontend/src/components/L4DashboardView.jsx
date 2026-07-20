@@ -293,9 +293,13 @@ export default function L4DashboardView({
   // Determine target and achieved values based on viewMode
   let targetValue, achievedValue
   if (viewMode === 'personal' && personalSheetData?.summary) {
-    // Personal view: use yearlyTarget/achieved first (personal API), then yearlyPlacementTarget/placementDone, then employeeData
-    const summaryTarget = personalSheetData.summary.yearlyTarget ?? personalSheetData.summary.yearlyPlacementTarget
-    const summaryAchieved = personalSheetData.summary.achieved ?? personalSheetData.summary.placementDone
+    // Use the same target and achieved source as the admin employee preview.
+    const summaryTarget = isRevenueTarget
+      ? (personalSheetData.summary.yearlyRevenueTarget ?? personalSheetData.summary.yearlyTarget)
+      : (personalSheetData.summary.yearlyTarget ?? personalSheetData.summary.yearlyPlacementTarget)
+    const summaryAchieved = isRevenueTarget
+      ? (personalSheetData.summary.totalRevenueGenerated ?? personalSheetData.summary.achieved)
+      : (personalSheetData.summary.achieved ?? personalSheetData.summary.placementDone)
     targetValue = (summaryTarget != null && summaryTarget !== '')
       ? Number(summaryTarget)
       : (isRevenueTarget ? employeeData?.yearlyRevenueTarget : employeeData?.yearlyPlacementTarget)
@@ -363,9 +367,12 @@ export default function L4DashboardView({
     shouldFormatAsCurrency
       ? CalculationService.formatCurrency(achievedValue ?? 0)
       : String(achievedValue ?? 0)
+  const summaryProgressPercent = isRevenueTarget
+    ? (activeSummary?.revenueTargetAchievedPercent ?? activeSummary?.targetAchievedPercent ?? activeSummary?.placementAchPercent)
+    : (activeSummary?.placementAchPercent ?? activeSummary?.targetAchievedPercent)
   const percent =
-    hasPlacementSheetData && (activeSummary.placementAchPercent != null || activeSummary.targetAchievedPercent != null)
-      ? Number(activeSummary.placementAchPercent ?? activeSummary.targetAchievedPercent) || 0
+    summaryProgressPercent != null
+      ? Number(summaryProgressPercent) || 0
       : targetValue > 0
         ? ((achievedValue || 0) / targetValue) * 100
         : 0
