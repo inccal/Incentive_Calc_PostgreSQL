@@ -14,6 +14,7 @@ yarn.lock
 dist/
 build/
 out/
+Backend/hierarchy_snapshots/
 
 # IDEs
 .vscode/

@@ -20,6 +20,7 @@
     "setup": "prisma generate && prisma db push",
     "test": "node tests/api.test.js",
     "test:sheets": "node scripts/comprehensive_sheet_test.js",
+    "export-hierarchy": "node scripts/export-hierarchy.js",
     "sync-target-types": "node scripts/sync-target-types-from-teams.js",
     "sync-hierarchy-assignments": "node scripts/sync-hierarchy-assignments.js"
   },
