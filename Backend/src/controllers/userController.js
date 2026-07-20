@@ -437,6 +437,8 @@ export async function updateUserWithProfile(id, body, actor) {
     const targetRole = role ?? user.role;
     const targetLevel =
       level !== undefined ? level : (user.employeeProfile?.level ?? null);
+    const targetTeamId =
+      teamId !== undefined ? teamId : (user.employeeProfile?.teamId ?? null);
     let resolvedManagerId =
       managerId !== undefined ? managerId : (user.employeeProfile?.managerId ?? null);
 
@@ -444,6 +446,11 @@ export async function updateUserWithProfile(id, body, actor) {
     const isTeamLeadTarget =
       targetRole === Role.TEAM_LEAD ||
       String(targetLevel || "").toUpperCase() === "L2";
+    // The edit form previously sent managerId="" for every L2/team change,
+    // repeatedly erasing a valid L1 -> L2 relationship. Preserve that Head.
+    if (isTeamLeadTarget && !resolvedManagerId && user.employeeProfile?.managerId) {
+      resolvedManagerId = user.employeeProfile.managerId;
+    }
     if (isTeamLeadTarget && resolvedManagerId) {
       const mgr = await prisma.user.findUnique({
         where: { id: resolvedManagerId },
@@ -451,6 +458,26 @@ export async function updateUserWithProfile(id, body, actor) {
       });
       if (mgr && mgr.role !== Role.SUPER_ADMIN) {
         resolvedManagerId = null;
+      }
+    }
+
+    // A team-assigned L3/L4 must never be saved without a manager. This keeps
+    // list, preview, authorization and login hierarchy views consistent.
+    if (targetTeamId && !isTeamLeadTarget && !resolvedManagerId) {
+      const error = new Error("Manager is required when assigning this member to a team");
+      error.statusCode = 400;
+      throw error;
+    }
+
+    if (targetTeamId && resolvedManagerId && !isTeamLeadTarget) {
+      const managerProfile = await prisma.employeeProfile.findUnique({
+        where: { id: resolvedManagerId },
+        select: { teamId: true },
+      });
+      if (managerProfile?.teamId && managerProfile.teamId !== targetTeamId) {
+        const error = new Error("Selected manager must belong to the same team");
+        error.statusCode = 400;
+        throw error;
       }
     }
 

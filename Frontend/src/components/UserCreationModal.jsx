@@ -23,7 +23,7 @@ const UserCreationModal = ({ isOpen, onClose, editingUser, onSuccess, teams = []
     return "RECRUITER";
   };
 
-  const getManagerOptions = (teamId) => {
+  const getManagerOptions = (teamId, levelOverride = formData.level) => {
     if (!teamId) return [];
     const byId = new Map();
     const add = (person) => {
@@ -33,7 +33,7 @@ const UserCreationModal = ({ isOpen, onClose, editingUser, onSuccess, teams = []
       byId.set(String(id), { userId: id, name: person.name });
     };
 
-    const assigneeLevel = (formData.level || "L4").toUpperCase();
+    const assigneeLevel = (levelOverride || "L4").toUpperCase();
     const team = teams.find((t) => String(t.id) === String(teamId));
     if (team) {
       (team.leads || []).forEach((lead) => {
@@ -116,7 +116,9 @@ const UserCreationModal = ({ isOpen, onClose, editingUser, onSuccess, teams = []
       ...prev,
       role: newRole,
       level: newLevel,
-      managerId: uiRole === "TEAM_LEAD" ? "" : prev.managerId,
+      // L2's Head assignment is valid across team changes and must not be
+      // silently erased when editing an existing Team Lead.
+      managerId: prev.managerId,
     }));
   };
 
@@ -127,8 +129,8 @@ const UserCreationModal = ({ isOpen, onClose, editingUser, onSuccess, teams = []
     try {
       const payload = { ...formData };
       const lvl = (payload.level || "").toUpperCase();
-      if (payload.role === "TEAM_LEAD" || lvl === "L2") {
-        payload.managerId = "";
+      if (payload.teamId && lvl !== "L2" && !payload.managerId) {
+        throw new Error("Select a manager for this team before saving.");
       }
       const url = editingUser ? `/users/${editingUser.id}` : "/users";
       const method = editingUser ? "PUT" : "POST";
@@ -247,10 +249,16 @@ const UserCreationModal = ({ isOpen, onClose, editingUser, onSuccess, teams = []
                 value={formData.teamId}
                 onChange={(e) => {
                   const newTeamId = e.target.value;
+                  const level = (formData.level || "L4").toUpperCase();
+                  const managerOptions = getManagerOptions(newTeamId, level);
                   setFormData({ 
                     ...formData, 
                     teamId: newTeamId, 
-                    managerId: "",
+                    // Preserve an L2's Head. For L3/L4, automatically select
+                    // the manager when the destination team has one option.
+                    managerId: level === "L2"
+                      ? formData.managerId
+                      : (managerOptions.length === 1 ? managerOptions[0].userId : ""),
                   });
                 }}
                 className="w-full px-3 py-2 border border-slate-300 rounded-xl focus:ring-2 focus:ring-blue-500 focus:border-blue-500 outline-none transition-all bg-white"
@@ -266,7 +274,7 @@ const UserCreationModal = ({ isOpen, onClose, editingUser, onSuccess, teams = []
             
             {formData.teamId && (formData.level || "L4").toUpperCase() !== "L2" && (
               <div>
-                <label className="block text-xs font-semibold text-slate-700 mb-1 uppercase tracking-wide">Manager (Optional)</label>
+                <label className="block text-xs font-semibold text-slate-700 mb-1 uppercase tracking-wide">Manager (Required)</label>
                 <select
                   value={formData.managerId}
                   onChange={(e) => setFormData({ ...formData, managerId: e.target.value })}
