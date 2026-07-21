@@ -11,6 +11,11 @@ import L4DashboardView from './L4DashboardView'
 import IncentiveSlabTable from './common/IncentiveSlabTable'
 import { formatPlacementDate } from '../utils/placementDates'
 
+const formatBilledHours = (placement) => {
+  const value = placement?.totalBilledHours ?? placement?.billedHours ?? null
+  return value == null || value === '' ? '-' : String(value)
+}
+
 const EmployeeDetails = () => {
   const navigate = useNavigate()
   const location = useLocation()
@@ -1503,7 +1508,7 @@ const EmployeeDetails = () => {
                           <td className="px-4 py-4 text-sm text-slate-600">{placement.placementType}</td>
                           <td className="px-4 py-4 text-sm text-slate-600">{placement.billingStatus}</td>
                           <td className="px-4 py-4 text-sm text-slate-600">{placement.collectionStatus ?? '-'}</td>
-                          <td className="px-4 py-4 text-sm text-slate-600">{placement.totalBilledHours ?? placement.billedHours ?? '-'}</td>
+                          <td className="px-4 py-4 text-sm text-slate-600">{formatBilledHours(placement)}</td>
                           <td className="px-4 py-4 text-sm text-slate-600 font-medium">
                             {CalculationService.formatCurrency(placement.revenueLeadUsd)}
                           </td>
@@ -1565,11 +1570,9 @@ const EmployeeDetails = () => {
                           </td>
                           <td className="px-4 py-4 text-sm text-slate-600">{placement.collectionStatus}</td>
                           <td className="px-4 py-4 text-sm text-slate-600">
-                            <div className="relative inline-block">
-                              {placement.placementType === 'FTE' ? (
-                                <span className="text-slate-600 font-medium">-</span>
-                              ) : (
-                                placement.monthlyBilling && placement.monthlyBilling.length > 0 ? (
+                            <div className="relative inline-flex items-center gap-2">
+                              <span className="text-slate-600 font-medium">{formatBilledHours(placement)}</span>
+                              {placement.monthlyBilling && placement.monthlyBilling.length > 0 && (
                                 <>
                                   <InfoIcon
                                     onClick={handleInfoIconClick}
@@ -1584,9 +1587,6 @@ const EmployeeDetails = () => {
                                     onClose={() => setOpenTooltip(null)}
                                   />
                                 </>
-                                ) : (
-                                    <span className="text-slate-600 font-medium">{placement.billedHours || ''}</span>
-                                )
                               )}
                             </div>
                           </td>
@@ -1652,11 +1652,9 @@ const EmployeeDetails = () => {
                           </td>
                           <td className="px-4 py-4 text-sm text-slate-600">{placement.collectionStatus}</td>
                           <td className="px-4 py-4 text-sm text-slate-600">
-                            <div className="relative inline-block">
-                              {placement.placementType === 'FTE' ? (
-                                <span className="text-slate-600 font-medium">-</span>
-                              ) : (
-                                placement.monthlyBilling && placement.monthlyBilling.length > 0 ? (
+                            <div className="relative inline-flex items-center gap-2">
+                              <span className="text-slate-600 font-medium">{formatBilledHours(placement)}</span>
+                              {placement.monthlyBilling && placement.monthlyBilling.length > 0 && (
                                 <>
                                   <InfoIcon
                                     onClick={handleInfoIconClick}
@@ -1671,9 +1669,6 @@ const EmployeeDetails = () => {
                                     onClose={() => setOpenTooltip(null)}
                                   />
                                 </>
-                                ) : (
-                                    <span className="text-slate-600 font-medium">{placement.billedHours || ''}</span>
-                                )
                               )}
                             </div>
                           </td>
