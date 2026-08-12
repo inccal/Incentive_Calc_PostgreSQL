@@ -131,7 +131,7 @@ function verifyEntraOAuthState(state) {
   return true;
 }
 
-function buildEntraAuthorizeUrl({ tenantId, clientId, redirectUri, state }) {
+function buildEntraAuthorizeUrl({ clientId, redirectUri, state }) {
   const params = new URLSearchParams({
     client_id: clientId,
     response_type: "code",
@@ -142,8 +142,10 @@ function buildEntraAuthorizeUrl({ tenantId, clientId, redirectUri, state }) {
     state,
   });
 
+  // Use the 'organizations' endpoint so users from ANY Azure AD tenant can log in.
+  // Change to 'common' if you also want to support personal Microsoft accounts.
   const authorizeUrl = new URL(
-    `https://login.microsoftonline.com/${encodeURIComponent(tenantId)}/oauth2/v2.0/authorize`
+    "https://login.microsoftonline.com/organizations/oauth2/v2.0/authorize"
   );
   authorizeUrl.search = params.toString();
   return authorizeUrl.toString();
@@ -216,10 +218,6 @@ async function resolveActiveUserFromEntra(entraUser) {
 }
 
 router.get("/entra/login", (req, res) => {
-  const tenantId =
-    process.env.AZURE_TENANT_ID ||
-    process.env.ENTRA_TENANT_ID ||
-    process.env.MICROSOFT_TENANT_ID;
   const clientId =
     process.env.AZURE_CLIENT_ID ||
     process.env.ENTRA_CLIENT_ID ||
@@ -229,7 +227,7 @@ router.get("/entra/login", (req, res) => {
     process.env.ENTRA_REDIRECT_URI ||
     process.env.MICROSOFT_REDIRECT_URI;
 
-  if (!tenantId || !clientId || !redirectUri) {
+  if (!clientId || !redirectUri) {
     return res
       .status(500)
       .json({ error: "Microsoft Entra ID is not configured on the server" });
@@ -237,12 +235,7 @@ router.get("/entra/login", (req, res) => {
 
   const state = createEntraOAuthState();
 
-  const redirectTarget = buildEntraAuthorizeUrl({
-    tenantId,
-    clientId,
-    redirectUri,
-    state,
-  });
+  const redirectTarget = buildEntraAuthorizeUrl({ clientId, redirectUri, state });
   if (!redirectTarget.startsWith("https://login.microsoftonline.com/")) {
     return res.status(500).json({ error: "Invalid Microsoft Entra authorization URL configuration" });
   }
@@ -251,10 +244,6 @@ router.get("/entra/login", (req, res) => {
 });
 
 router.get("/entra/authorize-url", (req, res) => {
-  const tenantId =
-    process.env.AZURE_TENANT_ID ||
-    process.env.ENTRA_TENANT_ID ||
-    process.env.MICROSOFT_TENANT_ID;
   const clientId =
     process.env.AZURE_CLIENT_ID ||
     process.env.ENTRA_CLIENT_ID ||
@@ -264,7 +253,7 @@ router.get("/entra/authorize-url", (req, res) => {
     process.env.ENTRA_REDIRECT_URI ||
     process.env.MICROSOFT_REDIRECT_URI;
 
-  if (!tenantId || !clientId || !redirectUri) {
+  if (!clientId || !redirectUri) {
     return res
       .status(500)
       .json({ error: "Microsoft Entra ID is not configured on the server" });
@@ -272,12 +261,7 @@ router.get("/entra/authorize-url", (req, res) => {
 
   const state = createEntraOAuthState();
 
-  const authorizeUrl = buildEntraAuthorizeUrl({
-    tenantId,
-    clientId,
-    redirectUri,
-    state,
-  });
+  const authorizeUrl = buildEntraAuthorizeUrl({ clientId, redirectUri, state });
   if (!authorizeUrl.startsWith("https://login.microsoftonline.com/")) {
     return res.status(500).json({ error: "Invalid Microsoft Entra authorization URL configuration" });
   }
@@ -297,10 +281,6 @@ router.get("/entra/callback", async (req, res, next) => {
       return res.status(400).json({ error: "Invalid login state. Please try again." });
     }
 
-    const tenantId =
-      process.env.AZURE_TENANT_ID ||
-      process.env.ENTRA_TENANT_ID ||
-      process.env.MICROSOFT_TENANT_ID;
     const clientId =
       process.env.AZURE_CLIENT_ID ||
       process.env.ENTRA_CLIENT_ID ||
@@ -314,13 +294,14 @@ router.get("/entra/callback", async (req, res, next) => {
       process.env.ENTRA_REDIRECT_URI ||
       process.env.MICROSOFT_REDIRECT_URI;
 
-    if (!tenantId || !clientId || !clientSecret || !redirectUri) {
+    if (!clientId || !clientSecret || !redirectUri) {
       return res
         .status(500)
         .json({ error: "Microsoft Entra ID is not configured on the server" });
     }
 
-    const tokenEndpoint = `https://login.microsoftonline.com/${tenantId}/oauth2/v2.0/token`;
+    // Use the 'organizations' token endpoint for multi-tenant support.
+    const tokenEndpoint = "https://login.microsoftonline.com/organizations/oauth2/v2.0/token";
     const tokenParams = new URLSearchParams({
       client_id: clientId,
       client_secret: clientSecret,
