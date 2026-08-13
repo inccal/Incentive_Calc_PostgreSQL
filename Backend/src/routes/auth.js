@@ -273,13 +273,35 @@ router.get("/entra/callback", async (req, res, next) => {
   const { ipAddress, userAgent } = getClientMeta(req);
 
   try {
-    const { code, state } = req.query || {};
+    const { code, state, admin_consent, error, error_description } = req.query || {};
+
+    // ── Admin consent redirect (not a login attempt) ─────────────────────────
+    // When an admin from another tenant grants consent via the /adminconsent URL,
+    // Azure redirects here with admin_consent=True — there is no `code`.
+    if (admin_consent === "True") {
+      const frontendUrl = (
+        process.env.FRONTEND_URL || "https://inccalvbeyond.com"
+      ).replace(/\/$/, "");
+      return res.redirect(`${frontendUrl}/?admin_consent=success`);
+    }
+
+    // ── OAuth error returned by Azure (e.g. user cancelled login) ────────────
+    if (error) {
+      const frontendUrl = (
+        process.env.FRONTEND_URL || "https://inccalvbeyond.com"
+      ).replace(/\/$/, "");
+      return res.redirect(
+        `${frontendUrl}/?login=error&reason=${encodeURIComponent(error_description || error)}`
+      );
+    }
+
     if (!code || typeof code !== "string") {
       return res.status(400).json({ error: "Authorization code is missing" });
     }
     if (!verifyEntraOAuthState(state)) {
       return res.status(400).json({ error: "Invalid login state. Please try again." });
     }
+
 
     const clientId =
       process.env.AZURE_CLIENT_ID ||
